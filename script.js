@@ -94,6 +94,7 @@ class FerrofluidVisualizer {
         this.loadDefaultAudio(); // Automatically load the default audio file
         this.updateStatusMessage(); // Initialize status message
         this.setupEventListeners();
+        this.initializeUIValues(); // Initialize UI values after properties are set
         this.animate();
     }    // Helper method to get random spawn emoji
     getRandomSpawnEmoji() {
@@ -145,11 +146,59 @@ class FerrofluidVisualizer {
                 img.addEventListener('error', checkAllLoaded); // Also handle errors
             }
         });
-        
-        // Fallback timeout to ensure colors are set even if load events don't fire
+          // Fallback timeout to ensure colors are set even if load events don't fire
         setTimeout(() => {
             this.updateFrequencyAnalyzerCloneColors('#bbbbbb');
         }, 500);
+    }
+
+    initializeUIValues() {
+        // Initialize environment control values
+        const envSizeValue = document.getElementById('env-size-value');
+        const envSizeInput = document.getElementById('env-size');
+        const envVisibilityInput = document.getElementById('env-visibility');
+        const envColorInput = document.getElementById('env-sphere-color');
+        
+        if (envSizeValue) {
+            envSizeValue.textContent = this.envSphereSize;
+        }
+        
+        if (envSizeInput) {
+            envSizeInput.value = this.envSphereSize;
+        }
+        
+        if (envVisibilityInput) {
+            envVisibilityInput.checked = this.envVisibility > 0;
+        }
+          if (envColorInput) {
+            // Set color picker to match the environment sphere color
+            // Ensure envSphereColor is defined before using toString
+            const envColor = this.envSphereColor || 0x999999;
+            const envColorHex = '#' + envColor.toString(16).padStart(6, '0');
+            envColorInput.value = envColorHex;
+        }
+
+        // Initialize light color control values
+        const lightBassColorInput = document.getElementById('light-bass-color');
+        const lightMidColorInput = document.getElementById('light-mid-color');
+        const lightHighColorInput = document.getElementById('light-high-color');
+        
+        if (lightBassColorInput) {
+            const bassColorHex = '#' + this.lightBassColor.toString(16).padStart(6, '0');
+            lightBassColorInput.value = bassColorHex;
+        }
+        
+        if (lightMidColorInput) {
+            const midColorHex = '#' + this.lightMidColor.toString(16).padStart(6, '0');
+            lightMidColorInput.value = midColorHex;
+        }
+        
+        if (lightHighColorInput) {
+            const highColorHex = '#' + this.lightHighColor.toString(16).padStart(6, '0');
+            lightHighColorInput.value = highColorHex;
+        }
+        
+        console.log('UI values initialized');
     }setupThreeJS() {
         // Scene
         this.scene = new THREE.Scene();
@@ -668,7 +717,20 @@ class FerrofluidVisualizer {
             if (this.envMaterial) {
                 this.envMaterial.color.setHex(this.envSphereColor);
             }
-        });        // Environment size control
+        });
+
+        // Light color controls for frequency-based lighting
+        document.getElementById('light-bass-color').addEventListener('input', (e) => {
+            this.lightBassColor = parseInt(e.target.value.replace('#', ''), 16);
+        });
+
+        document.getElementById('light-mid-color').addEventListener('input', (e) => {
+            this.lightMidColor = parseInt(e.target.value.replace('#', ''), 16);
+        });
+
+        document.getElementById('light-high-color').addEventListener('input', (e) => {
+            this.lightHighColor = parseInt(e.target.value.replace('#', ''), 16);
+        });// Environment size control
         document.getElementById('env-size').addEventListener('input', (e) => {
             this.envSphereSize = parseInt(e.target.value);
             document.getElementById('env-size-value').textContent = this.envSphereSize;
@@ -904,10 +966,16 @@ this.analyser.connect(this.audioContext.destination);
             console.error('Error loading audio file:', error);
         }
     }
-    
-    async loadAudioFromURL(url) {
+      async loadAudioFromURL(url) {
         try {
             console.log(`Attempting to load audio from URL: ${url}`);
+            
+            // Check if we're running from file:// protocol
+            if (window.location.protocol === 'file:') {
+                console.warn('Running from file:// protocol - cannot load external audio files due to CORS restrictions');
+                console.log('Please serve this application from a local web server to enable audio loading');
+                return; // Exit gracefully without throwing an error
+            }
             
             // Fetch the file
             const response = await fetch(url);
@@ -2293,8 +2361,20 @@ this.spawnFloatingBlobs();
         
         this.fetchAndUpdateSvg(imgElement.src, imgElement, hexColor);
     }
-    
-    fetchAndUpdateSvg(svgUrl, imgElement, hexColor) {
+      fetchAndUpdateSvg(svgUrl, imgElement, hexColor) {
+        // Check for file:// protocol which would cause CORS issues
+        if (window.location.protocol === 'file:') {
+            console.warn('SVG color modification not available when serving from file:// protocol due to CORS restrictions.');
+            console.warn('For full functionality, serve the application from a local HTTP server.');
+            // Fallback to CSS filter approach
+            const gridColorRgb = this.hexToRgb(hexColor);
+            if (gridColorRgb) {
+                const filter = this.getColorFilter(gridColorRgb.r, gridColorRgb.g, gridColorRgb.b);
+                imgElement.style.filter = filter;
+            }
+            return;
+        }
+
         fetch(svgUrl)
             .then(response => response.text())
             .then(svgText => {
@@ -3012,28 +3092,4 @@ window.addEventListener('beforeunload', () => {
 });
 
 // --- UI Initialization for Environment Controls ---
-(function() {
-    const envSizeInput = document.getElementById('env-size');
-    const envVisibilityInput = document.getElementById('env-visibility');
-    const envColorInput = document.getElementById('env-sphere-color');
-    
-    if (!envSizeInput || !envVisibilityInput || !envColorInput) return;
-    
-    FerrofluidVisualizer.prototype.initializeUIValues = function() {
-        // Initialize environment control values
-        document.getElementById('env-size-value').textContent = this.envSphereSize;
-        
-        // Set input controls to match property values
-        document.getElementById('env-size').value = this.envSphereSize;
-        document.getElementById('env-visibility').checked = this.envVisibility > 0;
-        
-        // Set color picker to match the environment sphere color
-        const envColorHex = '#' + this.envSphereColor.toString(16).padStart(6, '0');
-        document.getElementById('env-sphere-color').value = envColorHex;
-        
-        console.log('UI values initialized');
-    };
-    
-    // Call initializeUIValues on prototype to set up initial values
-    FerrofluidVisualizer.prototype.initializeUIValues();
-})();
+// This functionality is now handled by the initializeUIValues method in the FerrofluidVisualizer class
