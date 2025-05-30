@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARTEF4KT - Ferrofluid Inspired Music Visualizer</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>    <div id="container">
+        <canvas id="visualizer"></canvas>
+        
+        <div id="ui-hover-area"></div>
+        <div id="ui">
+            <div id="header">
+                <h1>ARTEF4KT</h1>
+            </div>
+            
+            <div id="controls">                
+                <div class="control-group">
+                    <label for="audio-file">Load Audio File</label>
+                    <div class="custom-file-input">
+                        <input type="file" id="audio-file" accept="audio/*" style="display: none;">
+                        <button id="file-button" type="button">File</button>
+                        <span id="file-name-display">bogdan-rosu-yfflon.mp3</span>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <button id="play-pause">▶ PLAY</button>
+                    <button id="stop">⏹ STOP</button>
+                </div>
+                  <div class="control-group slider-control">
+                    <div class="control-header">
+                        <label for="sensitivity">Sensitivity</label>
+                        <span id="sensitivity-value">1.0</span>
+                    </div>
+                    <input type="range" id="sensitivity" min="0.1" max="3" step="0.1" value="1">
+                </div>
+                
+                <div class="control-group slider-control">
+                    <div class="control-header">
+                        <label for="smoothing">Smoothing</label>
+                        <span id="smoothing-value">0.8</span>
+                    </div>
+                    <input type="range" id="smoothing" min="0" max="2" step="0.1" value="0.8">                
+                </div>
+                  <div class="control-group checkbox-control">
+                    <div class="control-header">
+                        <label for="grid-toggle">Grid Visibility</label>
+                        <input type="checkbox" id="grid-toggle" checked>
+                    </div>
+                </div>
+
+                <div class="control-group checkbox-control">
+                    <div class="control-header">
+                        <label for="debug-encoding-toggle">Debug Encoding</label>
+                        <input type="checkbox" id="debug-encoding-toggle" checked>
+                    </div>
+                </div>                
+
+
+                <div class="control-group slider-control">
+                    <div class="control-header">
+                        <label for="grid-size">Grid Size</label>
+                        <span id="grid-size-value">15</span>
+                    </div>
+                    <input type="range" id="grid-size" min="10" max="40" step="5" value="15">
+                </div>
+                  <div class="control-group slider-control">
+                    <div class="control-header">
+                        <label for="grid-opacity">Grid Opacity</label>
+                        <span id="grid-opacity-value">0.3</span>
+                    </div>
+                    <input type="range" id="grid-opacity" min="0.1" max="0.8" step="0.1" value="0.3">
+                </div>                
+                <div class="control-group slider-control">
+                    <div class="control-header">
+                        <label for="shadow-transparency">Shadow Opacity</label>
+                        <span id="shadow-transparency-value">0.4</span>
+                    </div>
+                    <input type="range" id="shadow-transparency" min="0" max="1" step="0.1" value="0.4">
+                </div>
+                <div class="control-group checkbox-control">
+                    <div class="control-header">
+                        <label for="link-shadow-color">Link Colors Shadow to Grid</label>
+                        <input type="checkbox" id="link-shadow-color">
+                    </div>
+                </div>
+                <div class="control-group color-controls">
+                    <div class="color-control">
+                        <label for="background-color">Bgcolor</label>
+                        <input type="color" id="background-color" value="#888888">
+                    </div>
+                    <div class="color-control">
+                        <label for="grid-color">Grdcolor</label>
+                        <input type="color" id="grid-color" value="#bbbbbb">
+                    </div>
+                    <div class="color-control">
+                        <label for="shadow-color">Shdcolor</label>
+                        <input type="color" id="shadow-color" value="#333333">
+                    </div>                    <div class="color-control">
+                        <label for="env-sphere-color">Envcolor</label>
+                        <input type="color" id="env-sphere-color" value="#999999">
+                    </div>
+                </div>
+                  <div class="control-group slider-control">
+                    <div class="control-header">
+                        <label for="env-size">Environment Size</label>
+                        <span id="env-size-value">80</span>
+                    </div>
+                    <input type="range" id="env-size" min="50" max="200" step="5" value="80">
+                </div>
+                
+                <div class="control-group checkbox-control">
+                    <div class="control-header">
+                        <label for="env-visibility">Environment Visibility</label>
+                        <input type="checkbox" id="env-visibility" checked>
+                    </div>
+                </div>
+                
+                <div class="control-group color-controls">
+                    <div class="color-control">
+                        <label for="light-bass-color">Bass</label>
+                        <input type="color" id="light-bass-color" value="#ff3366">
+                    </div>
+                    <div class="color-control">
+                        <label for="light-mid-color">Mid</label>
+                        <input type="color" id="light-mid-color" value="#33ff66">
+                    </div>
+                    <div class="color-control">
+                        <label for="light-high-color">High</label>
+                        <input type="color" id="light-high-color" value="#3366ff">
+                    </div>
+                </div>
+                  <div class="control-group slider-control">
+                    <div class="control-header">
+                        <label for="eq-bass">EQ Bass</label>
+                        <span id="eq-bass-value">0 dB</span>
+                    </div>
+                    <input type="range" id="eq-bass" min="-12" max="12" step="0.5" value="0">
+                </div>
+                
+                <div class="control-group slider-control">
+                    <div class="control-header">
+                        <label for="eq-mid">EQ Mid</label>
+                        <span id="eq-mid-value">0 dB</span>
+                    </div>
+                    <input type="range" id="eq-mid" min="-12" max="12" step="0.5" value="0">
+                </div>
+                
+                <div class="control-group slider-control">
+                    <div class="control-header">
+                        <label for="eq-high">EQ High</label>
+                        <span id="eq-high-value">0 dB</span>
+                    </div>
+                    <input type="range" id="eq-high" min="-12" max="12" step="0.5" value="0">
+                </div>
+                  <div class="control-group">
+                    <label>Frequency Analysis</label>                    
+                    <div id="frequency-ranges">
+                        <div class="freq-range bass">
+                            <div class="freq-bar">
+                                <div class="freq-level" id="bass-level"></div>
+                            </div>
+                            <span class="freq-label">20-250 Hz</span>
+                        </div>
+                        <div class="freq-range mids">
+                            <div class="freq-bar">
+                                <div class="freq-level" id="mid-level"></div>
+                            </div>
+                            <span class="freq-label">250Hz-4K</span>
+                        </div>
+                        <div class="freq-range highs">
+                            <div class="freq-bar">
+                                <div class="freq-level" id="high-level"></div>
+                            </div>
+                            <span class="freq-label">4K-20K</span>
+                        </div>
+                    </div>
+                </div></div></div>
+        
+        <!-- Status message display (above debug console) -->
+        <div id="status-message">Push space [_] to start visualization</div>
+        <div id="debug-info-panel"></div><!-- Track info display above frequency analyzer -->
+        <div id="track-info-display">
+            <div id="track-numbers-line">
+                <span id="track-freq-display">0 Hz</span>
+                <span id="track-bpm">00</span>
+                <span id="track-time-display">00:00 / 00:00</span>
+            </div>
+            <div id="track-name-vertical">No file loaded</div>
+        </div>
+        
+        <!-- Vertical frequency analyzer clone in bottom right -->
+        <div id="frequency-analyzer-clone">
+            <div class="freq-range-vertical bass-vertical">
+                <div class="freq-bar-vertical">
+                    <div class="freq-level-vertical" id="bass-level-clone"></div>
+                </div>
+            </div>
+            <div class="freq-range-vertical mids-vertical">
+                <div class="freq-bar-vertical">
+                    <div class="freq-level-vertical" id="mid-level-clone"></div>
+                </div>
+            </div>
+            <div class="freq-range-vertical highs-vertical">
+                <div class="freq-bar-vertical">
+                    <div class="freq-level-vertical" id="high-level-clone"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- SVG logos container -->
+        <div id="svg-logos-container">
+            <div class="svg-logo">
+                <img src="images/br.svg" alt="BR" id="br-logo">
+            </div>
+            <div class="svg-logo">
+                <img src="images/pixel-crusher.svg" alt="Pixel Crusher" id="pixel-crusher-logo">
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

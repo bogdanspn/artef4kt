@@ -1,0 +1,697 @@
+/* FERROVIS - Clean CSS without duplicates */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'JetBrains Mono', monospace;
+    background: #000;
+    color: #fff;
+    overflow: hidden;
+    user-select: none;
+}
+
+#container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+}
+
+#visualizer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+#ui {
+    position: fixed;
+    top: 0;
+    right: -300px; /* Hide off screen by default */
+    left: auto;
+    height: 100vh; /* Fill full height */    z-index: 1100;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0; /* Remove border radius for full height */
+    border-right: none; /* Remove right border since it's at screen edge */
+    min-width: 300px;
+    max-width: 340px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    transition: right 0.3s cubic-bezier(.4,0,.2,1);
+    pointer-events: auto;
+}
+
+/* Hover area to trigger UI panel */
+#ui-hover-area {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 32px;
+    height: 100vh;
+    z-index: 20;
+    background: transparent;
+    cursor: pointer;
+}
+
+#ui:hover, #ui:focus-within, #ui-hover-area:hover ~ #ui {
+    right: 0;
+}
+
+/* Show a small tab to hint at the UI */
+#ui::before {
+    content: '◀';
+    position: absolute;
+    left: -22px;
+    top: 60px; /* Position near the top instead of center */    width: 22px;
+    height: 60px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-right: none;
+    border-radius: 8px 0 0 8px;
+    box-shadow: 2px 0 12px 0 rgba(0,0,0,0.3);
+    cursor: pointer;
+    z-index: 1101; /* Higher than UI panel to stay visible */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.7);
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.3s ease;
+}
+
+#ui:hover::before, #ui:focus-within::before, #ui-hover-area:hover ~ #ui::before {
+    background: rgba(20, 20, 20, 0.8);
+    color: rgba(255,255,255,0.9);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Status Message Display (above debug console) */
+#status-message {
+    position: fixed;
+    top: 5px;
+    left: 10px;
+    z-index: 1050;
+    padding: 0px;
+    margin-bottom: 8px;
+    background: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    color: #bbbbbb;
+    font-family: 'JetBrains Mono', 'Fira Mono', 'Consolas', monospace;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.45;
+    pointer-events: none;
+    user-select: none;
+    text-align: left;
+    white-space: pre-wrap;
+    text-transform: uppercase;
+}
+
+/* Debug Info Panel (left side overlay) */
+#debug-info-panel {
+    position: fixed;
+    top: 25px;
+    left: 10px;
+    right: auto;
+    width: 400px;
+    max-width: 45vw;
+    height: calc(100vh - 25px);
+    background: none;
+    color: #bbbbbb;
+    font-family: 'JetBrains Mono', 'Fira Mono', 'Consolas', monospace;
+    font-size: 11px;
+    line-height: 1.45;
+    overflow-y: scroll;
+    padding: 0;
+    z-index: 1000;
+    border: none;
+    box-shadow: none;
+    pointer-events: none;
+    white-space: pre-wrap;
+    text-align: left;
+    scrollbar-width: none; /* Firefox */
+}
+
+#debug-info-panel::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
+/* Ensure debug panel is always above UI and hover area */
+#ui, #ui-hover-area {
+    z-index: 900;
+}
+
+#header {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+#header h1 {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: #fff;
+    margin-bottom: 4px;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+#header p {
+    font-size: 11px;
+    font-weight: 300;
+    color: #aaa;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.control-group {
+    margin-bottom: 15px;
+}
+
+.control-group label {
+    display: block;
+    font-size: 10px;
+    font-weight: 500;
+    color: #ccc;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+}
+
+.control-group span {
+    font-size: 10px;
+    color: #ccc;
+    line-height: 1.2;
+}
+
+/* Slider control specific styling */
+.slider-control {
+    margin-bottom: 18px;
+}
+
+.control-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.slider-control .control-header label {
+    margin-bottom: 0;
+    flex: 1;
+}
+
+.slider-control .control-header span {
+    font-weight: 500;
+    color: #fff;
+    min-width: 50px;
+    text-align: right;
+}
+
+.slider-control input[type="range"] {
+    width: 100%;
+    margin-right: 0;
+}
+
+/* Checkbox control specific styling */
+.checkbox-control .control-header {
+    margin-bottom: 0;
+}
+
+.checkbox-control .control-header label {
+    margin-bottom: 0;
+    flex: 1;
+}
+
+.checkbox-control .control-header input[type="checkbox"] {
+    margin-left: 10px;
+}
+
+/* Color controls specific styling */
+.color-controls {
+    display: flex;
+    gap: 0;
+    margin-bottom: 15px;
+    width: 100%;
+}
+
+.color-control {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: left;
+    gap: 6px;
+    padding: 0;
+}
+
+.color-control label {
+    font-size: 9px;
+    font-weight: 500;
+    color: #ccc;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0;
+    text-align: left;
+}
+
+.color-control input[type="color"] {
+    width: 100%;
+    height: 25px;
+    max-width: 60px;
+}
+
+/* File input styling */
+input[type="file"] {
+    width: 100%;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+input[type="file"]:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+input[type="file"]::file-selector-button {
+    background: #333;
+    border: none;
+    color: #fff;
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    margin-right: 8px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+input[type="file"]::file-selector-button::before {
+    content: "File";
+}
+
+input[type="file"]::file-selector-button:hover {
+    background: #555;
+}
+
+/* Custom file input styling */
+.custom-file-input {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.custom-file-input:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.custom-file-input #file-button {
+    background: #333;
+    border: none;
+    color: #fff;
+    padding: 8px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    border-radius: 0;
+    flex-shrink: 0;
+}
+
+.custom-file-input #file-button:hover {
+    background: #555;
+}
+
+.custom-file-input #file-name-display {
+    padding: 8px 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.8);
+    flex: 1;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+/* Button styling */
+button {
+    background: #444;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-right: 8px;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+button:hover {
+    background: #666;
+    color: #000;
+}
+
+button:active {
+    background: #333;
+}
+
+button.playing {
+    background: #fff;
+    color: #444;
+}
+
+button.playing:hover {
+    background: #eee;
+    color: #222;
+}
+
+/* Range input styling */
+input[type="range"] {
+    width: 75%;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    outline: none;
+    margin-right: 10px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+}
+
+/* Checkbox styling */
+input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #fff;
+    cursor: pointer;
+}
+
+/* Color input styling */
+input[type="color"] {
+    width: 60px;
+    height: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    outline: none;
+    padding: 0;
+}
+
+input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 3px;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+    border: none;
+    border-radius: 3px;
+}
+
+#info {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+    font-size: 10px;
+}
+
+.info-item .label {
+    color: #888;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.info-item span:last-child {
+    color: #fff;
+    font-weight: 400;
+}
+
+/* Frequency Range Indicators */
+#frequency-ranges {
+    margin-top: 8px;
+}
+
+.freq-range {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    padding: 4px 0;
+    gap: 8px;
+}
+
+.freq-label {
+    font-weight: 600;
+    font-size: 9px;
+    letter-spacing: 1px;
+    min-width: 60px;
+    color: #ccc;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.freq-hz {
+    font-size: 8px;
+    color: #888;
+    min-width: 65px;
+    text-align: center;
+}
+
+.freq-bar {
+    flex: 1;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    margin-right: 8px;
+    overflow: hidden;
+}
+
+.freq-level {
+    height: 100%;
+    width: 0%;
+    border-radius: 4px;
+    transition: width 0.1s ease-out;
+    background: #fff;
+}
+
+.freq-range.bass .freq-label,
+.freq-range.mids .freq-label,
+.freq-range.highs .freq-label {
+    color: #ccc;
+}
+
+.freq-range.bass .freq-level,
+.freq-range.mids .freq-level,
+.freq-range.highs .freq-level {
+    background: #fff;
+}
+
+/* Track Info Display */
+#track-info-display {
+    position: fixed;
+    bottom: 120px;
+    right: 20px;
+    z-index: 55;
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    pointer-events: none;
+    font-family: 'JetBrains Mono', 'Fira Mono', 'Consolas', monospace;
+    writing-mode: vertical-lr;
+    text-orientation: mixed;
+}
+
+#track-numbers-line {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 12px;
+    font-size: 24px;
+    line-height: 24px;
+    font-weight: 600;
+    color: #bbbbbb;
+    letter-spacing: 2px;
+    text-align: center;
+}
+
+#track-bmp,
+#track-time-display,
+#track-freq-display {
+    font-size: 24px;
+    font-weight: 600;
+    color: #bbbbbb;
+    letter-spacing: 2px;
+    text-align: center;
+}
+
+#track-name-vertical {
+    font-size: 11px;
+    font-weight: 400;
+    color: #bbbbbb;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    max-width: 120px;
+    word-wrap: break-word;
+    text-align: right;
+    line-height: 1.3;
+}
+
+/* Vertical Frequency Analyzer Clone */
+#frequency-analyzer-clone {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 50;
+    display: flex;
+    gap: 12px;
+    padding: 8px 12px;
+    background: none;
+    pointer-events: none;
+    font-family: 'JetBrains Mono', 'Fira Mono', 'Consolas', monospace;
+}
+
+.freq-range-vertical {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.freq-bar-vertical {
+    width: 6px;
+    height: 80px;
+    background: rgba(187, 187, 187, 0.1);
+    border: 1px solid rgba(187, 187, 187, 0.3);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+}
+
+.freq-level-vertical {
+    width: 100%;
+    height: 0%;
+    position: absolute;
+    bottom: 0;
+    background: #bbbbbb;
+    border-radius: 3px;
+    transition: height 0.1s ease-out;
+}
+
+/* SVG Logos Container */
+#svg-logos-container {
+    position: fixed;
+    bottom: 30px;
+    right: 100px;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.svg-logo {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.svg-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    opacity: 0.8;
+    transition: filter 0.3s ease;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #ui {
+        width: calc(100% - 30px);
+        margin: 10px 15px;
+        padding: 15px;
+    }
+    
+    #header h1 {
+        font-size: 18px;
+    }
+    
+    button {
+        padding: 8px 12px;
+        font-size: 9px;
+    }
+}
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
