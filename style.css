@@ -201,7 +201,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
 }
 
 .slider-control .control-header label {
@@ -398,14 +398,14 @@ input[type="range"] {
     background: rgba(255, 255, 255, 0.2);
     border-radius: 2px;
     outline: none;
-    margin-right: 10px;
+    margin-right: 10px; 
 }
 
 input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
     background: #fff;
     border-radius: 50%;
     cursor: pointer;
@@ -413,8 +413,8 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 input[type="range"]::-moz-range-thumb {
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
     background: #fff;
     border-radius: 50%;
     cursor: pointer;
