@@ -1,1 +1,1 @@
-Fascinating ferrofluid inspired music visualizer.
+ARTEF4KT - Fascinating sphere ferrofluid inspired music visualizer.
