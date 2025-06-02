@@ -189,7 +189,7 @@ The visualizer supports full color customization:
 - **Environment Size**: Background sphere scale
 - **Debug Encoding**: Toggle animated debug console effects
 
-## 🔧 **Technical Details**
+##  **Technical Details**
 
 ### **Performance Optimization**
 - Frame-rate independent animations using deltaTime
@@ -237,6 +237,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Experience the future of music visualization with ARTEF4KT** 🎵✨
+**Experience the future of music visualization with ARTEF4KT** 
 
 *Created with passion for immersive audio-visual experiences*
