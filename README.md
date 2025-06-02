@@ -7,23 +7,22 @@
 
 A cutting-edge 3D music visualizer that simulates ferrofluid behavior, creating mesmerizing liquid metal effects that respond dynamically to audio input. Experience music like never before with organic deformations, floating particle systems, and intelligent camera movement.
 
-![ARTEF4KT Demo](https://via.placeholder.com/800x400/000000/FFFFFF?text=ARTEF4KT+Ferrofluid+Visualizer)
 
-## ✨ Features
+##  Features
 
-### 🎵 **Audio-Reactive Visualization**
+###  **Audio-Reactive Visualization**
 - **Real-time Audio Analysis**: Advanced FFT processing with frequency band separation (Bass: 20-250Hz, Mids: 250-4000Hz, Highs: 4000-20000Hz)
 - **BPM Detection**: Intelligent beat detection and tempo analysis with visual BPM display
 - **Dynamic Deformation**: Ferrofluid surface morphs organically based on music intensity
 - **Frequency-Specific Effects**: Different frequency ranges trigger unique visual responses
 
-### 🌊 **Ferrofluid Physics Simulation**
+###  **Ferrofluid Physics Simulation**
 - **Organic Surface Deformation**: 3D sphere with 128x128 geometry detail for smooth liquid metal effects
 - **Dynamic Blob Centers**: Audio-driven spike generation with varying thickness and intensity
 - **Floating Particle System**: Up to 25 independent floating blobs with unique behaviors
 - **Liquid Movement**: Flowing surface effects with realistic ferrofluid-inspired physics
 
-### 🎨 **Visual Effects & Lighting**
+###  **Visual Effects & Lighting**
 - **PBR Materials**: Physically-based rendering with metallic, reflective ferrofluid appearance
 - **Dynamic Lighting**: Three frequency-reactive colored lights (Bass/Red, Mid/Green, High/Blue)
 - **Customizable Colors**: Full color control for grid, lights, environment, and background
@@ -40,25 +39,25 @@ A cutting-edge 3D music visualizer that simulates ferrofluid behavior, creating 
 - **Grid Visualization**: Customizable 3D grid with opacity, size, and color controls
 - **Real-time Parameter Adjustment**: All visual parameters adjustable via elegant control panel
 
-### 📊 **Advanced Audio Features**
+###  **Advanced Audio Features**
 - **Multi-format Support**: MP3, WAV, OGG, and other common audio formats
 - **Frequency Analyzer**: Real-time frequency band visualization with horizontal and vertical displays
 - **Track Information**: Display track name, BPM, time, and dominant frequency
 - **Sensitivity Controls**: Adjustable audio sensitivity and smoothing parameters
 
-### ⚙️ **Settings & Presets System**
+###  **Settings & Presets System**
 - **Built-in Presets**: 5 professionally crafted presets (Default, Dark Mode, Neon Vibes, Minimal, High Contrast)
 - **Dynamic Preset Discovery**: Automatically detects user-created custom presets
 - **Import/Export**: Save and share custom configurations as JSON files
 - **Persistent Settings**: Settings automatically preserved between sessions
 
-### 🐛 **Debug & Development Features**
+###  **Debug & Development Features**
 - **Advanced Debug Console**: Real-time performance monitoring with animated text decoding effects
 - **Status Messages**: System status and audio information display
 - **Performance Optimization**: Efficient rendering with frame-rate independent animations
 - **Developer Tools**: Keyboard shortcuts (Ctrl+D: Toggle debug animation, Ctrl+R: Clear console)
 
-## 🛠️ **Technologies Used**
+##  **Technologies Used**
 
 ### **Core Technologies**
 - **[Three.js](https://threejs.org/)** - 3D graphics rendering and scene management
@@ -89,7 +88,7 @@ A cutting-edge 3D music visualizer that simulates ferrofluid behavior, creating 
 - **Local Storage** - Persistent configuration storage
 - **File API** - Audio file loading and settings import/export
 
-## 🚀 **Getting Started**
+##  **Getting Started**
 
 ### **Installation**
 ```bash
@@ -116,7 +115,7 @@ cd artef4kt
 4. Hover over the right edge to access the control panel
 5. Experiment with different settings and presets
 
-## 🎛️ **Usage Guide**
+##  **Usage Guide**
 
 ### **Loading Audio**
 - Click the "File" button in the control panel
@@ -142,7 +141,7 @@ cd artef4kt
 - **Import**: Load settings from a JSON file with "Import"
 - **Refresh**: Update preset list to include new custom presets
 
-## 📁 **Project Structure**
+##  **Project Structure**
 
 ```
 artef4kt/
@@ -165,7 +164,7 @@ artef4kt/
     └── README.md           # Settings system documentation
 ```
 
-## 🎨 **Customization**
+##  **Customization**
 
 ### **Creating Custom Presets**
 1. Adjust all settings to your preference in the control panel
@@ -213,38 +212,28 @@ The visualizer supports full color customization:
 4. **Lighting**: Dynamic colored lights responding to frequency bands
 5. **Post-processing**: Shadow mapping and environment reflections
 
-## 🤝 **Contributing**
-
-We welcome contributions! Please see our contributing guidelines:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
 ### **Development Setup**
 - No build process required - pure vanilla JavaScript
 - Use a local server for development to avoid CORS issues with audio files
 - Test across multiple browsers for compatibility
 
-## 📄 **License**
+##  **License**
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 **Acknowledgments**
+##  **Acknowledgments**
 
 - **Three.js Community** - For the amazing 3D graphics library
 - **Web Audio API** - For enabling real-time audio analysis
 - **JetBrains** - For the excellent monospace font
 - **Ferrofluid Physics** - Inspired by real ferrofluid behavior and properties
 
-## 📞 **Support**
+## **Support**
 
-- 🐛 **Bug Reports**: Open an issue on GitHub
-- 💡 **Feature Requests**: Submit a feature request issue
-- 📖 **Documentation**: Check the `/settings/README.md` for settings system details
-- 💬 **Questions**: Start a discussion on GitHub
+-  **Bug Reports**: Open an issue on GitHub
+-  **Feature Requests**: Submit a feature request issue
+-  **Documentation**: Check the `/settings/README.md` for settings system details
+-  **Questions**: Start a discussion on GitHub
 
 ---
 
