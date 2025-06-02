@@ -354,6 +354,17 @@ input[type="file"]::file-selector-button:hover {
 }
 
 /* Button styling */
+/* Control buttons - play/pause/stop should match settings buttons */
+#play-pause, #stop {
+    padding: 8px 12px;
+    font-size: 9px;
+    background: #333;
+}
+
+#play-pause:hover, #stop:hover {
+    background: #555;
+}
+
 button {
     background: #444;
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -569,7 +580,7 @@ input[type="color"]::-webkit-color-swatch-wrapper {
     text-align: center;
 }
 
-#track-bmp,
+#track-bpm,
 #track-time-display,
 #track-freq-display {
     font-size: 24px;
@@ -658,6 +669,94 @@ input[type="color"]::-webkit-color-swatch-wrapper {
     object-fit: contain;
     opacity: 0.8;
     transition: filter 0.3s ease;
+}
+
+/* Settings controls styling */
+.settings-control {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.settings-selector-group {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.settings-selector-group select {
+    flex: 1;
+    padding: 8px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    outline: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.settings-selector-group select:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.settings-selector-group select option {
+    background: #222;
+    color: #fff;
+    padding: 6px;
+}
+
+.settings-selector-group button {
+    padding: 8px 10px;
+    font-size: 9px;
+    margin-right: 0;
+    min-width: 40px;
+}
+
+.settings-selector-group button#refresh-presets {
+    padding: 8px 8px;
+    min-width: 32px;
+    background: #444;
+    transition: background 0.2s ease;
+}
+
+.settings-selector-group button#refresh-presets:hover {
+    background: #555;
+}
+
+.settings-selector-group button#refresh-presets.rotating {
+    transform: rotate(180deg);
+    transition: transform 0.3s ease;
+}
+
+.settings-file-group {
+    display: flex;
+    gap: 8px;
+}
+
+.settings-file-group button {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 9px;
+    margin-right: 0;
+    background: #333;
+}
+
+.settings-file-group button:hover {
+    background: #555;
+}
+
+/* Settings status message */
+.settings-status {
+    font-size: 9px;
+    color: #888;
+    text-align: center;
+    margin-top: 4px;
+    min-height: 12px;
 }
 
 /* Responsive adjustments */

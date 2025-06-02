@@ -1,0 +1,46 @@
+{
+  "presets": [
+    {
+      "name": "Dark Mode",
+      "description": "Preset: Dark Mode",
+      "file": "dark-mode.json"
+    },
+    {
+      "name": "Default",
+      "description": "Preset: Default",
+      "file": "default.json"
+    },
+    {
+      "name": "High Contrast",
+      "description": "Preset: High Contrast",
+      "file": "high-contrast.json"
+    },
+    {
+      "name": "Minimal",
+      "description": "Preset: Minimal",
+      "file": "minimal.json"
+    },
+    {
+      "name": "Neon Vibes",
+      "description": "Preset: Neon Vibes",
+      "file": "neon-vibes.json"
+    },
+    {
+      "name": "Red Tinge",
+      "description": "Preset: Red Tinge",
+      "file": "red-tinge.json"
+    },
+    {
+      "name": "Soviet Red",
+      "description": "Preset: Soviet Red",
+      "file": "soviet-red.json"
+    },
+    {
+      "name": "Yellow Red",
+      "description": "Preset: Yellow Red",
+      "file": "yellow-red.json"
+    }
+  ],
+  "version": "1.0",
+  "lastUpdated": "2025-06-02T02:21:16.976Z"
+}

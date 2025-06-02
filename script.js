@@ -80,21 +80,23 @@ class FerrofluidVisualizer {
         this.blobSpawnThreshold = 0.1; // Even lower threshold for easier spawning
         this.lastSpawnTime = 0;
         this.spawnCooldown = 100; // Even faster cooldown
-        
-        // BPM Detection
+          // BPM Detection
         this.bpmDetector = {
             peaks: [],
             bpm: 0,
             lastBeatTime: 0,
-            beatThreshold: 0.3,
+            beatThreshold: 0.15, // Lowered from 0.3 to 0.15 for better beat detection
             minBpm: 60,
             maxBpm: 200,
             analysisWindow: 10000 // 10 seconds
         };        this.init();
         this.loadDefaultAudio(); // Automatically load the default audio file
         this.updateStatusMessage(); // Initialize status message
-        this.setupEventListeners();
-        this.initializeUIValues(); // Initialize UI values after properties are set
+        this.setupEventListeners();        this.initializeUIValues(); // Initialize UI values after properties are set
+        
+        // Initialize settings dropdown with built-in presets
+        this.refreshSettingsDropdown();
+        
         this.animate();
     }    // Helper method to get random spawn emoji
     getRandomSpawnEmoji() {
@@ -670,11 +672,8 @@ class FerrofluidVisualizer {
                         }
                     }
                 });
-            }
-              // Update shadow colors to match current grid color only if linking is enabled
-            if (this.linkShadowColor) {
-                this.updateShadowColors();
-            }
+            }              // Always update shadow colors after grid recreation to preserve custom shadow color
+            this.updateShadowColors();
             
             // Update shadow transparency to match current setting
             this.updateShadowTransparency();
@@ -812,8 +811,8 @@ class FerrofluidVisualizer {
                 // 2. (Optional) Update shadows based on current shadow picker value,
                 //    in case it was changed while disabled (though it shouldn't be possible)
                 //    or if we want to ensure it reflects its own value immediately.
-                this.shadowColor = parseInt(shadowColorInput.value.replace('#', ''), 16);
-                this.updateShadowColors();
+                // this.shadowColor = parseInt(shadowColorInput.value.replace('#', ''), 16);
+                // this.updateShadowColors();
             }
         });
 
@@ -821,12 +820,31 @@ class FerrofluidVisualizer {
         window.addEventListener('resize', () => this.resize());
         
         // Enhanced mouse camera controls
-        this.initMouseControls();
-          // Spacebar for play/pause functionality
+        this.initMouseControls();        // Spacebar for play/pause functionality
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
                 e.preventDefault();
                 this.togglePlayPause();
+            }
+        });        // Settings event listeners
+        document.getElementById('load-preset').addEventListener('click', () => {
+            this.loadSelectedSettings();
+        });        document.getElementById('refresh-presets').addEventListener('click', (e) => {
+            const button = e.target;
+            button.classList.add('rotating');
+            setTimeout(() => button.classList.remove('rotating'), 300);
+            this.refreshSettingsDropdown();
+        });
+
+        document.getElementById('export-settings').addEventListener('click', () => {
+            this.exportSettings();
+        });
+
+        document.getElementById('import-settings').addEventListener('click', () => {
+            document.getElementById('settings-file-input').click();
+        });        document.getElementById('settings-file-input').addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                this.handleSettingsFileImport(e.target.files[0]);
             }
         });
     }
@@ -928,11 +946,10 @@ this.analyser.connect(this.audioContext.destination);
                     file.name.substring(0, maxLength) + '...' : file.name;
                 fileNameDisplay.textContent = displayName;
             }
-            
-            // Reset BPM detector
+              // Reset BPM detector (but don't reset display to allow detection to work)
             this.bpmDetector.peaks = [];
             this.bpmDetector.bpm = 0;
-            document.getElementById('track-bpm').textContent = '--';
+            // Note: We don't reset the display here to prevent interfering with BPM detection
             
             // Update time display
             this.audioElement.addEventListener('timeupdate', () => {
@@ -1194,10 +1211,8 @@ this.analyser.connect(this.audioContext.destination);
             }
         }          const dominantFrequency = maxIndex * frequencyBinWidth;
         document.getElementById('track-freq-display').textContent = `${Math.round(dominantFrequency)} Hz`;
-        
-        // BPM Detection
-        this.detectBPM();
-        
+          // BPM Detection
+        this.detectBPM();        
         // Debug info (can be removed later)
         if (Math.random() < 0.01) { // Log occasionally to avoid spam
             console.log(`Sample Rate: ${sampleRate}Hz, Bin Width: ${frequencyBinWidth.toFixed(1)}Hz`);
@@ -2742,11 +2757,14 @@ this.spawnFloatingBlobs();
         
         this.renderer.dispose();
     }
-    
-    // BPM Detection method
+      // BPM Detection method
     detectBPM() {
         const now = performance.now();
         const totalIntensity = this.bassIntensity + this.midIntensity + this.highIntensity;
+          // Debug: Log bass intensity occasionally
+        if (Math.random() < 0.02) { // 2% chance to log (increased for debugging)
+            console.log(`BPM Debug - Bass: ${this.bassIntensity.toFixed(3)}, Threshold: ${this.bpmDetector.beatThreshold}, Peaks: ${this.bpmDetector.peaks.length}`);
+        }
         
         // Detect beat based on bass intensity threshold
         if (this.bassIntensity > this.bpmDetector.beatThreshold) {
@@ -2756,6 +2774,9 @@ this.spawnFloatingBlobs();
             if (timeSinceLastBeat > 300) {
                 this.bpmDetector.peaks.push(now);
                 this.bpmDetector.lastBeatTime = now;
+                
+                // Debug: Log beat detection
+                console.log(`Beat detected! Bass: ${this.bassIntensity.toFixed(3)}, Total peaks: ${this.bpmDetector.peaks.length}`);
                 
                 // Remove old peaks outside analysis window
                 const windowStart = now - this.bpmDetector.analysisWindow;
@@ -2767,16 +2788,19 @@ this.spawnFloatingBlobs();
                 }
             }
         }
-    }
-
-    calculateBPM() {
-        if (this.bpmDetector.peaks.length < 4) return;
+    }    calculateBPM() {
+        if (this.bpmDetector.peaks.length < 4) {
+            console.log(`BPM: Not enough peaks (${this.bpmDetector.peaks.length}/4 required)`);
+            return;
+        }
         
         // Calculate intervals between consecutive beats
         const intervals = [];
         for (let i = 1; i < this.bpmDetector.peaks.length; i++) {
             intervals.push(this.bpmDetector.peaks[i] - this.bpmDetector.peaks[i - 1]);
         }
+        
+        console.log(`BPM: Raw intervals (${intervals.length}):`, intervals.map(i => Math.round(i)).join(', '));
         
         // Remove outliers (intervals that are too different from the median)
         intervals.sort((a, b) => a - b);
@@ -2785,18 +2809,466 @@ this.spawnFloatingBlobs();
             Math.abs(interval - median) < median * 0.3 // Within 30% of median
         );
         
-        if (filteredIntervals.length < 2) return;
+        console.log(`BPM: Median: ${Math.round(median)}ms, Filtered intervals (${filteredIntervals.length}):`, filteredIntervals.map(i => Math.round(i)).join(', '));
         
-        // Calculate average interval
+        if (filteredIntervals.length < 2) {
+            console.log(`BPM: Not enough filtered intervals (${filteredIntervals.length}/2 required)`);
+            return;
+        }
+          // Calculate average interval
         const avgInterval = filteredIntervals.reduce((sum, interval) => sum + interval, 0) / filteredIntervals.length;
         
         // Convert to BPM (60000 ms = 1 minute)
         const calculatedBPM = Math.round(60000 / avgInterval);
+        
+        console.log(`BPM: Average interval: ${Math.round(avgInterval)}ms, Calculated BPM: ${calculatedBPM}, Valid range: ${this.bpmDetector.minBpm}-${this.bpmDetector.maxBpm}`);
           // Validate BPM range
         if (calculatedBPM >= this.bpmDetector.minBpm && calculatedBPM <= this.bpmDetector.maxBpm) {
             this.bpmDetector.bpm = calculatedBPM;
-            document.getElementById('track-bpm').textContent = calculatedBPM.toString();
+            const bpmElement = document.getElementById('track-bpm');
+            if (bpmElement) {
+                bpmElement.textContent = calculatedBPM.toString();
+                console.log(`✅ BPM updated to: ${calculatedBPM}, element found: ${bpmElement.tagName}`);
+            } else {
+                console.log(`❌ BPM element not found! Calculated BPM: ${calculatedBPM}`);
+            }
+        } else {
+            console.log(`❌ BPM ${calculatedBPM} rejected (outside valid range ${this.bpmDetector.minBpm}-${this.bpmDetector.maxBpm})`);
         }
+    }
+
+    // Settings Methods
+    getUISettings() {
+        return {
+            // Audio settings
+            sensitivity: this.sensitivity,
+            smoothing: this.smoothing,
+            eqBass: 0, // These would need to be implemented if you have EQ controls
+            eqMid: 0,
+            eqHigh: 0,
+            
+            // Grid settings
+            gridVisible: this.gridVisible,
+            gridSize: this.gridSize,
+            gridOpacity: this.gridOpacity,
+            gridColor: this.gridColor,
+            
+            // Shadow settings
+            shadowTransparency: this.shadowTransparency,
+            shadowColor: this.shadowColor,
+            linkShadowColor: this.linkShadowColor,
+            
+            // Background settings
+            backgroundColor: this.backgroundColor,
+            
+            // Light colors
+            lightBassColor: this.lightBassColor,
+            lightMidColor: this.lightMidColor,
+            lightHighColor: this.lightHighColor,
+            
+            // Environment settings
+            envSphereColor: this.envSphereColor,
+            envSphereSize: this.envSphereSize,
+            envVisibility: this.envVisibility,
+            
+            // Debug settings
+            debugEncodingEnabled: window.debugEncodingSettings ? window.debugEncodingSettings.enabled : false,
+            
+            // Metadata
+            settingsVersion: "1.0",
+            exportDate: new Date().toISOString()
+        };
+    }
+
+    applyUISettings(settings) {
+        try {
+            // Audio settings
+            if (settings.sensitivity !== undefined) {
+                this.sensitivity = settings.sensitivity;
+                const sensitivitySlider = document.getElementById('sensitivity');
+                const sensitivityValue = document.getElementById('sensitivity-value');
+                if (sensitivitySlider) sensitivitySlider.value = this.sensitivity;
+                if (sensitivityValue) sensitivityValue.textContent = this.sensitivity.toFixed(1);
+            }
+            
+            if (settings.smoothing !== undefined) {
+                this.smoothing = settings.smoothing;
+                const smoothingSlider = document.getElementById('smoothing');
+                const smoothingValue = document.getElementById('smoothing-value');
+                if (smoothingSlider) smoothingSlider.value = this.smoothing;
+                if (smoothingValue) smoothingValue.textContent = this.smoothing.toFixed(1);
+                if (this.analyser) {
+                    this.analyser.smoothingTimeConstant = this.smoothing;
+                }
+            }
+            
+            // Grid settings
+            if (settings.gridVisible !== undefined) {
+                this.gridVisible = settings.gridVisible;
+                const gridToggle = document.getElementById('grid-toggle');
+                if (gridToggle) gridToggle.checked = this.gridVisible;
+                if (this.gridGroup) {
+                    this.gridGroup.visible = this.gridVisible;
+                }
+            }
+            
+            if (settings.gridSize !== undefined) {
+                this.gridSize = settings.gridSize;
+                const gridSizeSlider = document.getElementById('grid-size');
+                const gridSizeValue = document.getElementById('grid-size-value');
+                if (gridSizeSlider) gridSizeSlider.value = this.gridSize;
+                if (gridSizeValue) gridSizeValue.textContent = this.gridSize;
+                this.createGrid(); // Recreate grid with new size
+                if (this.cameraControls) {
+                    this.clampCameraTarget();
+                }
+            }
+            
+            if (settings.gridOpacity !== undefined) {
+                this.gridOpacity = settings.gridOpacity;
+                const gridOpacitySlider = document.getElementById('grid-opacity');
+                const gridOpacityValue = document.getElementById('grid-opacity-value');
+                if (gridOpacitySlider) gridOpacitySlider.value = this.gridOpacity;
+                if (gridOpacityValue) gridOpacityValue.textContent = this.gridOpacity.toFixed(1);
+                if (this.gridGroup) {
+                    this.gridGroup.children.forEach(mesh => {
+                        if (mesh.material && mesh.material.type !== 'ShadowMaterial') {
+                            mesh.material.opacity = this.gridOpacity;
+                        }
+                    });
+                }
+            }
+            
+            if (settings.gridColor !== undefined) {
+                this.gridColor = settings.gridColor;
+                const gridColorInput = document.getElementById('grid-color');
+                if (gridColorInput) {
+                    gridColorInput.value = '#' + this.gridColor.toString(16).padStart(6, '0');
+                }
+                if (this.gridGroup) {
+                    this.gridGroup.children.forEach(mesh => {
+                        if (mesh.material && mesh.material.type !== 'ShadowMaterial') {
+                            if (mesh.material.color) {
+                                mesh.material.color.setHex(this.gridColor);
+                            }
+                        }
+                    });
+                }                // Update frequency analyzer colors
+                const gridColorHex = '#' + this.gridColor.toString(16).padStart(6, '0');
+                this.updateFrequencyAnalyzerCloneColors(gridColorHex);
+                
+                // Update track info elements
+                const trackBpm = document.getElementById('track-bpm');
+                const trackNameVertical = document.getElementById('track-name-vertical');
+                const trackTimeDisplay = document.getElementById('track-time-display');
+                const trackFreqDisplay = document.getElementById('track-freq-display');
+                if (trackBpm) trackBpm.style.color = gridColorHex;
+                if (trackNameVertical) trackNameVertical.style.color = gridColorHex;
+                if (trackTimeDisplay) trackTimeDisplay.style.color = gridColorHex;
+                if (trackFreqDisplay) trackFreqDisplay.style.color = gridColorHex;
+                
+                // Update debug panel and status message colors
+                const debugPanel = document.getElementById('debug-info-panel');
+                const statusMessage = document.getElementById('status-message');
+                if (debugPanel) debugPanel.style.color = gridColorHex;
+                if (statusMessage) statusMessage.style.color = gridColorHex;
+            }
+            
+            // Shadow settings
+            if (settings.shadowTransparency !== undefined) {
+                this.shadowTransparency = settings.shadowTransparency;
+                const shadowSlider = document.getElementById('shadow-transparency');
+                const shadowValue = document.getElementById('shadow-transparency-value');
+                if (shadowSlider) shadowSlider.value = this.shadowTransparency;
+                if (shadowValue) shadowValue.textContent = this.shadowTransparency.toFixed(1);
+                this.updateShadowTransparency();
+            }
+            
+            if (settings.shadowColor !== undefined) {
+                this.shadowColor = settings.shadowColor;
+                const shadowColorInput = document.getElementById('shadow-color');
+                if (shadowColorInput) {
+                    shadowColorInput.value = '#' + this.shadowColor.toString(16).padStart(6, '0');
+                }
+            }
+            
+            if (settings.linkShadowColor !== undefined) {
+                this.linkShadowColor = settings.linkShadowColor;
+                const linkToggle = document.getElementById('link-shadow-color');
+                if (linkToggle) linkToggle.checked = this.linkShadowColor;
+                const shadowColorInput = document.getElementById('shadow-color');
+                if (shadowColorInput) {
+                    shadowColorInput.disabled = this.linkShadowColor;
+                }
+            }
+            
+            // Background settings
+            if (settings.backgroundColor !== undefined) {
+                this.backgroundColor = settings.backgroundColor;
+                const backgroundColorInput = document.getElementById('background-color');
+                if (backgroundColorInput) {
+                    backgroundColorInput.value = '#' + this.backgroundColor.toString(16).padStart(6, '0');
+                }
+                if (this.scene) {
+                    this.scene.background.setHex(this.backgroundColor);
+                    if (this.scene.fog) {
+                        this.scene.fog.color.setHex(this.backgroundColor);
+                    }
+                }
+                this.updateLightingFromBackground();
+            }
+            
+            // Light colors
+            if (settings.lightBassColor !== undefined) {
+                this.lightBassColor = settings.lightBassColor;
+                const bassColorInput = document.getElementById('light-bass-color');
+                if (bassColorInput) {
+                    bassColorInput.value = '#' + this.lightBassColor.toString(16).padStart(6, '0');
+                }
+            }
+            
+            if (settings.lightMidColor !== undefined) {
+                this.lightMidColor = settings.lightMidColor;
+                const midColorInput = document.getElementById('light-mid-color');
+                if (midColorInput) {
+                    midColorInput.value = '#' + this.lightMidColor.toString(16).padStart(6, '0');
+                }
+            }
+            
+            if (settings.lightHighColor !== undefined) {
+                this.lightHighColor = settings.lightHighColor;
+                const highColorInput = document.getElementById('light-high-color');
+                if (highColorInput) {
+                    highColorInput.value = '#' + this.lightHighColor.toString(16).padStart(6, '0');
+                }
+            }
+            
+            // Environment settings
+            if (settings.envSphereColor !== undefined) {
+                this.envSphereColor = settings.envSphereColor;
+                const envColorInput = document.getElementById('env-sphere-color');
+                if (envColorInput) {
+                    envColorInput.value = '#' + this.envSphereColor.toString(16).padStart(6, '0');
+                }
+                if (this.envMaterial) {
+                    this.envMaterial.color.setHex(this.envSphereColor);
+                }
+            }
+            
+            if (settings.envSphereSize !== undefined) {
+                this.envSphereSize = settings.envSphereSize;
+                const envSizeSlider = document.getElementById('env-size');
+                const envSizeValue = document.getElementById('env-size-value');
+                if (envSizeSlider) envSizeSlider.value = this.envSphereSize;
+                if (envSizeValue) envSizeValue.textContent = this.envSphereSize;
+                this.updateEnvironment();
+            }
+            
+            if (settings.envVisibility !== undefined) {
+                this.envVisibility = settings.envVisibility;
+                const envToggle = document.getElementById('env-visibility');
+                if (envToggle) envToggle.checked = this.envVisibility > 0;
+                this.updateEnvironment();
+            }
+            
+            // Debug settings
+            if (settings.debugEncodingEnabled !== undefined && window.debugEncodingControls) {
+                window.debugEncodingControls.setEnabled(settings.debugEncodingEnabled);
+                const debugToggle = document.getElementById('debug-encoding-toggle');
+                if (debugToggle) debugToggle.checked = settings.debugEncodingEnabled;
+            }
+            
+            // Update shadow colors after all settings are applied
+            this.updateShadowColors();
+            
+            console.log('Settings applied successfully');
+            return true;
+        } catch (error) {
+            console.error('Error applying settings:', error);
+            return false;
+        }
+    }    async refreshSettingsDropdown() {
+        const dropdown = document.getElementById('settings-dropdown');
+        if (!dropdown) {
+            console.warn('Settings dropdown not found');
+            return;
+        }
+        
+        try {
+            // Clear existing options except the first placeholder
+            dropdown.innerHTML = '<option value="">Select a preset...</option>';
+            
+            let loadedCount = 0;
+            
+            // First, try to fetch a settings index file that lists all available presets
+            try {
+                const indexResponse = await fetch('settings/index.json');
+                if (indexResponse.ok) {
+                    const indexData = await indexResponse.json();
+                    if (indexData.presets && Array.isArray(indexData.presets)) {
+                        console.log('Loading presets from index.json');
+                        for (const preset of indexData.presets) {
+                            const filename = preset.file || preset;
+                            const displayName = preset.name || filename.replace('.json', '').replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                            
+                            try {
+                                const response = await fetch(`settings/${filename}`);
+                                if (response.ok) {
+                                    const option = document.createElement('option');
+                                    option.value = `settings/${filename}`;
+                                    option.textContent = displayName;
+                                    dropdown.appendChild(option);
+                                    loadedCount++;
+                                }
+                            } catch (error) {
+                                console.warn(`Could not load preset ${filename}:`, error);
+                            }
+                        }
+                        
+                        console.log(`Settings dropdown refreshed from index: ${loadedCount} presets found`);
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.log('No settings index found, using discovery method');
+            }
+            
+            // Fallback: Try to discover JSON files by attempting common patterns
+            // This is a compromise solution for static web apps
+            const discoveryAttempts = [];
+            
+            // Try to fetch the settings directory listing (works on some servers)
+            try {
+                const dirResponse = await fetch('settings/');
+                if (dirResponse.ok) {
+                    const dirText = await dirResponse.text();
+                    // Look for .json files in directory listing HTML
+                    const jsonMatches = dirText.match(/href="([^"]*\.json)"/g);
+                    if (jsonMatches) {
+                        for (const match of jsonMatches) {
+                            const filename = match.match(/href="([^"]*)"/)[1];
+                            if (filename.endsWith('.json')) {
+                                discoveryAttempts.push(filename);
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.log('Directory listing not available, using known presets');
+            }
+            
+            // If no files discovered, fall back to known presets
+            if (discoveryAttempts.length === 0) {
+                discoveryAttempts.push(
+                    'default.json', 
+                    'dark-mode.json', 
+                    'neon-vibes.json', 
+                    'minimal.json', 
+                    'high-contrast.json',
+                    'soviet-red.json'
+                );
+            }
+            
+            // Load discovered/known files
+            for (const filename of discoveryAttempts) {
+                try {
+                    const response = await fetch(`settings/${filename}`);
+                    if (response.ok) {
+                        const option = document.createElement('option');
+                        option.value = `settings/${filename}`;
+                        option.textContent = filename
+                            .replace('.json', '')
+                            .replace(/[-_]/g, ' ')
+                            .replace(/\b\w/g, l => l.toUpperCase());
+                        dropdown.appendChild(option);
+                        loadedCount++;
+                    }
+                } catch (error) {
+                    // Silently ignore missing files
+                }
+            }
+            
+            console.log(`Settings dropdown refreshed: ${loadedCount} presets found`);
+        } catch (error) {
+            console.error('Error refreshing settings dropdown:', error);
+        }
+    }
+
+    async loadSelectedSettings() {
+        const dropdown = document.getElementById('settings-dropdown');
+        if (!dropdown || !dropdown.value) {
+            console.warn('No preset selected');
+            return;
+        }
+        
+        try {
+            const response = await fetch(dropdown.value);
+            if (!response.ok) {
+                throw new Error(`Failed to load preset: ${response.status}`);
+            }
+            
+            const settings = await response.json();
+            const success = this.applyUISettings(settings);
+            
+            if (success) {
+                console.log(`Loaded preset: ${dropdown.options[dropdown.selectedIndex].textContent}`);
+            } else {
+                console.error('Failed to apply loaded settings');
+            }
+        } catch (error) {
+            console.error('Error loading selected settings:', error);
+        }
+    }
+
+    exportSettings() {
+        try {
+            const settings = this.getUISettings();
+            const dataStr = JSON.stringify(settings, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            // Create download link
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `ferrofluid-settings-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+            
+            // Trigger download
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            console.log('Settings exported successfully');
+        } catch (error) {
+            console.error('Error exporting settings:', error);
+        }
+    }
+
+    importSettings() {
+        const fileInput = document.getElementById('settings-file-input');
+        if (fileInput) {
+            fileInput.click();
+        }
+    }
+
+    handleSettingsFileImport(file) {
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const settings = JSON.parse(e.target.result);
+                const success = this.applyUISettings(settings);
+                
+                if (success) {
+                    console.log(`Settings imported from: ${file.name}`);
+                } else {
+                    console.error('Failed to apply imported settings');
+                }
+            } catch (error) {
+                console.error('Error parsing settings file:', error);
+            }
+        };
+        
+        reader.readAsText(file);
     }
 }
 
@@ -3044,6 +3516,8 @@ this.spawnFloatingBlobs();
             event.preventDefault();
             window.debugEncodingControls.toggle();
         }
+        
+
         
         if (event.ctrlKey && event.key === 'r') {
             event.preventDefault();
