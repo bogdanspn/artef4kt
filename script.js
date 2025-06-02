@@ -3,9 +3,9 @@ class FerrofluidVisualizer {
         this.canvas = document.getElementById('visualizer');
         this.audioContext = null;
         this.audioSource = null;
-        this.analyser = null;
-        this.audioElement = null;
+        this.analyser = null;        this.audioElement = null;
         this.isPlaying = false;
+        this.isLooping = false;
         this.animationId = null;
           // ASCII emoji collection for spawning logs
         this.spawnEmojis = [
@@ -79,8 +79,7 @@ class FerrofluidVisualizer {
         this.maxFloatingBlobs = 25;
         this.blobSpawnThreshold = 0.1; // Even lower threshold for easier spawning
         this.lastSpawnTime = 0;
-        this.spawnCooldown = 100; // Even faster cooldown
-          // BPM Detection
+        this.spawnCooldown = 100; // Even faster cooldown        // BPM Detection
         this.bpmDetector = {
             peaks: [],
             bpm: 0,
@@ -89,16 +88,48 @@ class FerrofluidVisualizer {
             minBpm: 60,
             maxBpm: 200,
             analysisWindow: 10000 // 10 seconds
-        };        this.init();
+        };
+
+        // Idle Anomaly System
+        this.anomalySystem = {
+            isActive: false,
+            lastTriggerTime: 0,
+            nextTriggerTime: 0,
+            duration: 0,
+            intensity: 0,
+            minInterval: 8000,  // Minimum 8 seconds between anomalies
+            maxInterval: 25000, // Maximum 25 seconds between anomalies
+            minDuration: 2000,  // Minimum 2 seconds anomaly duration
+            maxDuration: 6000,  // Maximum 6 seconds anomaly duration
+            messages: [
+                "ARTEFACT ANOMALY DETECTED",
+                "ARTEFACT FLUX DETECTED",
+                "ARTEFACT FERROFLUID INSTABILITY",
+                "UNKNOWN SIGNAL DETECTED", 
+                "ARTEFACT MAGNETIC FIELD DISTURBANCE",
+                "QUANTUM INTERFERENCE",
+                "ARTEFACT TEMPORAL DISPLACEMENT",
+                "ARTEFACT ENERGY SURGE DETECTED"
+            ],
+            spawnBlobCount: 0,
+            maxSpawnBlobs: 8
+        };
+
+        // Schedule the first anomaly
+        this.scheduleNextAnomaly();
+        
+        this.init();
         this.loadDefaultAudio(); // Automatically load the default audio file
         this.updateStatusMessage(); // Initialize status message
-        this.setupEventListeners();        this.initializeUIValues(); // Initialize UI values after properties are set
+        this.setupEventListeners();
+        this.initializeUIValues(); // Initialize UI values after properties are set
         
         // Initialize settings dropdown with built-in presets
         this.refreshSettingsDropdown();
         
-        this.animate();
-    }    // Helper method to get random spawn emoji
+        this.animate();    }
+
+    // Helper method to get random spawn emoji
     getRandomSpawnEmoji() {
         return this.spawnEmojis[Math.floor(Math.random() * this.spawnEmojis.length)];
     }    init() {
@@ -615,10 +646,14 @@ class FerrofluidVisualizer {
         document.getElementById('play-pause').addEventListener('click', () => {
             this.togglePlayPause();
         });
-        
-        // Stop button
+          // Stop button
         document.getElementById('stop').addEventListener('click', () => {
             this.stop();
+        });
+
+        // Loop button
+        document.getElementById('loop').addEventListener('click', () => {
+            this.toggleLoop();
         });
         
         // Sensitivity slider
@@ -874,10 +909,10 @@ class FerrofluidVisualizer {
                 this.audioElement.pause();
                 this.audioElement.remove();
             }
-            
-            this.audioElement = new Audio();
+              this.audioElement = new Audio();
             this.audioElement.src = URL.createObjectURL(file);
             this.audioElement.crossOrigin = 'anonymous';
+            this.audioElement.loop = this.isLooping; // Set loop property based on current state
             
             // Setup audio analysis
             this.audioSource = this.audioContext.createMediaElementSource(this.audioElement);
@@ -886,28 +921,28 @@ class FerrofluidVisualizer {
             this.analyser.smoothingTimeConstant = this.smoothing;
             
             // Create EQ filters: bass (lowshelf), mid (peaking), high (highshelf)
-this.bassEQ = this.audioContext.createBiquadFilter();
-this.bassEQ.type = 'lowshelf';
-this.bassEQ.frequency.value = 250;
-this.bassEQ.gain.value = 0;
+            this.bassEQ = this.audioContext.createBiquadFilter();
+            this.bassEQ.type = 'lowshelf';
+            this.bassEQ.frequency.value = 250;
+            this.bassEQ.gain.value = 0;
 
-this.midEQ = this.audioContext.createBiquadFilter();
-this.midEQ.type = 'peaking';
-this.midEQ.frequency.value = 1000;
-this.midEQ.Q.value = 1;
-this.midEQ.gain.value = 0;
+            this.midEQ = this.audioContext.createBiquadFilter();
+            this.midEQ.type = 'peaking';
+            this.midEQ.frequency.value = 1000;
+            this.midEQ.Q.value = 1;
+            this.midEQ.gain.value = 0;
 
-this.highEQ = this.audioContext.createBiquadFilter();
-this.highEQ.type = 'highshelf';
-this.highEQ.frequency.value = 4000;
-this.highEQ.gain.value = 0;
+            this.highEQ = this.audioContext.createBiquadFilter();
+            this.highEQ.type = 'highshelf';
+            this.highEQ.frequency.value = 4000;
+            this.highEQ.gain.value = 0;
 
-// Connect audio graph: source -> bass -> mid -> high -> analyser -> destination
-this.audioSource.connect(this.bassEQ);
-this.bassEQ.connect(this.midEQ);
-this.midEQ.connect(this.highEQ);
-this.highEQ.connect(this.analyser);
-this.analyser.connect(this.audioContext.destination);
+            // Connect audio graph: source -> bass -> mid -> high -> analyser -> destination
+            this.audioSource.connect(this.bassEQ);
+            this.bassEQ.connect(this.midEQ);
+            this.midEQ.connect(this.highEQ);
+            this.highEQ.connect(this.analyser);
+            this.analyser.connect(this.audioContext.destination);
             
             // Setup EQ slider controls
             const eqBass = document.getElementById('eq-bass');
@@ -950,10 +985,26 @@ this.analyser.connect(this.audioContext.destination);
             this.bpmDetector.peaks = [];
             this.bpmDetector.bpm = 0;
             // Note: We don't reset the display here to prevent interfering with BPM detection
-            
-            // Update time display
+              // Update time display
             this.audioElement.addEventListener('timeupdate', () => {
                 this.updateTimeDisplay();
+            });
+
+            // Handle track ending
+            this.audioElement.addEventListener('ended', () => {
+                if (this.isLooping) {
+                    // Restart the track if looping is enabled
+                    this.audioElement.currentTime = 0;
+                    this.audioElement.play().catch(error => {
+                        console.error('Error restarting loop:', error);
+                    });
+                } else {
+                    // Reset to play state when track ends naturally
+                    this.isPlaying = false;
+                    document.getElementById('play-pause').textContent = '▶ PLAY';
+                    document.getElementById('play-pause').classList.remove('playing');
+                    this.updateStatusMessage();
+                }
             });
               // Auto-play new file regardless of current state
             try {
@@ -1099,9 +1150,25 @@ this.analyser.connect(this.audioContext.destination);
         this.bassIntensity = 0;
         this.midIntensity = 0;
         this.highIntensity = 0;
-        
-        // Update status message after stop
+          // Update status message after stop
         this.updateStatusMessage();
+    }    toggleLoop() {
+        this.isLooping = !this.isLooping;
+        
+        // Update loop button appearance
+        const loopButton = document.getElementById('loop');
+        if (this.isLooping) {
+            loopButton.classList.add('active');
+        } else {
+            loopButton.classList.remove('active');
+        }
+        
+        // Also update the audio element's loop property if it exists
+        if (this.audioElement) {
+            this.audioElement.loop = this.isLooping;
+        }
+        
+        console.log(`Loop ${this.isLooping ? 'enabled' : 'disabled'}`);
     }
       updateTimeDisplay() {
         if (!this.audioElement) return;
@@ -1117,9 +1184,7 @@ this.analyser.connect(this.audioContext.destination);
         
         document.getElementById('track-time-display').textContent = 
             `${formatTime(current)} / ${formatTime(duration)}`;
-    }
-
-    // Status message update methods
+    }    // Status message update methods
     updateStatusMessage() {
         const statusElement = document.getElementById('status-message');
         if (!statusElement) return;
@@ -1131,6 +1196,96 @@ this.analyser.connect(this.audioContext.destination);
         } else {
             statusElement.textContent = 'Visualisation on pause push [_] to resume';
         }
+    }
+
+    // Idle Anomaly System Methods
+    scheduleNextAnomaly() {
+        const now = performance.now();
+        const interval = this.anomalySystem.minInterval + 
+                        Math.random() * (this.anomalySystem.maxInterval - this.anomalySystem.minInterval);
+        this.anomalySystem.nextTriggerTime = now + interval;
+        this.anomalySystem.lastTriggerTime = now;
+    }
+
+    triggerAnomaly() {
+        const now = performance.now();
+        
+        // Set anomaly state
+        this.anomalySystem.isActive = true;
+        this.anomalySystem.duration = this.anomalySystem.minDuration + 
+                                      Math.random() * (this.anomalySystem.maxDuration - this.anomalySystem.minDuration);
+        this.anomalySystem.intensity = 0.5 + Math.random() * 0.5; // 0.5 to 1.0 intensity
+        this.anomalySystem.spawnBlobCount = 0;
+
+        // Display random anomaly message in console
+        const message = this.anomalySystem.messages[Math.floor(Math.random() * this.anomalySystem.messages.length)];
+        console.log(`══════════════════════════════════════════════════════════`);
+        console.log(`${message.padStart(25)} `);
+        console.log(`                                                            `);
+        console.log(`  ▲▲▲ FERROFLUID STABILITY COMPROMISED ▲▲▲ `);
+        console.log(`  System attempting autonomous correction...`);
+        console.log(`══════════════════════════════════════════════════════════`);
+
+        // Schedule the end of this anomaly
+        setTimeout(() => {
+            this.endAnomaly();
+        }, this.anomalySystem.duration);
+    }
+
+    endAnomaly() {
+        this.anomalySystem.isActive = false;
+        this.anomalySystem.intensity = 0;
+        this.anomalySystem.spawnBlobCount = 0;
+        
+        console.log(`══════════════════════════════════════════════════════════`);
+        console.log(`ANOMALY STABILIZED`);
+        console.log(`System integrity restored. Returning to idle state...`);
+        console.log(`══════════════════════════════════════════════════════════`);
+
+        // Schedule next anomaly
+        this.scheduleNextAnomaly();
+    }
+
+    updateAnomalySystem() {
+        // Only trigger anomalies when not playing music
+        if (this.isPlaying) {
+            return;
+        }
+
+        const now = performance.now();
+
+        // Check if it's time to trigger an anomaly
+        if (!this.anomalySystem.isActive && now >= this.anomalySystem.nextTriggerTime) {
+            this.triggerAnomaly();
+        }
+
+        // Handle anomaly blob spawning during active anomaly
+        if (this.anomalySystem.isActive && this.anomalySystem.spawnBlobCount < this.anomalySystem.maxSpawnBlobs) {
+            // Random chance to spawn blob during anomaly (more frequent spawning)
+            if (Math.random() < 0.1) { // 10% chance per frame
+                this.spawnAnomalyBlob();
+                this.anomalySystem.spawnBlobCount++;
+            }
+        }
+    }
+
+    spawnAnomalyBlob() {
+        // Create blob at random position around the ferrofluid
+        const angle1 = Math.random() * Math.PI * 2;
+        const angle2 = Math.random() * Math.PI;
+        const distance = 4 + Math.random() * 2; // 4-6 units from center
+        
+        const spawnPosition = new THREE.Vector3(
+            Math.sin(angle2) * Math.cos(angle1) * distance,
+            Math.cos(angle2) * distance,
+            Math.sin(angle2) * Math.sin(angle1) * distance
+        );
+
+        // Create blob with higher intensity during anomaly
+        const intensity = 0.3 + Math.random() * 0.4; // 0.3 to 0.7 intensity
+        const blob = this.createFloatingBlob(spawnPosition, intensity, 'anomaly');
+        
+        console.log(`⚠️ Anomaly blob spawned at ${spawnPosition.x.toFixed(1)}, ${spawnPosition.y.toFixed(1)}, ${spawnPosition.z.toFixed(1)}`);
     }
     analyzeAudio() {
         if (!this.analyser || !this.isPlaying) {
@@ -1298,14 +1453,48 @@ this.analyser.connect(this.audioContext.destination);
                 this.noise3D(x * 0.1, y * 0.1 + time * 0.2, z * 0.1),
                 this.noise3D(x * 0.1, y * 0.1, z * 0.1 + time * 0.4)
             ).normalize().multiplyScalar(0.08 * audioInfluence);
+              const finalNormal = normal.clone().add(flowDirection).normalize();
             
-            const finalNormal = normal.clone().add(flowDirection).normalize();
+            // === ANOMALY DEFORMATION EFFECTS ===
+            let anomalyDeformation = 0;
+            if (this.anomalySystem.isActive && !this.isPlaying) {
+                const anomalyIntensity = this.anomalySystem.intensity;
+                
+                // Shifting effect - random wave-like deformations
+                const shiftTime = time * 3.5;
+                const shiftWave = Math.sin(shiftTime + vertexPos.x * 0.8 + vertexPos.z * 0.6) * 
+                                 Math.cos(shiftTime * 0.7 + vertexPos.y * 0.5) * anomalyIntensity * 0.4;
+                
+                // Rippling effect - concentric waves from random centers
+                const rippleTime = time * 4.2;
+                const rippleCenter1 = new THREE.Vector3(Math.sin(rippleTime * 0.3) * 2, Math.cos(rippleTime * 0.4) * 2, Math.sin(rippleTime * 0.5) * 2);
+                const rippleCenter2 = new THREE.Vector3(Math.cos(rippleTime * 0.2) * 1.5, Math.sin(rippleTime * 0.3) * 1.5, Math.cos(rippleTime * 0.6) * 1.5);
+                
+                const dist1 = vertexPos.distanceTo(rippleCenter1);
+                const dist2 = vertexPos.distanceTo(rippleCenter2);
+                
+                const ripple1 = Math.sin(rippleTime * 2 - dist1 * 1.5) * Math.exp(-dist1 * 0.3) * anomalyIntensity * 0.3;
+                const ripple2 = Math.cos(rippleTime * 1.7 - dist2 * 1.2) * Math.exp(-dist2 * 0.4) * anomalyIntensity * 0.25;
+                
+                // Spike generation - random sharp protrusions
+                const spikeNoise = this.noise3D(vertexPos.x * 8 + time * 6, vertexPos.y * 8 + time * 5, vertexPos.z * 8 + time * 7);
+                const spikeThreshold = 0.7 - anomalyIntensity * 0.4; // Lower threshold = more spikes during intense anomalies
+                const spike = spikeNoise > spikeThreshold ? (spikeNoise - spikeThreshold) * anomalyIntensity * 2.0 : 0;
+                
+                anomalyDeformation = shiftWave + ripple1 + ripple2 + spike;
+            }
               // Calculate target positions
             if (this.isPlaying && audioInfluence > 0.15) {
                 // Normal audio-reactive behavior
                 this.targetPositions[i] = x + finalNormal.x * totalDeformation;
                 this.targetPositions[i + 1] = y + finalNormal.y * totalDeformation;
                 this.targetPositions[i + 2] = z + finalNormal.z * totalDeformation;
+            } else if (this.anomalySystem.isActive && !this.isPlaying) {
+                // Anomaly effects when not playing music
+                const combinedDeformation = baseNoise * 0.3 + anomalyDeformation;
+                this.targetPositions[i] = x + finalNormal.x * combinedDeformation;
+                this.targetPositions[i + 1] = y + finalNormal.y * combinedDeformation;
+                this.targetPositions[i + 2] = z + finalNormal.z * combinedDeformation;
             } else {
                 // When paused or no audio, target the original sphere shape
                 this.targetPositions[i] = x + finalNormal.x * (baseNoise * 0.3);
@@ -2704,8 +2893,8 @@ this.spawnFloatingBlobs();
         // Calculate delta time for frame-rate independent animation
         const now = performance.now() * 0.001;
         const deltaTime = now - (this.lastAnimationTime || now);
-        this.lastAnimationTime = now;
-          this.analyzeAudio();
+        this.lastAnimationTime = now;        this.analyzeAudio();
+        this.updateAnomalySystem(); // Update anomaly system for idle effects
         this.updateFerrofluid();
         this.updateFloatingBlobs(deltaTime);
         this.updateLighting();
@@ -2790,7 +2979,7 @@ this.spawnFloatingBlobs();
         }
     }    calculateBPM() {
         if (this.bpmDetector.peaks.length < 4) {
-            console.log(`BPM: Not enough peaks (${this.bpmDetector.peaks.length}/4 required)`);
+            console.log(`ARTEFAKT BPM: Not enough peaks (${this.bpmDetector.peaks.length}/4 required)`);
             return;
         }
         
@@ -2800,7 +2989,7 @@ this.spawnFloatingBlobs();
             intervals.push(this.bpmDetector.peaks[i] - this.bpmDetector.peaks[i - 1]);
         }
         
-        console.log(`BPM: Raw intervals (${intervals.length}):`, intervals.map(i => Math.round(i)).join(', '));
+        console.log(`ARTEFAKT BPM: Raw intervals (${intervals.length}):`, intervals.map(i => Math.round(i)).join(', '));
         
         // Remove outliers (intervals that are too different from the median)
         intervals.sort((a, b) => a - b);
@@ -2809,10 +2998,10 @@ this.spawnFloatingBlobs();
             Math.abs(interval - median) < median * 0.3 // Within 30% of median
         );
         
-        console.log(`BPM: Median: ${Math.round(median)}ms, Filtered intervals (${filteredIntervals.length}):`, filteredIntervals.map(i => Math.round(i)).join(', '));
+        console.log(`ARTEFAKT BPM: Median: ${Math.round(median)}ms, Filtered intervals (${filteredIntervals.length}):`, filteredIntervals.map(i => Math.round(i)).join(', '));
         
         if (filteredIntervals.length < 2) {
-            console.log(`BPM: Not enough filtered intervals (${filteredIntervals.length}/2 required)`);
+            console.log(`ARTEFAKT BPM: Not enough filtered intervals (${filteredIntervals.length}/2 required)`);
             return;
         }
           // Calculate average interval
@@ -2821,19 +3010,19 @@ this.spawnFloatingBlobs();
         // Convert to BPM (60000 ms = 1 minute)
         const calculatedBPM = Math.round(60000 / avgInterval);
         
-        console.log(`BPM: Average interval: ${Math.round(avgInterval)}ms, Calculated BPM: ${calculatedBPM}, Valid range: ${this.bpmDetector.minBpm}-${this.bpmDetector.maxBpm}`);
+        console.log(`ARTEFAKT BPM: Average interval: ${Math.round(avgInterval)}ms, Calculated BPM: ${calculatedBPM}, Valid range: ${this.bpmDetector.minBpm}-${this.bpmDetector.maxBpm}`);
           // Validate BPM range
         if (calculatedBPM >= this.bpmDetector.minBpm && calculatedBPM <= this.bpmDetector.maxBpm) {
             this.bpmDetector.bpm = calculatedBPM;
             const bpmElement = document.getElementById('track-bpm');
             if (bpmElement) {
                 bpmElement.textContent = calculatedBPM.toString();
-                console.log(`✅ BPM updated to: ${calculatedBPM}, element found: ${bpmElement.tagName}`);
+                console.log(`ARTEFAKT BPM updated to: ${calculatedBPM}, element found: ${bpmElement.tagName}`);
             } else {
-                console.log(`❌ BPM element not found! Calculated BPM: ${calculatedBPM}`);
+                console.log(`ARTEFAKT BPM element not found! Calculated BPM: ${calculatedBPM}`);
             }
         } else {
-            console.log(`❌ BPM ${calculatedBPM} rejected (outside valid range ${this.bpmDetector.minBpm}-${this.bpmDetector.maxBpm})`);
+            console.log(`ARTEFAKT BPM ${calculatedBPM} rejected (outside valid range ${this.bpmDetector.minBpm}-${this.bpmDetector.maxBpm})`);
         }
     }
 
@@ -2901,14 +3090,17 @@ this.spawnFloatingBlobs();
                     this.analyser.smoothingTimeConstant = this.smoothing;
                 }
             }
-            
-            // Grid settings
+              // Grid settings
             if (settings.gridVisible !== undefined) {
                 this.gridVisible = settings.gridVisible;
                 const gridToggle = document.getElementById('grid-toggle');
                 if (gridToggle) gridToggle.checked = this.gridVisible;
                 if (this.gridGroup) {
                     this.gridGroup.visible = this.gridVisible;
+                }
+                // Show permanent floor only when grid is disabled to avoid double shadows
+                if (this.permanentFloor) {
+                    this.permanentFloor.visible = !this.gridVisible;
                 }
             }
             
@@ -3432,19 +3624,22 @@ this.spawnFloatingBlobs();
         // This function is now mainly for immediate display without encoding
         const filtered = debugBuffer.filter(isTextLine);
         debugPanel.textContent = filtered.length ? filtered.join('\n') : 'Initializing info panel...';
-    }    
-    // Patch console.log to use the decoding animation
+    }      // Patch console.log to use the decoding animation
     const origLog = console.log;
     console.log = function(...args) {
         const cleanArgs = args.map(formatArg);
         const text = cleanArgs.join(' ');
         
-        // Add to both buffers for fallback
-        debugBuffer.push(text);
-        if (debugBuffer.length > MAX_LINES) debugBuffer = debugBuffer.slice(-MAX_LINES);
-        
-        // Add encoded line that will decode over time
-        addEncodedLine(text);
+        // Check if encoding is enabled to avoid duplication
+        if (window.debugEncodingSettings && window.debugEncodingSettings.enabled) {
+            // When encoding enabled, let addEncodedLine handle everything
+            addEncodedLine(text);
+        } else {
+            // When encoding disabled, add directly to buffer
+            debugBuffer.push(text);
+            if (debugBuffer.length > MAX_LINES) debugBuffer = debugBuffer.slice(-MAX_LINES);
+            updateDebugPanel();
+        }
         
         origLog.apply(console, args);
     };
@@ -3455,10 +3650,16 @@ this.spawnFloatingBlobs();
         const cleanArgs = args.map(formatArg);
         const text = '[WARN] ' + cleanArgs.join(' ');
         
-        debugBuffer.push(text);
-        if (debugBuffer.length > MAX_LINES) debugBuffer = debugBuffer.slice(-MAX_LINES);
-        
-        addEncodedLine(text);
+        // Check if encoding is enabled to avoid duplication
+        if (window.debugEncodingSettings && window.debugEncodingSettings.enabled) {
+            // When encoding enabled, let addEncodedLine handle everything
+            addEncodedLine(text);
+        } else {
+            // When encoding disabled, add directly to buffer
+            debugBuffer.push(text);
+            if (debugBuffer.length > MAX_LINES) debugBuffer = debugBuffer.slice(-MAX_LINES);
+            updateDebugPanel();
+        }
         
         origWarn.apply(console, args);
     };
@@ -3468,9 +3669,16 @@ this.spawnFloatingBlobs();
         const cleanArgs = args.map(formatArg);
         const text = '[ERROR] ' + cleanArgs.join(' ');
         
-        debugBuffer.push(text);
-        if (debugBuffer.length > MAX_LINES) debugBuffer = debugBuffer.slice(-MAX_LINES);
-          addEncodedLine(text);
+        // Check if encoding is enabled to avoid duplication
+        if (window.debugEncodingSettings && window.debugEncodingSettings.enabled) {
+            // When encoding enabled, let addEncodedLine handle everything
+            addEncodedLine(text);
+        } else {
+            // When encoding disabled, add directly to buffer
+            debugBuffer.push(text);
+            if (debugBuffer.length > MAX_LINES) debugBuffer = debugBuffer.slice(-MAX_LINES);
+            updateDebugPanel();
+        }
         
         origErr.apply(console, args);
     };
