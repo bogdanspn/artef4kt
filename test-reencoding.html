@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Re-encoding Animation Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #000;
+            color: #0f0;
+            padding: 20px;
+        }
+        
+        #debug-info-panel {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #0f0;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #0f0;
+            white-space: pre-wrap;
+            max-height: 600px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        
+        .controls {
+            margin: 20px 0;
+        }
+        
+        button {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: monospace;
+        }
+        
+        button:hover {
+            background: #00ff00aa;
+        }
+        
+        .info {
+            margin: 20px 0;
+            padding: 10px;
+            border: 1px solid #0f0;
+            background: rgba(0, 255, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>Debug Console Re-encoding Animation Test</h1>
+    
+    <div class="info">
+        <strong>Instructions:</strong><br>
+        • Click "Add Test Lines" to generate console output<br>
+        • Watch as new lines decode from scrambled text<br>
+        • When the buffer exceeds 40 lines, old lines at the top will re-encode before disappearing<br>
+        • Use Ctrl+D to toggle encoding on/off<br>
+        • Use Ctrl+R to clear the console<br>
+    </div>
+    
+    <div class="controls">
+        <button onclick="addTestLines()">Add Test Lines</button>
+        <button onclick="addManyLines()">Add Many Lines (Test Re-encoding)</button>
+        <button onclick="toggleEncoding()">Toggle Encoding</button>
+        <button onclick="clearConsole()">Clear Console</button>
+    </div>
+    
+    <div id="debug-info-panel">Initializing debug console...</div>
+    
+    <script>
+        // Include the debug console system from the main script
+        let lineCounter = 1;
+        
+        // Simplified version of the debug console system for testing
+        const debugPanel = document.getElementById('debug-info-panel');
+        const MAX_LINES = 40;
+        let debugBuffer = [];
+        let decodingLines = [];
+        let reencodingLines = [];
+        let animationFrame = null;
+        
+        const ENCODING_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?~`';
+        const DECODE_SPEED = 25;
+        const CHARS_PER_STEP = 4;
+        const REENCODE_SPEED = 20;
+        const REENCODE_CHARS_PER_STEP = 5;
+        
+        function stripEmoji(str) {
+            return String(str).replace(/[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '');
+        }
+        
+        function isTextLine(line) {
+            const trimmed = line.trim();
+            return trimmed.length > 0;
+        }
+        
+        function encodeText(text) {
+            return text.split('').map(char => {
+                if (char === ' ' || char === '\n' || char === '\t' || char === ':' || char === '.' || char === ',') {
+                    return char;
+                }
+                return ENCODING_CHARS[Math.floor(Math.random() * ENCODING_CHARS.length)];
+            }).join('');
+        }
+        
+        function createDecodingLine(originalText, index) {
+            return {
+                original: originalText,
+                current: encodeText(originalText),
+                index: index,
+                decodedChars: 0,
+                lastDecodeTime: Date.now(),
+                isDecoding: true,
+                isReencoding: false
+            };
+        }
+        
+        function createReencodingLine(originalText, index) {
+            return {
+                original: originalText,
+                current: originalText,
+                index: index,
+                reencodedChars: 0,
+                lastReencodeTime: Date.now(),
+                isReencoding: true,
+                isDecoding: false
+            };
+        }
+        
+        function decodeStep(line) {
+            const now = Date.now();
+            if (now - line.lastDecodeTime < DECODE_SPEED) {
+                return false;
+            }
+            
+            if (line.decodedChars >= line.original.length) {
+                line.isDecoding = false;
+                line.current = line.original;
+                return true;
+            }
+            
+            const currentArray = line.current.split('');
+            const originalArray = line.original.split('');
+            
+            let decoded = 0;
+            for (let i = line.decodedChars; i < line.original.length && decoded < CHARS_PER_STEP; i++) {
+                if (originalArray[i] === ' ' || originalArray[i] === '\n' || 
+                    originalArray[i] === '\t' || originalArray[i] === ':' || 
+                    originalArray[i] === '.' || originalArray[i] === ',') {
+                    line.decodedChars++;
+                    continue;
+                }
+                
+                currentArray[i] = originalArray[i];
+                line.decodedChars++;
+                decoded++;
+            }
+            
+            line.current = currentArray.join('');
+            line.lastDecodeTime = now;
+            
+            return false;
+        }
+        
+        function reencodeStep(line) {
+            const now = Date.now();
+            if (now - line.lastReencodeTime < REENCODE_SPEED) {
+                return false;
+            }
+            
+            if (line.reencodedChars >= line.original.length) {
+                line.isReencoding = false;
+                return true;
+            }
+            
+            const currentArray = line.current.split('');
+            const originalArray = line.original.split('');
+            
+            let reencoded = 0;
+            for (let i = line.original.length - 1 - line.reencodedChars; i >= 0 && reencoded < REENCODE_CHARS_PER_STEP; i--) {
+                if (originalArray[i] === ' ' || originalArray[i] === '\n' || 
+                    originalArray[i] === '\t' || originalArray[i] === ':' || 
+                    originalArray[i] === '.' || originalArray[i] === ',') {
+                    line.reencodedChars++;
+                    continue;
+                }
+                
+                currentArray[i] = ENCODING_CHARS[Math.floor(Math.random() * ENCODING_CHARS.length)];
+                line.reencodedChars++;
+                reencoded++;
+            }
+            
+            line.current = currentArray.join('');
+            line.lastReencodeTime = now;
+            
+            return false;
+        }
+        
+        function animateDecoding() {
+            let anyDecoding = false;
+            let anyReencoding = false;
+            
+            decodingLines.forEach(line => {
+                if (line.isDecoding) {
+                    decodeStep(line);
+                    if (line.isDecoding) {
+                        anyDecoding = true;
+                    }
+                }
+            });
+            
+            reencodingLines.forEach((line, index) => {
+                if (line.isReencoding) {
+                    reencodeStep(line);
+                    if (line.isReencoding) {
+                        anyReencoding = true;
+                    }
+                }
+            });
+            
+            reencodingLines = reencodingLines.filter(line => line.isReencoding);
+            
+            updateDecodedDisplay();
+            
+            if (anyDecoding || anyReencoding) {
+                animationFrame = setTimeout(animateDecoding, 16);
+            } else {
+                animationFrame = null;
+            }
+        }
+        
+        function updateDecodedDisplay() {
+            const allLines = [...decodingLines, ...reencodingLines];
+            const displayLines = allLines
+                .sort((a, b) => a.index - b.index)
+                .map(line => line.current);
+            const filtered = displayLines.filter(line => isTextLine(line));
+            debugPanel.textContent = filtered.length ? filtered.join('\n') : 'Initializing debug console...';
+        }
+        
+        function addEncodedLine(text) {
+            if (!window.debugEncodingSettings || !window.debugEncodingSettings.enabled) {
+                debugBuffer.push(text);
+                if (debugBuffer.length > MAX_LINES) debugBuffer = debugBuffer.slice(-MAX_LINES);
+                updateDebugPanel();
+                return;
+            }
+            
+            if (decodingLines.length >= MAX_LINES) {
+                const linesToReencode = decodingLines.slice(0, decodingLines.length - MAX_LINES + 1);
+                
+                linesToReencode.forEach(line => {
+                    if (!line.isDecoding) {
+                        const reencodingLine = createReencodingLine(line.current, line.index);
+                        reencodingLines.push(reencodingLine);
+                    }
+                });
+                
+                decodingLines = decodingLines.slice(linesToReencode.length);
+            }
+            
+            const decodingLine = createDecodingLine(text, Date.now());
+            decodingLines.push(decodingLine);
+            
+            if (!animationFrame) {
+                animateDecoding();
+            }
+        }
+        
+        function updateDebugPanel() {
+            const filtered = debugBuffer.filter(isTextLine);
+            debugPanel.textContent = filtered.length ? filtered.join('\n') : 'Initializing debug console...';
+        }
+        
+        // Global settings
+        window.debugEncodingSettings = {
+            enabled: true,
+            scrollDecodeMode: false
+        };
+        
+        // Test functions
+        function addTestLines() {
+            console.log(`Test line ${lineCounter++}: System initialization complete`);
+            console.log(`Test line ${lineCounter++}: Processing ferrofluid parameters`);
+            console.log(`Test line ${lineCounter++}: Vector field calculation: [${Math.random().toFixed(3)}, ${Math.random().toFixed(3)}, ${Math.random().toFixed(3)}]`);
+            console.log(`Test line ${lineCounter++}: Particle count: ${Math.floor(Math.random() * 10000)}`);
+            console.log(`Test line ${lineCounter++}: Magnetic field strength: ${(Math.random() * 100).toFixed(2)}%`);
+        }
+        
+        function addManyLines() {
+            for (let i = 0; i < 50; i++) {
+                console.log(`Bulk line ${lineCounter++}: Data stream ${i.toString().padStart(3, '0')} - Processing magnetic flux density: ${(Math.random() * 255).toFixed(1)} mT`);
+                
+                // Add a small delay to make the effect more visible
+                if (i % 10 === 0) {
+                    setTimeout(() => {}, 50);
+                }
+            }
+        }
+        
+        function toggleEncoding() {
+            window.debugEncodingSettings.enabled = !window.debugEncodingSettings.enabled;
+            const status = window.debugEncodingSettings.enabled ? 'ENABLED' : 'DISABLED';
+            console.log(`Encoding animation: ${status}`);
+        }
+        
+        function clearConsole() {
+            decodingLines = [];
+            reencodingLines = [];
+            debugBuffer = [];
+            console.log('Console cleared and reset');
+        }
+        
+        // Patch console.log for testing
+        const origLog = console.log;
+        console.log = function(...args) {
+            const text = args.join(' ');
+            
+            if (window.debugEncodingSettings && window.debugEncodingSettings.enabled) {
+                addEncodedLine(text);
+            } else {
+                debugBuffer.push(text);
+                if (debugBuffer.length > MAX_LINES) debugBuffer = debugBuffer.slice(-MAX_LINES);
+                updateDebugPanel();
+            }
+            
+            origLog.apply(console, args);
+        };
+        
+        // Keyboard controls
+        document.addEventListener('keydown', function(event) {
+            if (event.ctrlKey && event.key === 'd') {
+                event.preventDefault();
+                toggleEncoding();
+            }
+            
+            if (event.ctrlKey && event.key === 'r') {
+                event.preventDefault();
+                clearConsole();
+            }
+        });
+        
+        // Initial test
+        console.log('Debug console re-encoding test initialized');
+        console.log('Ready to test bidirectional encoding/decoding animation');
+    </script>
+</body>
+</html>

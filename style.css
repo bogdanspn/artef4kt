@@ -30,16 +30,16 @@ body {
 #ui {
     position: fixed;
     top: 0;
-    right: -300px; /* Hide off screen by default */
+    right: -320px; /* Hide off screen by default */
     left: auto;
-    height: 100vh; /* Fill full height */    z-index: 1100;
+    height: 100vh; /* Fill full height */    z-index: 2000; /* Highest z-index to be above everything */
     padding: 20px;
     background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(6px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 0; /* Remove border radius for full height */
     border-right: none; /* Remove right border since it's at screen edge */
-    min-width: 300px;
+    min-width: 320px;
     max-width: 340px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
     transition: right 0.3s cubic-bezier(.4,0,.2,1);
@@ -53,7 +53,7 @@ body {
     right: 0;
     width: 32px;
     height: 100vh;
-    z-index: 20;
+    z-index: 1900; /* High z-index but below UI panel */
     background: transparent;
     cursor: pointer;
 }
@@ -76,7 +76,7 @@ body {
     border-radius: 8px 0 0 8px;
     box-shadow: 2px 0 12px 0 rgba(0,0,0,0.3);
     cursor: pointer;
-    z-index: 1101; /* Higher than UI panel to stay visible */
+    z-index: 2100; /* Higher than UI panel to stay visible */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -84,12 +84,42 @@ body {
     font-size: 12px;
     font-family: 'JetBrains Mono', monospace;
     transition: all 0.3s ease;
+    pointer-events: auto; /* Ensure it's clickable */
 }
 
 #ui:hover::before, #ui:focus-within::before, #ui-hover-area:hover ~ #ui::before {
     background: rgba(20, 20, 20, 0.8);
     color: rgba(255,255,255,0.9);
     border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Close button for mobile - only visible when UI is open */
+#ui::after {
+    content: '✕';
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    display: none; /* Hidden by default */
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 2200;
+    transition: all 0.3s ease;
+    pointer-events: auto;
+}
+
+#ui::after:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 1);
 }
 
 /* Status Message Display (above debug console) */
@@ -145,11 +175,6 @@ body {
     display: none; /* Chrome, Safari, Opera */
 }
 
-/* Ensure debug panel is always above UI and hover area */
-#ui, #ui-hover-area {
-    z-index: 900;
-}
-
 #header {
     margin-bottom: 20px;
     text-align: left;
@@ -171,9 +196,23 @@ body {
     letter-spacing: 1px;
     text-transform: uppercase;
 }
-
+.control-section { 
+    margin-bottom: 12px;
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+}
+.control-section .section-name {
+    font-size: 12px;
+    font-weight: 600;
+     color: #ccc;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0px; 
+    display:none;
+}
 .control-group {
-    margin-bottom: 15px;
+    margin-bottom: 5px; /* Reduced from 15px */
 }
 
 .control-group label {
@@ -183,25 +222,25 @@ body {
     color: #ccc;
     text-transform: uppercase;
     letter-spacing: 1px;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
 }
 
 .control-group span {
     font-size: 10px;
     color: #ccc;
-    line-height: 1.2;
+    line-height: 1;
 }
 
 /* Slider control specific styling */
 .slider-control {
-    margin-bottom: 18px;
+    margin-bottom: 8px; /* Reduced from 18px */
 }
 
 .control-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 4px;
+    margin-bottom: 4px; /* Reduced from 4px */
 }
 
 .slider-control .control-header label {
@@ -239,7 +278,7 @@ body {
 .color-controls {
     display: flex;
     gap: 0;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
     width: 100%;
 }
 
@@ -257,7 +296,7 @@ body {
     font-weight: 500;
     color: #ccc;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0px;
     margin-bottom: 0;
     text-align: left;
 }
@@ -319,6 +358,7 @@ input[type="file"]::file-selector-button:hover {
     overflow: hidden;
     transition: all 0.3s ease;
 }
+.player-buttons { margin-bottom: 8px; }
 
 .custom-file-input:hover {
     background: rgba(255, 255, 255, 0.1);
@@ -424,8 +464,8 @@ input[type="range"] {
 input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
     background: #fff;
     border-radius: 50%;
     cursor: pointer;
@@ -433,8 +473,8 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 input[type="range"]::-moz-range-thumb {
-    width: 12px;
-    height: 12px;
+    width: 10px;
+    height: 10px;
     background: #fff;
     border-radius: 50%;
     cursor: pointer;
@@ -508,14 +548,14 @@ input[type="color"]::-webkit-color-swatch-wrapper {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 6px;
+    margin-bottom: 0px;
     padding: 4px 0;
     gap: 8px;
 }
 
 .freq-label {
     font-weight: 600;
-    font-size: 9px;
+    font-size: 6px;
     letter-spacing: 1px;
     min-width: 60px;
     color: #ccc;
@@ -524,7 +564,7 @@ input[type="color"]::-webkit-color-swatch-wrapper {
 }
 
 .freq-hz {
-    font-size: 8px;
+    font-size: 6px;
     color: #888;
     min-width: 65px;
     text-align: center;
@@ -532,7 +572,7 @@ input[type="color"]::-webkit-color-swatch-wrapper {
 
 .freq-bar {
     flex: 1;
-    height: 6px;
+    height: 4px;
     background: rgba(255, 255, 255, 0.1);
     border-radius: 3px;
     margin-right: 8px;
@@ -738,7 +778,6 @@ input[type="color"]::-webkit-color-swatch-wrapper {
 }
 
 .settings-selector-group button#refresh-presets.rotating {
-    transform: rotate(180deg);
     transition: transform 0.3s ease;
 }
 
@@ -771,9 +810,39 @@ input[type="color"]::-webkit-color-swatch-wrapper {
 /* Responsive adjustments */
 @media (max-width: 768px) {
     #ui {
-        width: calc(100% - 30px);
-        margin: 10px 15px;
+        right: -100vw; /* Hide completely off screen on mobile */
+        width: 100vw;
+        max-width: 100vw;
+        min-width: 100vw;
         padding: 15px;
+        top: 0;
+        height: 100vh;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        background: rgba(0, 0, 0, 0.9); /* More opaque on mobile to cover debug console */
+        backdrop-filter: blur(15px); /* Stronger blur for better readability */
+    }
+    
+    #ui:hover, #ui:focus-within, #ui-hover-area:hover ~ #ui {
+        right: 0;
+    }
+      /* Make UI tab larger and more thumb-friendly on mobile */
+    #ui::before {
+        left: -40px; /* Slightly smaller than before for better mobile UX */
+        top: 20px;
+        width: 40px; /* Reduced from 48px for smaller screens */
+        height: 80px; /* Reduced from 100px for smaller screens */
+        font-size: 16px; /* Reduced from 18px */
+        border-radius: 10px 0 0 10px; /* Adjust border radius */
+    }
+      /* Show close button when UI is open on mobile */
+    #ui::after {
+        display: flex; /* Always show close button on mobile when panel could be open */
+    }
+      /* Make hover area match smaller tab size on mobile for easier access */
+    #ui-hover-area {
+        width: 50px; /* Match smaller tab width */
     }
     
     #header h1 {
@@ -783,6 +852,67 @@ input[type="color"]::-webkit-color-swatch-wrapper {
     button {
         padding: 8px 12px;
         font-size: 9px;
+    }
+    
+    /* Ensure debug panel and status message don't interfere */
+    #debug-info-panel {
+        width: 60vw;
+        max-width: 60vw;
+        font-size: 10px;
+    }
+    
+    #status-message {
+        font-size: 10px;
+    }
+}
+
+/* Additional mobile adjustments for very small screens */
+@media (max-width: 480px) {
+    #ui {
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.95); /* Even more opaque on very small screens */
+        backdrop-filter: blur(20px); /* Maximum blur for better readability */
+    }
+    
+    /* Make tab even smaller for very small screens */
+    #ui::before {
+        left: -32px; /* Even smaller for tiny screens */
+        width: 32px; 
+        height: 64px; 
+        font-size: 14px; 
+        border-radius: 8px 0 0 8px;
+    }
+    
+    /* Adjust hover area for smaller tab */
+    #ui-hover-area {
+        width: 40px;
+    }
+    
+    #header h1 {
+        font-size: 16px;
+    }
+    
+    .control-group {
+        margin-bottom: 12px;
+    }
+    
+    button {
+        padding: 6px 10px;
+        font-size: 8px;
+    }
+    
+    #debug-info-panel {
+        width: 70vw;
+        max-width: 70vw;
+        font-size: 9px;
+        top: 20px;
+        left: 5px;
+    }
+    
+    #status-message {
+        font-size: 9px;
+        top: 3px;
+        left: 5px;
     }
 }
 

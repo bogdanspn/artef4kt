@@ -53,7 +53,8 @@ class FerrofluidVisualizer {
         this.highIntensity = 0;        // Grid parameters
         this.gridVisible = true;
         this.gridSize = 15;
-        this.gridOpacity = 0.3;        this.gridColor = 0xbbbbbb;
+        this.gridOpacity = 0.3;        
+        this.gridColor = 0xbbbbbb;
         this.shadowTransparency = 0.4; // 0 = fully transparent, 1 = fully opaque (no transparency)
         this.shadowColor = 0x333333; // Default shadow color set to a dark grey
         this.linkShadowColor = false; // Whether shadow color should sync with grid color
@@ -76,10 +77,11 @@ class FerrofluidVisualizer {
         this.ferrofluid = null;
         this.lightGroup = null;        // Floating blob system
         this.floatingBlobs = [];
-        this.maxFloatingBlobs = 25;
+        this.maxFloatingBlobs = 30;
         this.blobSpawnThreshold = 0.1; // Even lower threshold for easier spawning
         this.lastSpawnTime = 0;
-        this.spawnCooldown = 100; // Even faster cooldown        // BPM Detection
+        this.spawnCooldown = 100; // Even faster cooldown       
+        //  BPM Detection
         this.bpmDetector = {
             peaks: [],
             bpm: 0,
@@ -112,17 +114,31 @@ class FerrofluidVisualizer {
                 "ARTEFACT ENERGY SURGE DETECTED"
             ],
             spawnBlobCount: 0,
-            maxSpawnBlobs: 8
+            maxSpawnBlobs: 12
+        };        // Schedule the first anomaly
+        this.scheduleNextAnomaly();        // Initialize mouse interaction object (needed for UI initialization)
+        this.mouseInteraction = {
+            enabled: true,
+            forceStrength: 0.5,
+            forceRadius: 0.2,
+            pushForce: 2.0,
+            intersectedBlob: null,
+            mainBlobIntersection: null,
+            mouseWorldPosition: new THREE.Vector3(),
+            lastMouseUpdate: 0,            // Ripple wave system - enhanced for more forceful, slower liquid-like behavior
+            waves: [],
+            maxWaves: 3,
+            waveAmplitude: 0.4,      // Increased from 0.8 - more forceful ripples
+            waveFrequency: 2.0,      // Further decreased from 2.5 - even wider wave crests for slower liquid motion
+            waveDecay: 0.8,          // Further decreased from 1.2 - much slower fade for persistent liquid waves
+            waveSpeed: 2.5           // Further decreased from 4.0 - much slower propagation like thick honey
         };
-
-        // Schedule the first anomaly
-        this.scheduleNextAnomaly();
         
         this.init();
         this.loadDefaultAudio(); // Automatically load the default audio file
         this.updateStatusMessage(); // Initialize status message
-        this.setupEventListeners();
-        this.initializeUIValues(); // Initialize UI values after properties are set
+        this.setupEventListeners(); // This calls initMouseControls() which sets up this.mouseInteraction
+        this.initializeUIValues(); // Initialize UI values after mouse controls are set up
         
         // Initialize settings dropdown with built-in presets
         this.refreshSettingsDropdown();
@@ -139,9 +155,6 @@ class FerrofluidVisualizer {
         this.updateShadowColors(); // Initialize shadow colors after lighting is created
         this.createEnvironment();
         this.updateLightingFromBackground(); // Apply initial background color influence
-          
-        // Initialize UI values to match property values
-        this.initializeUIValues();
           
         // Initialize frequency analyzer clone colors to match default grid color
         this.updateFrequencyAnalyzerCloneColors('#bbbbbb');
@@ -225,11 +238,12 @@ class FerrofluidVisualizer {
             const midColorHex = '#' + this.lightMidColor.toString(16).padStart(6, '0');
             lightMidColorInput.value = midColorHex;
         }
-        
-        if (lightHighColorInput) {
+          if (lightHighColorInput) {
             const highColorHex = '#' + this.lightHighColor.toString(16).padStart(6, '0');
             lightHighColorInput.value = highColorHex;
         }
+          // Initialize mouse interaction control values
+        // (UI controls removed - mouse interaction is always enabled during idle mode)
         
         console.log('UI values initialized');
     }setupThreeJS() {
@@ -680,9 +694,7 @@ class FerrofluidVisualizer {
             if (this.permanentFloor) {
                 this.permanentFloor.visible = !this.gridVisible;
             }
-        });
-
-        // Debug Encoding toggle control
+        });        // Debug Encoding toggle control
         document.getElementById('debug-encoding-toggle').addEventListener('change', (e) => {
             if (window.debugEncodingControls) {
                 window.debugEncodingControls.setEnabled(e.target.checked);
@@ -693,7 +705,10 @@ class FerrofluidVisualizer {
                     'Decoding animation: DISABLED via UI';
                 console.log(toggleMessage);
             }
-        });        document.getElementById('grid-size').addEventListener('input', (e) => {
+        });        // Mouse Interaction Controls
+        // (UI controls removed - mouse interaction is always enabled during idle mode)
+
+        document.getElementById('grid-size').addEventListener('input', (e) => {
             this.gridSize = parseInt(e.target.value);
             document.getElementById('grid-size-value').textContent = this.gridSize;
             this.createPermanentFloor(); // Update permanent floor size
@@ -1454,8 +1469,7 @@ class FerrofluidVisualizer {
                 this.noise3D(x * 0.1, y * 0.1, z * 0.1 + time * 0.4)
             ).normalize().multiplyScalar(0.08 * audioInfluence);
               const finalNormal = normal.clone().add(flowDirection).normalize();
-            
-            // === ANOMALY DEFORMATION EFFECTS ===
+              // === ANOMALY DEFORMATION EFFECTS ===
             let anomalyDeformation = 0;
             if (this.anomalySystem.isActive && !this.isPlaying) {
                 const anomalyIntensity = this.anomalySystem.intensity;
@@ -1482,26 +1496,69 @@ class FerrofluidVisualizer {
                 const spike = spikeNoise > spikeThreshold ? (spikeNoise - spikeThreshold) * anomalyIntensity * 2.0 : 0;
                 
                 anomalyDeformation = shiftWave + ripple1 + ripple2 + spike;
-            }
-              // Calculate target positions
+            }            
+            // === MOUSE RIPPLE WAVE EFFECTS - ENHANCED FOR LIQUID BEHAVIOR ===
+            let mouseRippleDeformation = 0;
+            if (this.mouseInteraction.waves.length > 0) {
+                // Process all active mouse ripple waves
+                for (const wave of this.mouseInteraction.waves) {
+                    const waveAge = now - wave.startTime;
+                      // Skip expired waves (will be cleaned up later) - much longer lifetime for ultra-slow liquid persistence
+                    if (waveAge > 8.0) continue; // Increased from 5.0 for even longer lasting waves
+                    
+                    // Calculate distance from vertex to wave center
+                    const distance = vertexPos.distanceTo(wave.center);
+                    
+                    // Calculate wave propagation with ultra-slow, more liquid-like expansion
+                    const waveRadius = waveAge * this.mouseInteraction.waveSpeed;
+                    const waveThickness = 1.5; // Further increased from 1.2 for even thicker, more viscous waves
+                    
+                    // Check if vertex is within the wave ring
+                    if (Math.abs(distance - waveRadius) < waveThickness) {
+                        // Enhanced wave intensity calculation for more forceful liquid behavior
+                        const timeDecay = Math.exp(-waveAge * this.mouseInteraction.waveDecay);
+                        const distanceFromWaveEdge = Math.abs(distance - waveRadius);
+                        const edgeDecay = Math.exp(-Math.pow(distanceFromWaveEdge / waveThickness, 1.5)); // Softer edge falloff
+                        
+                        // Generate concentric wave pattern with ultra-slow liquid-like oscillation
+                        const wavePhase = distance * this.mouseInteraction.waveFrequency - waveAge * this.mouseInteraction.waveSpeed * 2; // Further reduced multiplier for much slower phase movement
+                        
+                        // Enhanced wave intensity with multiple harmonics for complex liquid motion
+                        const primaryWave = Math.sin(wavePhase) * this.mouseInteraction.waveAmplitude;
+                        const secondaryWave = Math.sin(wavePhase * 1.7 + wave.phase) * this.mouseInteraction.waveAmplitude * 0.3;
+                        const tertiaryWave = Math.cos(wavePhase * 0.6 + wave.phase * 2) * this.mouseInteraction.waveAmplitude * 0.15;
+                        
+                        const complexWaveIntensity = (primaryWave + secondaryWave + tertiaryWave) * timeDecay * edgeDecay;
+                        
+                        mouseRippleDeformation += complexWaveIntensity;
+                    }
+                }
+            }// Calculate target positions
             if (this.isPlaying && audioInfluence > 0.15) {
-                // Normal audio-reactive behavior
-                this.targetPositions[i] = x + finalNormal.x * totalDeformation;
-                this.targetPositions[i + 1] = y + finalNormal.y * totalDeformation;
-                this.targetPositions[i + 2] = z + finalNormal.z * totalDeformation;
-            } else if (this.anomalySystem.isActive && !this.isPlaying) {
-                // Anomaly effects when not playing music
-                const combinedDeformation = baseNoise * 0.3 + anomalyDeformation;
+                // Normal audio-reactive behavior with mouse ripples
+                const combinedDeformation = totalDeformation + mouseRippleDeformation;
                 this.targetPositions[i] = x + finalNormal.x * combinedDeformation;
                 this.targetPositions[i + 1] = y + finalNormal.y * combinedDeformation;
                 this.targetPositions[i + 2] = z + finalNormal.z * combinedDeformation;
-            } else {
-                // When paused or no audio, target the original sphere shape
-                this.targetPositions[i] = x + finalNormal.x * (baseNoise * 0.3);
-                this.targetPositions[i + 1] = y + finalNormal.y * (baseNoise * 0.3);
-                this.targetPositions[i + 2] = z + finalNormal.z * (baseNoise * 0.3);
+            } else if (this.anomalySystem.isActive && !this.isPlaying) {
+                // Anomaly effects when not playing music with mouse ripples
+                const combinedDeformation = baseNoise * 0.3 + anomalyDeformation + mouseRippleDeformation;
+                this.targetPositions[i] = x + finalNormal.x * combinedDeformation;
+                this.targetPositions[i + 1] = y + finalNormal.y * combinedDeformation;
+                this.targetPositions[i + 2] = z + finalNormal.z * combinedDeformation;            } else {
+                // When paused or no audio, target the original sphere shape with mouse ripples
+                const combinedDeformation = baseNoise * 0.3 + mouseRippleDeformation;
+                this.targetPositions[i] = x + finalNormal.x * combinedDeformation;
+                this.targetPositions[i + 1] = y + finalNormal.y * combinedDeformation;
+                this.targetPositions[i + 2] = z + finalNormal.z * combinedDeformation;
             }
-            
+        }
+        
+        // Apply mouse interaction forces during idle mode
+        this.applyMouseForceToMainBlob();
+        
+        // Apply smoothing to all vertices after all forces are calculated
+        for (let i = 0; i < positions.length; i += 3) {
             // Adaptive damping: faster return to original shape when paused
             let dampingFactor;
             if (this.isPlaying && audioInfluence > 0.15) {
@@ -1532,12 +1589,16 @@ class FerrofluidVisualizer {
         const floatIntensity = 0.3 + audioInfluence * 0.5;
         this.ferrofluid.position.y = Math.sin(time * 0.4) * floatIntensity;
         this.ferrofluid.position.x = Math.cos(time * 0.35) * (floatIntensity * 0.7);
-        this.ferrofluid.position.z = Math.sin(time * 0.45) * (floatIntensity * 0.5);
-
-        // Synchronize inner sphere position and rotation with the main ferrofluid
+        this.ferrofluid.position.z = Math.sin(time * 0.45) * (floatIntensity * 0.5);        // Synchronize inner sphere position and rotation with the main ferrofluid
         if (this.ferrofluidInner) {
             this.ferrofluidInner.position.copy(this.ferrofluid.position);
             this.ferrofluidInner.rotation.copy(this.ferrofluid.rotation);
+        }        // Clean up expired mouse ripple waves (much longer lifetime for ultra-slow liquid persistence)
+        if (this.mouseInteraction.waves.length > 0) {
+            this.mouseInteraction.waves = this.mouseInteraction.waves.filter(wave => {
+                const waveAge = now - wave.startTime;
+                return waveAge < 8.0; // Increased from 5.0 for much longer lasting ultra-slow liquid-like waves
+            });
         }
     }
       generateDynamicBlobCenters(time) {
@@ -2021,9 +2082,14 @@ createFloatingBlob(spawnPosition, intensity, type) {
                 positions[j + 1] = blobData.currentPositions[j + 1];
                 positions[j + 2] = blobData.currentPositions[j + 2];
             }
-            
-            // Store maximum deformation for inner core adjustment
+              // Store maximum deformation for inner core adjustment
             blobData.maxDeformation = maxDeformation;
+            
+            // Apply mouse interaction forces during idle mode
+            if (this.mouseInteraction.intersectedBlob && 
+                this.mouseInteraction.intersectedBlob.blobData === blobData) {
+                this.applyMouseForceToFloatingBlobs();
+            }
             
             // Update geometry
             geometry.attributes.position.needsUpdate = true;
@@ -2611,11 +2677,17 @@ this.spawnFloatingBlobs();
                     imgElement.style.filter = filter;
                 }
             });
-    }
-      // Enhanced mouse camera controls
+    }    // Enhanced mouse camera controls
     initMouseControls() {
         this.mouse = { x: 0, y: 0, prevX: 0, prevY: 0 };
-        this.mousePressed = false;        this.cameraControls = {
+        this.mousePressed = false;
+        
+        // Mouse interaction setup for blob collision (raycaster components)
+        this.raycaster = new THREE.Raycaster();
+        this.mouseVector = new THREE.Vector2();
+        // Note: this.mouseInteraction is already initialized in constructor
+        
+        this.cameraControls = {
             distance: 18,    // Start at optimal viewing distance
             azimuth: 0,
             elevation: 15,   // Start at better side viewing angle
@@ -2749,10 +2821,12 @@ this.spawnFloatingBlobs();
                 document.body.style.cursor = 'default';
             }
         });
-        
-        document.addEventListener('mousemove', (e) => {
+          document.addEventListener('mousemove', (e) => {
             this.mouse.x = e.clientX;
             this.mouse.y = e.clientY;
+            
+            // Update mouse interaction raycasting during idle mode
+            this.updateMouseInteraction(e);
             
             if (this.mousePressed) {
                 const deltaX = this.mouse.x - this.mouse.prevX;
@@ -2780,12 +2854,214 @@ this.spawnFloatingBlobs();
                 
                 // Clamp camera target within grid bounds
                 this.clampCameraTarget();
-                
-                this.mouse.prevX = e.clientX;
+                  this.mouse.prevX = e.clientX;
                 this.mouse.prevY = e.clientY;
             }
         });
-    }    // Update automatic camera movement based on music
+    }    // Mouse interaction for blob collision and deformation
+    updateMouseInteraction(event) {
+        // Only enable mouse interaction during idle mode (no music playing or low intensity)
+        const isIdleMode = !this.isPlaying || (this.bassIntensity + this.midIntensity + this.highIntensity) < 0.3;
+        
+        if (!this.mouseInteraction.enabled || !isIdleMode) {
+            this.mouseInteraction.intersectedBlob = null;
+            this.mouseInteraction.mainBlobIntersection = null;
+            // Reset cursor when not in idle mode
+            document.body.style.cursor = 'default';
+            return;
+        }
+
+        // Update mouse vector for raycasting
+        this.mouseVector.x = (event.clientX / window.innerWidth) * 2 - 1;
+        this.mouseVector.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+        // Update raycaster
+        this.raycaster.setFromCamera(this.mouseVector, this.camera);
+
+        // Check intersection with main ferrofluid blob
+        if (this.ferrofluid) {
+            const mainIntersects = this.raycaster.intersectObject(this.ferrofluid);
+            if (mainIntersects.length > 0) {
+                this.mouseInteraction.mainBlobIntersection = {
+                    point: mainIntersects[0].point.clone(),
+                    face: mainIntersects[0].face,
+                    distance: mainIntersects[0].distance
+                };
+                // Change cursor to indicate interaction
+                document.body.style.cursor = 'crosshair';
+            } else {
+                this.mouseInteraction.mainBlobIntersection = null;
+            }
+        }
+
+        // Check intersection with floating blobs
+        this.mouseInteraction.intersectedBlob = null;
+        let closestDistance = Infinity;
+        
+        for (const blobData of this.floatingBlobs) {
+            const intersects = this.raycaster.intersectObject(blobData.mesh);
+            if (intersects.length > 0 && intersects[0].distance < closestDistance) {
+                closestDistance = intersects[0].distance;
+                this.mouseInteraction.intersectedBlob = {
+                    blobData: blobData,
+                    intersection: intersects[0]
+                };
+                // Change cursor to indicate interaction
+                document.body.style.cursor = 'pointer';
+            }
+        }
+
+        // Reset cursor if no intersection
+        if (!this.mouseInteraction.mainBlobIntersection && !this.mouseInteraction.intersectedBlob) {
+            document.body.style.cursor = 'default';
+        }
+
+        // Store mouse world position for force calculations
+        if (this.mouseInteraction.mainBlobIntersection || this.mouseInteraction.intersectedBlob) {
+            // Calculate mouse position in 3D space
+            const mouseRay = this.raycaster.ray;
+            const distance = this.mouseInteraction.mainBlobIntersection ? 
+                this.mouseInteraction.mainBlobIntersection.distance : 
+                (this.mouseInteraction.intersectedBlob ? this.mouseInteraction.intersectedBlob.intersection.distance : 15);
+            
+            this.mouseInteraction.mouseWorldPosition.copy(mouseRay.origin).add(
+                mouseRay.direction.multiplyScalar(distance)
+            );
+        }
+
+        this.mouseInteraction.lastMouseUpdate = performance.now();
+    }    // Apply mouse forces to main ferrofluid blob
+    applyMouseForceToMainBlob() {
+        if (!this.mouseInteraction.mainBlobIntersection || !this.ferrofluid) return;
+
+        const intersection = this.mouseInteraction.mainBlobIntersection;
+        const forcePoint = intersection.point;
+        const forceStrength = this.mouseInteraction.forceStrength;
+        const forceRadius = this.mouseInteraction.forceRadius;
+
+        // Create ripple wave at contact point
+        this.createMouseRipple(forcePoint);
+
+        // Get current geometry positions
+        const geometry = this.ferrofluid.geometry;
+        const positions = geometry.attributes.position.array;
+
+        // Apply forces to vertices near the intersection point
+        for (let i = 0; i < positions.length; i += 3) {
+            const x = this.originalPositions[i];
+            const y = this.originalPositions[i + 1];
+            const z = this.originalPositions[i + 2];
+            
+            const vertexPos = new THREE.Vector3(x, y, z);
+            // Transform to world space
+            vertexPos.applyMatrix4(this.ferrofluid.matrixWorld);
+            
+            const distance = vertexPos.distanceTo(forcePoint);
+            
+            if (distance < forceRadius) {
+                // Calculate force falloff (stronger closer to mouse)
+                const influence = Math.exp(-Math.pow(distance / forceRadius, 2));
+                
+                // Calculate force direction (push away from mouse)
+                const forceDirection = new THREE.Vector3()
+                    .subVectors(vertexPos, forcePoint)
+                    .normalize();                // Apply force to target positions
+                const forceAmount = forceStrength * influence * 0.15;
+                this.targetPositions[i] += forceDirection.x * forceAmount;
+                this.targetPositions[i + 1] += forceDirection.y * forceAmount;
+                this.targetPositions[i + 2] += forceDirection.z * forceAmount;
+            }
+        }
+    }
+
+    // Create ripple wave at mouse contact point
+    createMouseRipple(contactPoint) {
+        const now = performance.now() * 0.001; // Convert to seconds
+          // Limit frequency of ripple creation (prevent spam but allow more dynamic interaction)
+        if (this.mouseInteraction.waves.length > 0) {
+            const lastWave = this.mouseInteraction.waves[this.mouseInteraction.waves.length - 1];
+            if (now - lastWave.startTime < 0.05) return; // Reduced from 100ms to 50ms for more responsive liquid interaction
+        }
+
+        // Remove old waves if at max capacity
+        if (this.mouseInteraction.waves.length >= this.mouseInteraction.maxWaves) {
+            this.mouseInteraction.waves.shift(); // Remove oldest wave
+        }
+
+        // Convert world space contact point to ferrofluid local space
+        const localContactPoint = new THREE.Vector3().copy(contactPoint);
+        const invertedMatrix = this.ferrofluid.matrixWorld.clone().invert();
+        localContactPoint.applyMatrix4(invertedMatrix);
+        
+        // Create new ripple wave
+        const wave = {
+            center: localContactPoint.clone(),
+            startTime: now,
+            amplitude: this.mouseInteraction.waveAmplitude,
+            frequency: this.mouseInteraction.waveFrequency,
+            decay: this.mouseInteraction.waveDecay,
+            speed: this.mouseInteraction.waveSpeed,
+            phase: Math.random() * Math.PI * 2 // Random phase for variety
+        };
+
+        this.mouseInteraction.waves.push(wave);
+        
+        console.log(`// Artefact interaction ripple created at:`, localContactPoint, ` // Total waves: ${this.mouseInteraction.waves.length}`);
+    }
+
+    // Apply mouse forces to floating blobs
+    applyMouseForceToFloatingBlobs() {
+        if (!this.mouseInteraction.intersectedBlob) return;
+
+        const intersectedBlob = this.mouseInteraction.intersectedBlob;
+        const blobData = intersectedBlob.blobData;
+        const intersection = intersectedBlob.intersection;
+        
+        // Apply push force away from mouse
+        const pushDirection = new THREE.Vector3()
+            .subVectors(blobData.mesh.position, intersection.point)
+            .normalize();
+        
+        const pushForce = this.mouseInteraction.pushForce;
+        blobData.velocity.add(pushDirection.multiplyScalar(pushForce * 0.1));
+        
+        // Add some upward component to make it more dynamic
+        blobData.velocity.y += pushForce * 0.05;
+        
+        // Apply deformation to the intersected blob
+        const forcePoint = intersection.point;
+        const localForcePoint = new THREE.Vector3().copy(forcePoint);
+        localForcePoint.sub(blobData.mesh.position); // Convert to local space
+        
+        const forceRadius = this.mouseInteraction.forceRadius * 0.7; // Smaller radius for floating blobs
+        const forceStrength = this.mouseInteraction.forceStrength * 1.5; // Stronger force for more visible effect
+        
+        // Apply deformation to vertices
+        const positions = blobData.geometry.attributes.position.array;
+        
+        for (let i = 0; i < positions.length; i += 3) {
+            const x = blobData.originalPositions[i];
+            const y = blobData.originalPositions[i + 1];
+            const z = blobData.originalPositions[i + 2];
+            
+            const vertexPos = new THREE.Vector3(x, y, z);
+            const distance = vertexPos.distanceTo(localForcePoint);
+            
+            if (distance < forceRadius) {
+                const influence = Math.exp(-Math.pow(distance / forceRadius, 2));
+                
+                // Push vertices away from force point
+                const forceDirection = new THREE.Vector3()
+                    .subVectors(vertexPos, localForcePoint)
+                    .normalize();
+                
+                const forceAmount = forceStrength * influence * 0.3;
+                blobData.targetPositions[i] += forceDirection.x * forceAmount;
+                blobData.targetPositions[i + 1] += forceDirection.y * forceAmount;
+                blobData.targetPositions[i + 2] += forceDirection.z * forceAmount;
+            }
+        }
+    }// Update automatic camera movement based on music
     updateAutomaticCameraMovement(deltaTime) {
         if (!this.cameraControls.autoMovement.enabled) return;
         
@@ -2967,7 +3243,7 @@ this.spawnFloatingBlobs();
                 // Debug: Log beat detection
                 console.log(`Beat detected! Bass: ${this.bassIntensity.toFixed(3)}, Total peaks: ${this.bpmDetector.peaks.length}`);
                 
-                // Remove old peaks outside analysis window
+                // Remove old peaks outside of analysis window
                 const windowStart = now - this.bpmDetector.analysisWindow;
                 this.bpmDetector.peaks = this.bpmDetector.peaks.filter(peak => peak > windowStart);
                 
@@ -3054,11 +3330,16 @@ this.spawnFloatingBlobs();
             lightBassColor: this.lightBassColor,
             lightMidColor: this.lightMidColor,
             lightHighColor: this.lightHighColor,
-            
-            // Environment settings
+              // Environment settings
             envSphereColor: this.envSphereColor,
             envSphereSize: this.envSphereSize,
             envVisibility: this.envVisibility,
+            
+            // Mouse interaction settings
+            mouseInteractionEnabled: this.mouseInteraction.enabled,
+            mouseForceStrength: this.mouseInteraction.forceStrength,
+            mouseForceRadius: this.mouseInteraction.forceRadius,
+            mousePushForce: this.mouseInteraction.pushForce,
             
             // Debug settings
             debugEncodingEnabled: window.debugEncodingSettings ? window.debugEncodingSettings.enabled : false,
@@ -3255,13 +3536,14 @@ this.spawnFloatingBlobs();
                 if (envSizeValue) envSizeValue.textContent = this.envSphereSize;
                 this.updateEnvironment();
             }
-            
-            if (settings.envVisibility !== undefined) {
+              if (settings.envVisibility !== undefined) {
                 this.envVisibility = settings.envVisibility;
                 const envToggle = document.getElementById('env-visibility');
                 if (envToggle) envToggle.checked = this.envVisibility > 0;
                 this.updateEnvironment();
-            }
+            }            
+            // Mouse interaction settings (internal only - no UI controls)
+            // Mouse interaction is always enabled during idle mode
             
             // Debug settings
             if (settings.debugEncodingEnabled !== undefined && window.debugEncodingControls) {
@@ -3421,7 +3703,7 @@ this.spawnFloatingBlobs();
             // Create download link
             const link = document.createElement('a');
             link.href = URL.createObjectURL(dataBlob);
-            link.download = `ferrofluid-settings-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+            link.download = `artef4kt-settings-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
             
             // Trigger download
             document.body.appendChild(link);
@@ -3468,14 +3750,16 @@ this.spawnFloatingBlobs();
 (function() {
     const debugPanel = document.getElementById('debug-info-panel');
     if (!debugPanel) return;
-    const MAX_LINES = 40;
-    let debugBuffer = [];
+    const MAX_LINES = 40;    let debugBuffer = [];
     let decodingLines = []; // Track lines that are currently decoding
+    let reencodingLines = []; // Track lines that are currently re-encoding before removal
     let animationFrame = null;
       // Characters used for encoding/scrambling
     const ENCODING_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?~`';
     const DECODE_SPEED = 25; // milliseconds between decode steps (faster: was 50)
     const CHARS_PER_STEP = 4; // how many characters to decode per step (faster: was 2)
+    const REENCODE_SPEED = 20; // milliseconds between re-encode steps (slightly faster than decode)
+    const REENCODE_CHARS_PER_STEP = 5; // how many characters to re-encode per step
 
     function stripEmoji(str) {
         // Only remove actual emoji characters, preserve all numbers, letters, punctuation
@@ -3520,19 +3804,30 @@ this.spawnFloatingBlobs();
             return ENCODING_CHARS[Math.floor(Math.random() * ENCODING_CHARS.length)];
         }).join('');
     }
-    
-    function createDecodingLine(originalText, index) {
+      function createDecodingLine(originalText, index) {
         return {
             original: originalText,
             current: encodeText(originalText),
             index: index,
             decodedChars: 0,
             lastDecodeTime: Date.now(),
-            isDecoding: true
+            isDecoding: true,
+            isReencoding: false
         };
     }
     
-    function decodeStep(line) {
+    function createReencodingLine(originalText, index) {
+        return {
+            original: originalText,
+            current: originalText, // Start with fully decoded text
+            index: index,
+            reencodedChars: 0,
+            lastReencodeTime: Date.now(),
+            isReencoding: true,
+            isDecoding: false
+        };
+    }
+      function decodeStep(line) {
         const now = Date.now();
         if (now - line.lastDecodeTime < DECODE_SPEED) {
             return false; // Not time to decode yet
@@ -3569,9 +3864,47 @@ this.spawnFloatingBlobs();
         return false; // Still decoding
     }
     
-    function animateDecoding() {
-        let anyDecoding = false;
+    function reencodeStep(line) {
+        const now = Date.now();
+        if (now - line.lastReencodeTime < REENCODE_SPEED) {
+            return false; // Not time to re-encode yet
+        }
         
+        if (line.reencodedChars >= line.original.length) {
+            line.isReencoding = false;
+            return true; // Finished re-encoding
+        }
+        
+        // Re-encode REENCODE_CHARS_PER_STEP characters from the end backwards
+        const currentArray = line.current.split('');
+        const originalArray = line.original.split('');
+        
+        let reencoded = 0;
+        for (let i = line.original.length - 1 - line.reencodedChars; i >= 0 && reencoded < REENCODE_CHARS_PER_STEP; i--) {
+            // Skip spaces and punctuation that should stay the same
+            if (originalArray[i] === ' ' || originalArray[i] === '\n' || 
+                originalArray[i] === '\t' || originalArray[i] === ':' || 
+                originalArray[i] === '.' || originalArray[i] === ',') {
+                line.reencodedChars++;
+                continue;
+            }
+            
+            // Replace with random character
+            currentArray[i] = ENCODING_CHARS[Math.floor(Math.random() * ENCODING_CHARS.length)];
+            line.reencodedChars++;
+            reencoded++;
+        }
+        
+        line.current = currentArray.join('');
+        line.lastReencodeTime = now;
+        
+        return false; // Still re-encoding
+    }
+      function animateDecoding() {
+        let anyDecoding = false;
+        let anyReencoding = false;
+        
+        // Process decoding lines
         decodingLines.forEach(line => {
             if (line.isDecoding) {
                 decodeStep(line);
@@ -3581,22 +3914,37 @@ this.spawnFloatingBlobs();
             }
         });
         
+        // Process re-encoding lines
+        reencodingLines.forEach((line, index) => {
+            if (line.isReencoding) {
+                reencodeStep(line);
+                if (line.isReencoding) {
+                    anyReencoding = true;
+                }
+            }
+        });
+        
+        // Remove finished re-encoding lines
+        reencodingLines = reencodingLines.filter(line => line.isReencoding);
+        
         // Update display with current state of all lines
         updateDecodedDisplay();
         
-        if (anyDecoding) {
+        if (anyDecoding || anyReencoding) {
             animationFrame = setTimeout(animateDecoding, 16); // ~60fps for smooth animation
         } else {
             animationFrame = null;
         }
     }
-    
-    function updateDecodedDisplay() {
-        const displayLines = decodingLines.map(line => line.current);
+      function updateDecodedDisplay() {
+        // Combine both decoding and re-encoding lines for display
+        const allLines = [...decodingLines, ...reencodingLines];
+        const displayLines = allLines
+            .sort((a, b) => a.index - b.index) // Maintain order by index
+            .map(line => line.current);
         const filtered = displayLines.filter(line => isTextLine(line));
         debugPanel.textContent = filtered.length ? filtered.join('\n') : 'Initializing info panel...';
-    }
-      function addEncodedLine(text) {
+    }      function addEncodedLine(text) {
         // Check if decoding is enabled
         if (!window.debugEncodingSettings || !window.debugEncodingSettings.enabled) {
             // Add directly without encoding when disabled
@@ -3606,13 +3954,26 @@ this.spawnFloatingBlobs();
             return;
         }
         
-        const decodingLine = createDecodingLine(text, decodingLines.length);
-        decodingLines.push(decodingLine);
-        
-        // Keep only MAX_LINES
-        if (decodingLines.length > MAX_LINES) {
-            decodingLines = decodingLines.slice(-MAX_LINES);
+        // Check if we need to re-encode lines that will be removed
+        if (decodingLines.length >= MAX_LINES) {
+            // Find lines that need to be re-encoded (oldest lines)
+            const linesToReencode = decodingLines.slice(0, decodingLines.length - MAX_LINES + 1);
+            
+            // Start re-encoding animation for these lines
+            linesToReencode.forEach(line => {
+                if (!line.isDecoding) { // Only re-encode fully decoded lines
+                    const reencodingLine = createReencodingLine(line.current, line.index);
+                    reencodingLines.push(reencodingLine);
+                }
+            });
+            
+            // Remove the lines that are being re-encoded from decodingLines
+            decodingLines = decodingLines.slice(linesToReencode.length);
         }
+        
+        // Add new line with decoding animation
+        const decodingLine = createDecodingLine(text, Date.now()); // Use timestamp as unique index
+        decodingLines.push(decodingLine);
         
         // Start animation if not already running
         if (!animationFrame) {
@@ -3706,10 +4067,10 @@ this.spawnFloatingBlobs();
                 if (debugBuffer.length > MAX_LINES) debugBuffer = debugBuffer.slice(-MAX_LINES);
                 updateDebugPanel();
             }
-        },
-        clear: function() {
-            // Clear and restart all decoding
+        },        clear: function() {
+            // Clear and restart all decoding and re-encoding
             decodingLines = [];
+            reencodingLines = [];
             debugBuffer = [];
             addEncodedLine('Console cleared and reset');
         },
@@ -3759,6 +4120,188 @@ this.spawnFloatingBlobs();
     }
     // Show a placeholder if no logs yet
     updateDebugPanel();
+})();
+
+// --- Mobile UI Panel Controls ---
+(() => {
+    let uiPanelOpen = false;
+    const uiPanel = document.getElementById('ui');
+    const uiHoverArea = document.getElementById('ui-hover-area');
+    
+    // Function to open UI panel
+    function openUIPanel() {
+        if (!uiPanelOpen) {
+            uiPanel.style.right = '0';
+            uiPanelOpen = true;
+        }
+    }
+    
+    // Function to close UI panel
+    function closeUIPanel() {
+        if (uiPanelOpen) {
+            uiPanel.style.right = '-100vw';
+            uiPanelOpen = false;
+        }
+    }
+    
+    // Function to toggle UI panel
+    function toggleUIPanel() {
+        if (uiPanelOpen) {
+            closeUIPanel();
+        } else {
+            openUIPanel();
+        }
+    }
+      // Tab indicator click handler (::before pseudo-element click simulation)
+    function handleTabClick(event) {
+        // Check if click is in the tab area (left side of UI panel)
+        const rect = uiPanel.getBoundingClientRect();
+        const clickX = event.clientX;
+        const clickY = event.clientY;
+        
+        // Get responsive tab dimensions based on screen size
+        const screenWidth = window.innerWidth;
+        let tabWidth, tabHeight, tabLeft, tabTop;
+        
+        if (screenWidth <= 480) {
+            // Very small screens
+            tabWidth = 32;
+            tabHeight = 64;
+            tabLeft = rect.left - 32;
+        } else if (screenWidth <= 768) {
+            // Mobile screens
+            tabWidth = 40;
+            tabHeight = 80;
+            tabLeft = rect.left - 40;
+        } else {
+            // Desktop screens
+            tabWidth = 48;
+            tabHeight = 100;
+            tabLeft = rect.left - 48;
+        }
+        
+        const tabRight = rect.left;
+        tabTop = rect.top + 20;
+        const tabBottom = rect.top + 20 + tabHeight;
+        
+        if (clickX >= tabLeft && clickX <= tabRight && clickY >= tabTop && clickY <= tabBottom) {
+            event.preventDefault();
+            event.stopPropagation();
+            toggleUIPanel();
+            return true;
+        }
+        return false;
+    }
+    
+    // Close button click handler (::after pseudo-element click simulation)
+    function handleCloseClick(event) {
+        // Check if click is in the close button area (top-right of UI panel)
+        const rect = uiPanel.getBoundingClientRect();
+        const clickX = event.clientX;
+        const clickY = event.clientY;
+        
+        // Close button area dimensions based on CSS: top: 15px, right: 15px, width: 32px, height: 32px
+        const closeLeft = rect.right - 47; // 15px margin + 32px width
+        const closeRight = rect.right - 15;
+        const closeTop = rect.top + 15;
+        const closeBottom = rect.top + 47; // 15px margin + 32px height
+        
+        if (clickX >= closeLeft && clickX <= closeRight && clickY >= closeTop && clickY <= closeBottom) {
+            event.preventDefault();
+            event.stopPropagation();
+            closeUIPanel();
+            return true;
+        }
+        return false;
+    }
+    
+    // Add click event listeners
+    document.addEventListener('click', (event) => {
+        // Handle tab click first (only when panel is closed)
+        if (!uiPanelOpen) {
+            if (handleTabClick(event)) {
+                return;
+            }
+        }
+        
+        // Handle close button click (only when panel is open)
+        if (uiPanelOpen) {
+            if (handleCloseClick(event)) {
+                return;
+            }
+            
+            // Close panel if clicking outside of it
+            const rect = uiPanel.getBoundingClientRect();
+            const clickX = event.clientX;
+            const clickY = event.clientY;
+            
+            if (clickX < rect.left || clickX > rect.right || clickY < rect.top || clickY > rect.bottom) {
+                closeUIPanel();
+            }
+        }
+    });
+    
+    // Add touch event listeners for mobile devices
+    document.addEventListener('touchstart', (event) => {
+        if (event.touches.length === 1) {
+            const touch = event.touches[0];
+            const mockEvent = {
+                clientX: touch.clientX,
+                clientY: touch.clientY,
+                preventDefault: () => event.preventDefault(),
+                stopPropagation: () => event.stopPropagation()
+            };
+            
+            // Handle tab touch
+            if (!uiPanelOpen) {
+                if (handleTabClick(mockEvent)) {
+                    return;
+                }
+            }
+            
+            // Handle close button touch
+            if (uiPanelOpen) {
+                if (handleCloseClick(mockEvent)) {
+                    return;
+                }
+                
+                // Close panel if touching outside of it
+                const rect = uiPanel.getBoundingClientRect();
+                const touchX = touch.clientX;
+                const touchY = touch.clientY;
+                
+                if (touchX < rect.left || touchX > rect.right || touchY < rect.top || touchY > rect.bottom) {
+                    closeUIPanel();
+                }
+            }
+        }
+    });
+    
+    // Keyboard shortcut for UI panel (Escape to close, Tab to toggle)
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && uiPanelOpen) {
+            event.preventDefault();
+            closeUIPanel();
+        } else if (event.key === 'Tab' && event.ctrlKey) {
+            event.preventDefault();
+            toggleUIPanel();
+        }
+    });
+    
+    // Update panel state on window resize to handle responsive breakpoints
+    function updatePanelState() {
+        const isMobile = window.innerWidth <= 768;
+        if (!isMobile && uiPanelOpen) {
+            // Reset to CSS hover behavior on desktop
+            uiPanel.style.right = '';
+            uiPanelOpen = false;
+        }
+    }
+    
+    window.addEventListener('resize', updatePanelState);
+    
+    // Initialize panel state
+    updatePanelState();
 })();
 
 // Initialize the visualizer when the page loads

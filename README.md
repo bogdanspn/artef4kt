@@ -29,7 +29,7 @@ A cutting-edge 3D music visualizer that simulates ferrofluid behavior, creating 
 - **Shadow Rendering**: Realistic shadow casting with transparency controls
 - **Environment Sphere**: Customizable background environment with size and visibility controls
 
-### 🎮 **Interactive Controls**
+###  **Interactive Controls**
 - **Mouse Camera Control**: 
   - Left-click + drag: Orbit camera around the scene
   - Right-click + drag: Pan camera view

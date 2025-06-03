@@ -1,46 +1,56 @@
 {
+  "version": "1.0",
+  "lastUpdated": "2025-06-03T00:28:13.034Z",
   "presets": [
     {
-      "name": "Dark Mode",
       "description": "Preset: Dark Mode",
-      "file": "dark-mode.json"
+      "file": "dark-mode.json",
+      "name": "Dark Mode"
     },
     {
-      "name": "Default",
       "description": "Preset: Default",
-      "file": "default.json"
+      "file": "default.json",
+      "name": "Default"
     },
     {
-      "name": "High Contrast",
+      "description": "Preset: Green Tinge",
+      "file": "green-tinge.json",
+      "name": "Green Tinge"
+    },
+    {
       "description": "Preset: High Contrast",
-      "file": "high-contrast.json"
+      "file": "high-contrast.json",
+      "name": "High Contrast"
     },
     {
-      "name": "Minimal",
       "description": "Preset: Minimal",
-      "file": "minimal.json"
+      "file": "minimal.json",
+      "name": "Minimal"
     },
     {
-      "name": "Neon Vibes",
       "description": "Preset: Neon Vibes",
-      "file": "neon-vibes.json"
+      "file": "neon-vibes.json",
+      "name": "Neon Vibes"
     },
     {
-      "name": "Red Tinge",
+      "description": "Preset: Purple Haze",
+      "file": "purple-haze.json",
+      "name": "Purple Haze"
+    },
+    {
       "description": "Preset: Red Tinge",
-      "file": "red-tinge.json"
+      "file": "red-tinge.json",
+      "name": "Red Tinge"
     },
     {
-      "name": "Soviet Red",
       "description": "Preset: Soviet Red",
-      "file": "soviet-red.json"
+      "file": "soviet-red.json",
+      "name": "Soviet Red"
     },
     {
-      "name": "Yellow Red",
       "description": "Preset: Yellow Red",
-      "file": "yellow-red.json"
+      "file": "yellow-red.json",
+      "name": "Yellow Red"
     }
-  ],
-  "version": "1.0",
-  "lastUpdated": "2025-06-02T02:21:16.976Z"
+  ]
 }

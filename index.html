@@ -26,162 +26,188 @@
                         <button id="file-button" type="button">File</button>
                         <span id="file-name-display">bogdan-rosu-yfflon.mp3</span>
                     </div>
-                </div>                <div class="control-group">
+                </div>                
+                <div class="control-group player-buttons">
                     <button id="play-pause">▶ PLAY</button>
                     <button id="loop">⟲</button>
                     <button id="stop">⏹ STOP</button>
                 </div>
-                  <div class="control-group slider-control">
-                    <div class="control-header">
-                        <label for="sensitivity">Sensitivity</label>
-                        <span id="sensitivity-value">1.0</span>
+
+                <div class="control-section">
+                    <div class="section-name">Main Sensorics</div>
+                    <div class="control-group slider-control">
+                        <div class="control-header">
+                            <label for="sensitivity">Sensitivity</label>
+                            <span id="sensitivity-value">1.0</span>
+                        </div>
+                        <input type="range" id="sensitivity" min="0.1" max="3" step="0.1" value="1">
                     </div>
-                    <input type="range" id="sensitivity" min="0.1" max="3" step="0.1" value="1">
-                </div>
-                
-                <div class="control-group slider-control">
-                    <div class="control-header">
-                        <label for="smoothing">Smoothing</label>
-                        <span id="smoothing-value">0.8</span>
+                    
+                    <div class="control-group slider-control">
+                        <div class="control-header">
+                            <label for="smoothing">Smoothing</label>
+                            <span id="smoothing-value">0.8</span>
+                        </div>
+                        <input type="range" id="smoothing" min="0" max="2" step="0.1" value="0.8">                
                     </div>
-                    <input type="range" id="smoothing" min="0" max="2" step="0.1" value="0.8">                
                 </div>
-                  <div class="control-group checkbox-control">
-                    <div class="control-header">
-                        <label for="grid-toggle">Grid Visibility</label>
-                        <input type="checkbox" id="grid-toggle" checked>
+                <div class="control-section">
+                    <div class="section-name">Grid Control</div>
+                    <div class="control-group checkbox-control">
+                        <div class="control-header">
+                            <label for="grid-toggle">Grid Visibility</label>
+                            <input type="checkbox" id="grid-toggle" checked>
+                        </div>
+                    </div>                
+
+                    <div class="control-group slider-control">
+                        <div class="control-header">
+                            <label for="grid-size">Grid Size</label>
+                            <span id="grid-size-value">15</span>
+                        </div>
+                        <input type="range" id="grid-size" min="10" max="40" step="5" value="15">
+                    </div>
+                    <div class="control-group slider-control">
+                        <div class="control-header">
+                            <label for="grid-opacity">Grid Opacity</label>
+                            <span id="grid-opacity-value">0.3</span>
+                        </div>
+                        <input type="range" id="grid-opacity" min="0.1" max="0.8" step="0.1" value="0.3">
                     </div>
                 </div>
 
-                <div class="control-group checkbox-control">
-                    <div class="control-header">
-                        <label for="debug-encoding-toggle">Debug Encoding</label>
-                        <input type="checkbox" id="debug-encoding-toggle" checked>
+                <div class="control-section">
+                    <div class="section-name">Environment Control</div>
+                    <div class="control-group slider-control">
+                        <div class="control-header">
+                            <label for="env-size">Environment Size</label>
+                            <span id="env-size-value">80</span>
+                        </div>
+                        <input type="range" id="env-size" min="50" max="200" step="5" value="80">
+                    </div>
+                    
+                    <div class="control-group checkbox-control">
+                        <div class="control-header">
+                            <label for="env-visibility">Environment Visibility</label>
+                            <input type="checkbox" id="env-visibility" checked>
+                        </div>
+                    </div>   
+                    <div class="control-group checkbox-control">
+                        <div class="control-header">
+                            <label for="debug-encoding-toggle">Debug Encoding</label>
+                            <input type="checkbox" id="debug-encoding-toggle" checked>
+                        </div>
+                    </div>                    
+                </div>                 
+
+
+                <div class="control-section">
+                    <div class="section-name">Shadow Control</div>
+                    <div class="control-group slider-control">
+                        <div class="control-header">
+                            <label for="shadow-transparency">Shadow Opacity</label>
+                            <span id="shadow-transparency-value">0.4</span>
+                        </div>
+                        <input type="range" id="shadow-transparency" min="0" max="1" step="0.1" value="0.4">
+                    </div>
+                    <div class="control-group checkbox-control">
+                        <div class="control-header">
+                            <label for="link-shadow-color">Link Colors Shadow to Grid</label>
+                            <input type="checkbox" id="link-shadow-color">
+                        </div>
+                    </div>
+                </div>
+                <div class="control-section">
+                    <div class="section-name">Color Control</div>
+                    <div class="control-group color-controls">
+                        <div class="color-control">
+                            <label for="background-color">Bgcolor</label>
+                            <input type="color" id="background-color" value="#888888">
+                        </div>
+                        <div class="color-control">
+                            <label for="grid-color">Grdcolor</label>
+                            <input type="color" id="grid-color" value="#bbbbbb">
+                        </div>
+                        <div class="color-control">
+                            <label for="shadow-color">Shdcolor</label>
+                            <input type="color" id="shadow-color" value="#333333">
+                        </div>                    <div class="color-control">
+                            <label for="env-sphere-color">Envcolor</label>
+                            <input type="color" id="env-sphere-color" value="#999999">
+                        </div>
+                    </div>
+
+                
+                    <div class="control-group color-controls">
+                        <div class="color-control">
+                            <label for="light-bass-color">Bass Spot</label>
+                            <input type="color" id="light-bass-color" value="#ff3366">
+                        </div>
+                        <div class="color-control">
+                            <label for="light-mid-color">Mid Spot</label>
+                            <input type="color" id="light-mid-color" value="#33ff66">
+                        </div>
+                        <div class="color-control">
+                            <label for="light-high-color">High Spot</label>
+                            <input type="color" id="light-high-color" value="#3366ff">
+                        </div>
+                        <div class="color-control">
+                            
+                        </div>
+                    </div> 
+                </div>  
+                <div class="control-section">
+                    <div class="section-name">Equalizer</div>                                  
+                    <div class="control-group slider-control">
+                        <div class="control-header">
+                            <label for="eq-bass">EQ Bass</label>
+                            <span id="eq-bass-value">0 dB</span>
+                        </div>
+                        <input type="range" id="eq-bass" min="-12" max="12" step="0.5" value="0">
+                    </div>
+                    
+                    <div class="control-group slider-control">
+                        <div class="control-header">
+                            <label for="eq-mid">EQ Mid</label>
+                            <span id="eq-mid-value">0 dB</span>
+                        </div>
+                        <input type="range" id="eq-mid" min="-12" max="12" step="0.5" value="0">
+                    </div>
+                    
+                    <div class="control-group slider-control">
+                        <div class="control-header">
+                            <label for="eq-high">EQ High</label>
+                            <span id="eq-high-value">0 dB</span>
+                        </div>
+                        <input type="range" id="eq-high" min="-12" max="12" step="0.5" value="0">                
+                    </div>
+                </div>    
+                <div class="control-section">
+                    <div class="section-name">Frequency Analysis</div>
+                    <div class="control-group">                    
+                        <div id="frequency-ranges">
+                            <div class="freq-range bass">
+                                <div class="freq-bar">
+                                    <div class="freq-level" id="bass-level"></div>
+                                </div>
+                                <span class="freq-label">20-250 Hz</span>
+                            </div>
+                            <div class="freq-range mids">
+                                <div class="freq-bar">
+                                    <div class="freq-level" id="mid-level"></div>
+                                </div>
+                                <span class="freq-label">250Hz-4K</span>
+                            </div>
+                            <div class="freq-range highs">
+                                <div class="freq-bar">
+                                    <div class="freq-level" id="high-level"></div>
+                                </div>
+                                <span class="freq-label">4K-20K</span>
+                            </div>
+                        </div>
                     </div>
                 </div>                
-
-
-                <div class="control-group slider-control">
-                    <div class="control-header">
-                        <label for="grid-size">Grid Size</label>
-                        <span id="grid-size-value">15</span>
-                    </div>
-                    <input type="range" id="grid-size" min="10" max="40" step="5" value="15">
-                </div>
-                  <div class="control-group slider-control">
-                    <div class="control-header">
-                        <label for="grid-opacity">Grid Opacity</label>
-                        <span id="grid-opacity-value">0.3</span>
-                    </div>
-                    <input type="range" id="grid-opacity" min="0.1" max="0.8" step="0.1" value="0.3">
-                </div>                
-                <div class="control-group slider-control">
-                    <div class="control-header">
-                        <label for="shadow-transparency">Shadow Opacity</label>
-                        <span id="shadow-transparency-value">0.4</span>
-                    </div>
-                    <input type="range" id="shadow-transparency" min="0" max="1" step="0.1" value="0.4">
-                </div>
-                <div class="control-group checkbox-control">
-                    <div class="control-header">
-                        <label for="link-shadow-color">Link Colors Shadow to Grid</label>
-                        <input type="checkbox" id="link-shadow-color">
-                    </div>
-                </div>
-                <div class="control-group color-controls">
-                    <div class="color-control">
-                        <label for="background-color">Bgcolor</label>
-                        <input type="color" id="background-color" value="#888888">
-                    </div>
-                    <div class="color-control">
-                        <label for="grid-color">Grdcolor</label>
-                        <input type="color" id="grid-color" value="#bbbbbb">
-                    </div>
-                    <div class="color-control">
-                        <label for="shadow-color">Shdcolor</label>
-                        <input type="color" id="shadow-color" value="#333333">
-                    </div>                    <div class="color-control">
-                        <label for="env-sphere-color">Envcolor</label>
-                        <input type="color" id="env-sphere-color" value="#999999">
-                    </div>
-                </div>
-                  <div class="control-group slider-control">
-                    <div class="control-header">
-                        <label for="env-size">Environment Size</label>
-                        <span id="env-size-value">80</span>
-                    </div>
-                    <input type="range" id="env-size" min="50" max="200" step="5" value="80">
-                </div>
-                
-                <div class="control-group checkbox-control">
-                    <div class="control-header">
-                        <label for="env-visibility">Environment Visibility</label>
-                        <input type="checkbox" id="env-visibility" checked>
-                    </div>
-                </div>
-                
-                <div class="control-group color-controls">
-                    <div class="color-control">
-                        <label for="light-bass-color">Bass</label>
-                        <input type="color" id="light-bass-color" value="#ff3366">
-                    </div>
-                    <div class="color-control">
-                        <label for="light-mid-color">Mid</label>
-                        <input type="color" id="light-mid-color" value="#33ff66">
-                    </div>
-                    <div class="color-control">
-                        <label for="light-high-color">High</label>
-                        <input type="color" id="light-high-color" value="#3366ff">
-                    </div>
-                    <div class="color-control">
-                        
-                    </div>
-                </div>
-                  <div class="control-group slider-control">
-                    <div class="control-header">
-                        <label for="eq-bass">EQ Bass</label>
-                        <span id="eq-bass-value">0 dB</span>
-                    </div>
-                    <input type="range" id="eq-bass" min="-12" max="12" step="0.5" value="0">
-                </div>
-                
-                <div class="control-group slider-control">
-                    <div class="control-header">
-                        <label for="eq-mid">EQ Mid</label>
-                        <span id="eq-mid-value">0 dB</span>
-                    </div>
-                    <input type="range" id="eq-mid" min="-12" max="12" step="0.5" value="0">
-                </div>
-                
-                <div class="control-group slider-control">
-                    <div class="control-header">
-                        <label for="eq-high">EQ High</label>
-                        <span id="eq-high-value">0 dB</span>
-                    </div>
-                    <input type="range" id="eq-high" min="-12" max="12" step="0.5" value="0">                </div>
-                  <div class="control-group">
-                    <label>Frequency Analysis</label>                    
-                    <div id="frequency-ranges">
-                        <div class="freq-range bass">
-                            <div class="freq-bar">
-                                <div class="freq-level" id="bass-level"></div>
-                            </div>
-                            <span class="freq-label">20-250 Hz</span>
-                        </div>
-                        <div class="freq-range mids">
-                            <div class="freq-bar">
-                                <div class="freq-level" id="mid-level"></div>
-                            </div>
-                            <span class="freq-label">250Hz-4K</span>
-                        </div>
-                        <div class="freq-range highs">
-                            <div class="freq-bar">
-                                <div class="freq-level" id="high-level"></div>
-                            </div>
-                            <span class="freq-label">4K-20K</span>
-                        </div>
-                    </div>
-                </div>                <!-- Settings Controls -->
+                <!-- Settings Controls -->
                 <div class="control-group">
                     <label>Settings</label>
                     <div class="settings-control">
