@@ -946,13 +946,19 @@ class FerrofluidVisualizer {
             
             // Always refresh the environment to ensure proper rendering
             this.updateEnvironment();
-        });
-
-        // UI opacity control
+        });        // UI opacity control
         document.getElementById('ui-opacity').addEventListener('input', (e) => {
             this.uiOpacity = parseFloat(e.target.value);
             document.getElementById('ui-opacity-value').textContent = this.uiOpacity.toFixed(1);
             this.updateUIOpacity();
+        });        // Filmic noise control with pure CSS
+        document.getElementById('filmic-noise').addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            document.getElementById('filmic-noise-value').textContent = value.toFixed(2);
+            const overlay = document.getElementById('filmic-noise-overlay');
+            if (overlay) {
+                overlay.style.opacity = value.toString();
+            }
         });
 
         // Grid color control
@@ -1422,14 +1428,20 @@ class FerrofluidVisualizer {
                     // Skip if already processed
                     const pairKey = `${Math.min(idx1, idx2)}-${Math.max(idx1, idx2)}`;
                     if (pairs.has(pairKey)) continue;
-                    
-                    // Temporal coherence optimization: Check collision cache
+                      // Temporal coherence optimization: Check collision cache
                     const cacheKey = pairKey;
                     const cachedResult = this.collisionOptimization.collisionCache.get(cacheKey);
                     if (cachedResult && (now - cachedResult.timestamp) < this.collisionOptimization.cacheTimeout) {
                         // Validate cache entry with position change
                         const blob1 = this.floatingBlobs[idx1];
                         const blob2 = this.floatingBlobs[idx2];
+                        
+                        // Safety check: ensure both blobs exist and have mesh
+                        if (!blob1 || !blob2 || !blob1.mesh || !blob2.mesh) {
+                            this.collisionOptimization.collisionCache.delete(cacheKey);
+                            continue;
+                        }
+                        
                         const positionChange1 = blob1.mesh.position.distanceTo(cachedResult.pos1);
                         const positionChange2 = blob2.mesh.position.distanceTo(cachedResult.pos2);
                         
@@ -1447,9 +1459,14 @@ class FerrofluidVisualizer {
                     // Distance check for performance
                     const blob1 = this.floatingBlobs[idx1];
                     const blob2 = this.floatingBlobs[idx2];
-                    const distance = blob1.mesh.position.distanceTo(blob2.mesh.position);
                     
-                    const shouldCollide = distance <= maxDistance;
+                    // Safety check: ensure both blobs exist and have mesh
+                    if (!blob1 || !blob2 || !blob1.mesh || !blob2.mesh) {
+                        continue;
+                    }
+                    
+                    const distance = blob1.mesh.position.distanceTo(blob2.mesh.position);
+                      const shouldCollide = distance <= maxDistance;
                     if (shouldCollide) {
                         pairs.add(pairKey);
                         this.collisionOptimization.stats.totalChecks++;
@@ -1457,13 +1474,15 @@ class FerrofluidVisualizer {
                         this.collisionOptimization.stats.spatialOptimizations++;
                     }
                     
-                    // Cache the result for temporal coherence
-                    this.collisionOptimization.collisionCache.set(cacheKey, {
-                        shouldCollide: shouldCollide,
-                        timestamp: now,
-                        pos1: blob1.mesh.position.clone(),
-                        pos2: blob2.mesh.position.clone()
-                    });
+                    // Cache the result for temporal coherence (with safety check)
+                    if (blob1.mesh && blob2.mesh) {
+                        this.collisionOptimization.collisionCache.set(cacheKey, {
+                            shouldCollide: shouldCollide,
+                            timestamp: now,
+                            pos1: blob1.mesh.position.clone(),
+                            pos2: blob2.mesh.position.clone()
+                        });
+                    }
                 }
             }
         }
@@ -3402,9 +3421,83 @@ this.spawnFloatingBlobs();
                     element.style.opacity = this.uiOpacity.toString();
                 }
             }
-        });
+        });        console.log(`UI opacity updated to: ${this.uiOpacity}`);
+    }
 
-        console.log(`UI opacity updated to: ${this.uiOpacity}`);
+    // Initialize dynamic CSS-based filmic noise system
+    initDynamicNoise(overlay) {
+        if (this.filmicNoiseAnimationId) {
+            this.stopDynamicNoise();
+        }
+
+        // Generate dynamic CSS for moving grain patterns
+        this.generateFilmicNoiseCSS();
+        
+        // Store animation reference for cleanup
+        this.filmicNoiseActive = true;
+        console.log('🎬 Filmic noise system initialized');
+    }
+
+    // Stop dynamic filmic noise system
+    stopDynamicNoise() {
+        if (this.filmicNoiseAnimationId) {
+            clearTimeout(this.filmicNoiseAnimationId);
+            this.filmicNoiseAnimationId = null;
+        }
+
+        this.filmicNoiseActive = false;
+        
+        // Clear the dynamic CSS
+        const overlay = document.getElementById('filmic-noise-overlay');
+        if (overlay) {
+            overlay.style.background = '';
+            const beforeEl = overlay.querySelector('::before');
+            const afterEl = overlay.querySelector('::after');
+            // Reset pseudo-elements via CSS custom properties
+            overlay.style.setProperty('--grain-bg-before', 'transparent');
+            overlay.style.setProperty('--grain-bg-after', 'transparent');
+        }
+        
+        console.log('🎬 Filmic noise system stopped');
+    }
+
+    // Generate moving CSS-based grain patterns
+    generateFilmicNoiseCSS() {
+        const overlay = document.getElementById('filmic-noise-overlay');
+        if (!overlay) return;
+
+        // Create multiple moving radial gradients for grain effect
+        const grainLayers = [];
+        const numLayers = 5; // Multiple layers for complex grain movement
+        
+        for (let i = 0; i < numLayers; i++) {
+            // Random positions and sizes for each grain layer
+            const x1 = Math.random() * 100;
+            const y1 = Math.random() * 100;
+            const x2 = Math.random() * 100;
+            const y2 = Math.random() * 100;
+            const size1 = 5 + Math.random() * 10;
+            const size2 = 5 + Math.random() * 10;
+            
+            // Create radial gradients with different opacities
+            const opacity1 = 0.15 + Math.random() * 0.25; // 0.15 to 0.4
+            const opacity2 = 0.1 + Math.random() * 0.2;   // 0.1 to 0.3
+            
+            grainLayers.push(
+                `radial-gradient(circle ${size1}px at ${x1}% ${y1}%, rgba(255,255,255,${opacity1}) 0%, transparent 70%)`,
+                `radial-gradient(circle ${size2}px at ${x2}% ${y2}%, rgba(0,0,0,${opacity2}) 0%, transparent 60%)`
+            );
+        }
+
+        // Apply the grain pattern to the main overlay
+        overlay.style.background = grainLayers.join(', ');
+
+        // Schedule next update for movement
+        if (this.filmicNoiseActive) {
+            this.filmicNoiseAnimationId = setTimeout(() => {
+                this.generateFilmicNoiseCSS();
+            }, 150 + Math.random() * 200); // 150-350ms intervals for organic movement
+        }
     }
 
     updateFrequencyIndicators() {
@@ -4426,7 +4519,10 @@ this.spawnFloatingBlobs();
             
             // Onscreen info settings
             uiOpacity: this.uiOpacity,
-              // Mouse interaction settings
+              // Filmic noise settings
+            filmicNoiseIntensity: document.getElementById('filmic-noise') ? parseFloat(document.getElementById('filmic-noise').value) : 0.60,
+
+            // Mouse interaction settings
             mouseInteractionEnabled: this.mouseInteraction ? this.mouseInteraction.enabled : true,
             mouseForceStrength: this.mouseInteraction ? this.mouseInteraction.forceStrength : 0.5,
             mouseForceRadius: this.mouseInteraction ? this.mouseInteraction.forceRadius : 0.2,
@@ -4661,7 +4757,17 @@ this.spawnFloatingBlobs();
             if (uiOpacitySlider) uiOpacitySlider.value = this.uiOpacity;
             if (uiOpacityValue) uiOpacityValue.textContent = this.uiOpacity.toFixed(1);
             this.updateUIOpacity();
-              // Mouse interaction settings (internal only - no UI controls)
+              // Filmic noise settings - use default 0.60 if not specified
+            const filmicNoiseIntensity = settings.filmicNoiseIntensity !== undefined ? settings.filmicNoiseIntensity : 0.60;
+            const filmicNoiseSlider = document.getElementById('filmic-noise');
+            const filmicNoiseValue = document.getElementById('filmic-noise-value');
+            const filmicOverlay = document.getElementById('filmic-noise-overlay');
+            
+            if (filmicNoiseSlider) filmicNoiseSlider.value = filmicNoiseIntensity;
+            if (filmicNoiseValue) filmicNoiseValue.textContent = filmicNoiseIntensity.toFixed(2);
+            if (filmicOverlay) filmicOverlay.style.opacity = filmicNoiseIntensity.toString();
+
+            // Mouse interaction settings (internal only - no UI controls)
             // Mouse interaction is always enabled during idle mode
               // Grid Cells Activity setting
             if (settings.gridCellsActivityEnabled !== undefined) {
@@ -5421,9 +5527,15 @@ this.spawnFloatingBlobs();
         }
         return false;
     }
-    
-    // Add click event listeners
+      // Add click event listeners
     document.addEventListener('click', (event) => {
+        // Check if the click is on or inside the SVG logos container
+        const svgLogosContainer = document.getElementById('svg-logos-container');
+        if (svgLogosContainer && (event.target === svgLogosContainer || svgLogosContainer.contains(event.target))) {
+            // Allow SVG logo clicks to proceed normally without interfering with UI panel logic
+            return;
+        }
+
         // Handle tab click first (only when panel is closed)
         if (!uiPanelOpen) {
             if (handleTabClick(event)) {
@@ -5447,11 +5559,19 @@ this.spawnFloatingBlobs();
             }
         }
     });
-    
-    // Add touch event listeners for mobile devices
+      // Add touch event listeners for mobile devices
     document.addEventListener('touchstart', (event) => {
         if (event.touches.length === 1) {
             const touch = event.touches[0];
+            
+            // Check if the touch is on or inside the SVG logos container
+            const svgLogosContainer = document.getElementById('svg-logos-container');
+            const touchTarget = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (svgLogosContainer && touchTarget && (touchTarget === svgLogosContainer || svgLogosContainer.contains(touchTarget))) {
+                // Allow SVG logo touches to proceed normally without interfering with UI panel logic
+                return;
+            }
+            
             const mockEvent = {
                 clientX: touch.clientX,
                 clientY: touch.clientY,

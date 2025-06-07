@@ -1,19 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+<head>    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARTEF4KT - Ferrofluid Inspired Music Visualizer</title>
+    <title>ARTEF4KT</title>
+    <meta name="description" content="An immersive ferrofluid-inspired music visualizer with dynamic blobs, particle effects, and real-time audio analysis.">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://bogdanrosu.net/artef4kt/">
+    <meta property="og:title" content="ARTEF4KT Visualizer">
+    <meta property="og:description" content="An immersive ferrofluid-inspired music visualizer with dynamic blobs, particle effects, and real-time audio analysis.">
+    <meta property="og:image" content="https://bogdanrosu.net/artef4kt/images/shareimage.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="ARTEF4KT Visualizer">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://bogdanrosu.net/artef4kt/">
+    <meta property="twitter:title" content="ARTEF4KT Visualizer">
+    <meta property="twitter:description" content="An immersive ferrofluid-inspired music visualizer with dynamic blobs, particle effects, and real-time audio analysis.">
+    <meta property="twitter:image" content="https://bogdanrosu.net/artef4kt/shareimage.png">
+    <meta property="twitter:image:alt" content="ARTEF4KT Visualizer">
+    
+    <!-- Additional Meta Tags -->
+    <meta name="author" content="ARTEF4KT">
+    <meta name="keywords" content="music visualizer, ferrofluid, audio visualization, generative art, interactive art, web audio api, threejs">
+    <meta name="theme-color" content="#000000">
+    
     <link rel="icon" type="image/svg+xml" href="images/favicon.svg">
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
-<body>    
-    <div id="container">
+<body>      <div id="container">
 
         <canvas id="visualizer"></canvas>
+        
+        <!-- Filmic noise overlay -->
+        <div id="filmic-noise-overlay"></div>
         
         <div id="ui-hover-area"></div>
           <div id="ui">
@@ -114,15 +141,20 @@
                             <span id="env-size-value">115</span>
                         </div>
                         <input type="range" id="env-size" min="50" max="200" step="5" value="115">
-                    </div>
-
-                    <div class="control-group slider-control">
+                    </div>                    <div class="control-group slider-control">
                         <div class="control-header">
                             <label for="ui-opacity">Info Opacity</label>
                             <span id="ui-opacity-value">1.0</span>
                         </div>
                         <input type="range" id="ui-opacity" min="0" max="1" step="0.1" value="1.0">
                     </div>      
+                      <div class="control-group slider-control">
+                        <div class="control-header">
+                            <label for="filmic-noise">Filmic Noise</label>
+                            <span id="filmic-noise-value">0.60</span>
+                        </div>
+                        <input type="range" id="filmic-noise" min="0" max="1" step="0.05" value="0.60">
+                    </div>
                     
                     <div class="control-group checkbox-control">
                         <div class="control-header">
@@ -331,11 +363,12 @@
         <!-- SVG logos container -->
         <div id="svg-logos-container">
             <div class="svg-logo">
-                <img src="images/br.svg" alt="BR" id="br-logo">
+                <a href="https://bogdanrosu.com/" target="_blank"><img src="images/br.svg" alt="BR" id="br-logo"></a>
             </div>
             <div class="svg-logo">
-                <img src="images/pixel-crusher.svg" alt="Pixel Crusher" id="pixel-crusher-logo">
-            </div>        </div>
+                <a href="https://bogdanrosu.com/" target="_blank"><img src="images/pixel-crusher.svg" alt="Pixel Crusher" id="pixel-crusher-logo"></a>
+            </div>        
+        </div>
     </div>    
     <script src="three.min.js"></script>
     <script src="color-harmonizer.js"></script>

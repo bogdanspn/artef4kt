@@ -27,6 +27,59 @@ body {
     z-index: 1;
 }
 
+/* Filmic noise overlay */
+#filmic-noise-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;    pointer-events: none;
+    z-index: 1500; /* Above visualizer but below UI */
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+/* Dynamic TV-like noise pattern - SVG-based grain */
+#filmic-noise-overlay::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150"><defs><filter id="grain"><feTurbulence type="turbulence" baseFrequency="0.9" numOctaves="4" seed="2" stitchTiles="stitch"/><feComponentTransfer><feFuncA type="discrete" tableValues="0 0.05 0 0.15 0 0.05 0 0.25 0 0.05 0"/></feComponentTransfer></filter></defs><rect width="100%" height="100%" filter="url(%23grain)" opacity="0.3"/></svg>') repeat;
+    opacity: 0.9;
+    animation: grain-move-1 3s infinite linear;
+}
+
+#filmic-noise-overlay::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><defs><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"/><feComponentTransfer><feFuncA type="discrete" tableValues="0 0.1 0 0.2 0 0.1 0 0.3 0 0.1 0"/></feComponentTransfer></filter></defs><rect width="100%" height="100%" filter="url(%23noise)" opacity="0.4"/></svg>') repeat;
+    opacity: 0.8;
+    animation: grain-move-2 4s infinite linear reverse;
+}
+
+/* Keyframes for grain movement */
+@keyframes grain-move-1 {
+    0% { transform: translate(0, 0) scale(1); }
+    25% { transform: translate(-2px, -1px) scale(1.01); }
+    50% { transform: translate(1px, -2px) scale(0.99); }
+    75% { transform: translate(-1px, 1px) scale(1.02); }
+    100% { transform: translate(0, 0) scale(1); }
+}
+
+@keyframes grain-move-2 {
+    0% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(1px, -2px) scale(0.98); }
+    66% { transform: translate(-2px, 1px) scale(1.01); }
+    100% { transform: translate(0, 0) scale(1); }
+}
+
 #ui {
     position: fixed;
     top: 0;
@@ -782,11 +835,11 @@ input[type="color"]::-webkit-color-swatch-wrapper {
     position: fixed;
     bottom: 30px;
     right: 100px;
-    z-index: 50;
+    z-index: 1500; /* Below UI panel but above visualizer */
     display: flex;
     flex-direction: column;
     gap: 8px;
-    pointer-events: none;
+    pointer-events: none; /* Keep container non-interactive */
 }
 
 .svg-logo {
@@ -797,12 +850,31 @@ input[type="color"]::-webkit-color-swatch-wrapper {
     justify-content: center;
 }
 
+.svg-logo a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    pointer-events: auto; /* Enable clicking on links */
+    transition: transform 0.3s ease;
+}
+
+.svg-logo a:hover {
+    transform: scale(1.1);
+}
+
 .svg-logo img {
     width: 100%;
     height: 100%;
     object-fit: contain;
     opacity: 0.8;
-    transition: filter 0.3s ease;
+    transition: filter 0.3s ease, opacity 0.3s ease;
+}
+
+.svg-logo a:hover img {
+    opacity: 1;
+    filter: brightness(1.2);
 }
 
 /* Settings controls styling */

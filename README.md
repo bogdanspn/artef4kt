@@ -1,92 +1,154 @@
 # ARTEF4KT
-*Ferrofluid Inspired Interactive Music Visualizer*
+*Advanced Ferrofluid Interactive Music Visualizer*
 
 [![Built with Three.js](https://img.shields.io/badge/Built%20with-Three.js-000000?style=flat&logo=three.js)](https://threejs.org/)
 [![Web Audio API](https://img.shields.io/badge/Audio-Web%20Audio%20API-orange?style=flat)](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
 [![JavaScript](https://img.shields.io/badge/Language-JavaScript-yellow?style=flat&logo=javascript)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 
-A cutting-edge 3D music visualizer that simulates ferrofluid behavior, creating mesmerizing liquid metal effects that respond dynamically to audio input. Experience music like never before with organic deformations, floating particle systems, and intelligent camera movement.
+A state-of-the-art 3D music visualizer that simulates complex ferrofluid behavior with advanced particle systems, shockwave effects, and cinematic post-processing. Experience music through an immersive liquid metal environment that responds dynamically to every beat, frequency, and musical nuance.
 
 
-##  Features
+## Core Features
 
-###  **Audio-Reactive Visualization**
-- **Real-time Audio Analysis**: Advanced FFT processing with frequency band separation (Bass: 20-250Hz, Mids: 250-4000Hz, Highs: 4000-20000Hz)
-- **BPM Detection**: Intelligent beat detection and tempo analysis with visual BPM display
-- **Dynamic Deformation**: Ferrofluid surface morphs organically based on music intensity
-- **Frequency-Specific Effects**: Different frequency ranges trigger unique visual responses
+### **Advanced Audio-Reactive Visualization**
+- **Multi-Band Real-time Audio Analysis**: Sophisticated FFT processing with precise frequency separation (Bass: 20-250Hz, Mids: 250-4000Hz, Highs: 4000-20000Hz)
+- **Intelligent BPM Detection**: Advanced beat detection algorithms with visual BPM display and tempo-based effects
+- **Dynamic Ferrofluid Deformation**: Primary sphere morphs organically with varying spike intensity based on audio amplitude
+- **Frequency-Specific Visual Responses**: Each frequency range triggers unique particle behaviors and lighting effects
 
-###  **Ferrofluid Physics Simulation**
-- **Organic Surface Deformation**: 3D sphere with 128x128 geometry detail for smooth liquid metal effects
-- **Dynamic Blob Centers**: Audio-driven spike generation with varying thickness and intensity
-- **Floating Particle System**: Up to 25 independent floating blobs with unique behaviors
-- **Liquid Movement**: Flowing surface effects with realistic ferrofluid-inspired physics
+### **Particle Systems & Effects**
 
-###  **Visual Effects & Lighting**
-- **PBR Materials**: Physically-based rendering with metallic, reflective ferrofluid appearance
-- **Dynamic Lighting**: Three frequency-reactive colored lights (Bass/Red, Mid/Green, High/Blue)
-- **Customizable Colors**: Full color control for grid, lights, environment, and background
-- **Shadow Rendering**: Realistic shadow casting with transparency controls
-- **Environment Sphere**: Customizable background environment with size and visibility controls
+#### **Shockwave System**
+- **Audio-Triggered Shockwaves**: Dynamic shockwave generation based on beat detection and audio peaks
+- **Configurable Parameters**: Adjustable shockwave count (1-10), speed, size, and opacity settings
+- **Visual Impact**: Expanding ring effects that ripple through the 3D environment
+- **Performance Optimized**: Efficient lifecycle management with automatic cleanup
 
-###  **Interactive Controls**
-- **Mouse Camera Control**: 
-  - Left-click + drag: Orbit camera around the scene
-  - Right-click + drag: Pan camera view
-  - Mouse wheel: Zoom in/out
-  - Double-click: Reset camera to optimal position
-- **Automatic Camera Movement**: Intelligent music-responsive camera positioning with manual override
-- **Grid Visualization**: Customizable 3D grid with opacity, size, and color controls
-- **Real-time Parameter Adjustment**: All visual parameters adjustable via elegant control panel
+#### **Orbital Blob System**
+- **Floating Particle Network**: Up to 50 independent orbital blobs with unique trajectories
+- **Audio-Responsive Behavior**: Blob size, movement speed, and opacity react to different frequency bands
+- **Organic Movement Patterns**: Smooth orbital paths with varying speeds and distances
+- **Dynamic Scaling**: Automatic blob count adjustment based on system performance
 
-###  **Advanced Audio Features**
-- **Multi-format Support**: MP3, WAV, OGG, and other common audio formats
-- **Frequency Analyzer**: Real-time frequency band visualization with horizontal and vertical displays
-- **Track Information**: Display track name, BPM, time, and dominant frequency
-- **Sensitivity Controls**: Adjustable audio sensitivity and smoothing parameters
+#### **Grid Cell Matrix**
+- **3D Cellular Grid**: Dynamic grid system with customizable density and appearance
+- **Interactive Cells**: Individual grid cells respond to audio with size and color variations
+- **Configurable Layout**: Adjustable grid dimensions, spacing, and visual properties
+- **Performance Adaptive**: Intelligent LOD system for optimal frame rates
 
-###  **Settings & Presets System**
-- **Built-in Presets**: 5 professionally crafted presets (Default, Dark Mode, Neon Vibes, Minimal, High Contrast)
-- **Dynamic Preset Discovery**: Automatically detects user-created custom presets
-- **Import/Export**: Save and share custom configurations as JSON files
-- **Persistent Settings**: Settings automatically preserved between sessions
+### **Ferrofluid Physics Simulation**
+- **High-Detail Geometry**: 3D sphere with 128x128 vertex resolution for ultra-smooth liquid metal effects
+- **Multi-Layer Deformation**: Primary surface with secondary detail layers for complex organic shapes
+- **Dynamic Blob Centers**: Audio-driven spike generation with varying thickness, height, and distribution
+- **Realistic Surface Flow**: Liquid movement simulation with momentum and inertia effects
 
-###  **Debug & Development Features**
-- **Advanced Debug Console**: Real-time performance monitoring with animated text decoding effects
-- **Status Messages**: System status and audio information display
-- **Performance Optimization**: Efficient rendering with frame-rate independent animations
-- **Developer Tools**: Keyboard shortcuts (Ctrl+D: Toggle debug animation, Ctrl+R: Clear console)
+### **Advanced Visual Effects & Post-Processing**
 
-##  **Technologies Used**
+#### **Filmic Noise Overlay**
+- **Cinematic Film Grain**: Dynamic TV-like noise pattern with SVG-based texture generation
+- **Animated Grain Movement**: Multiple moving layers for realistic film aesthetic
+- **Configurable Intensity**: Adjustable opacity and blend modes for subtle or dramatic effects
+- **Performance Optimized**: GPU-accelerated CSS filters with minimal performance impact
+
+#### **Lighting & Materials**
+- **PBR Material System**: Physically-based rendering with metallic ferrofluid appearance and environment reflections
+- **Multi-Source Dynamic Lighting**: Three frequency-reactive colored lights with customizable intensities
+- **Advanced Shadow System**: Real-time shadow mapping with transparency controls and color customization
+- **Environment Mapping**: Spherical environment with size, opacity, and color controls
+
+### **Color Harmonization System**
+- **Intelligent Color Palette Generation**: Advanced color theory algorithms for harmonious palettes
+- **Automatic Color Relationships**: Complementary, analogous, and triadic color scheme generation
+- **Real-time Color Adaptation**: Dynamic color adjustments based on audio characteristics
+- **User Color Randomization**: One-click randomization with harmonized color relationships
+
+### **Enhanced Interactive Controls**
+- **Advanced Mouse Camera Control**: 
+  - Left-click + drag: Smooth orbital camera movement around the scene
+  - Right-click + drag: Precise camera panning with momentum
+  - Mouse wheel: Smooth zoom with configurable sensitivity
+  - Double-click: Intelligent camera reset to optimal viewing position
+- **Automatic Camera Intelligence**: Music-responsive camera positioning with manual override capabilities
+- **Touch-Optimized Mobile Controls**: Full touch support for tablets and mobile devices
+- **Keyboard Shortcuts**: Debug toggle (Ctrl+D), console clear (Ctrl+R), UI panel toggle (Tab/Escape)
+
+### **Professional User Interface**
+- **Sliding Control Panel**: Elegant right-side panel with smooth animations and backdrop blur effects
+- **Responsive Design**: Fully responsive layout optimized for desktop, tablet, and mobile devices
+- **Hover-Triggered Access**: Intuitive hover area for panel access with visual feedback
+- **Touch-Friendly Controls**: Mobile-optimized buttons and touch targets for all devices
+- **Real-time Parameter Feedback**: Live value updates and visual feedback for all controls
+
+### **Comprehensive Performance Monitoring**
+- **Real-time Performance Metrics**: Live FPS monitoring, frame time analysis, and performance quality indicators
+- **System Resource Tracking**: Memory usage, GPU utilization, and render call optimization
+- **Performance Adaptive Features**: Automatic quality adjustment based on system capabilities
+- **Debug Console System**: Advanced debug information with animated text decoding effects
+- **Optimization Indicators**: Visual indicators for performance bottlenecks and optimization suggestions
+
+### **Advanced Audio Features**
+- **Multi-format Audio Support**: MP3, WAV, OGG, AAC, and other common audio formats with fallback support
+- **Multi-Channel Frequency Analysis**: Real-time frequency spectrum analysis with both horizontal and vertical visualizers
+- **Advanced Beat Detection**: Peak analysis algorithms with threshold adaptation and tempo tracking
+- **Comprehensive Track Information**: Real-time display of track name, BPM, elapsed time, remaining time, and dominant frequency analysis
+- **Audio Sensitivity Controls**: Fine-tuned sensitivity and smoothing parameters with real-time adjustment
+- **Audio Visualization Components**: Dedicated frequency analyzer displays with customizable appearance
+
+### **Comprehensive Settings & Preset System**
+- **Extensive Preset Library**: 20+ professionally crafted presets including Default, Dark Mode, Neon Vibes, Minimal, High Contrast, Deep Space, Soviet Red, Purple Haze, and more
+- **Dynamic Preset Discovery**: Automatic detection and loading of user-created custom presets
+- **Advanced Import/Export**: Complete settings serialization with JSON format support
+- **Preset Management Tools**: Refresh functionality, preset validation, and error handling
+- **Persistent Configuration**: Automatic settings preservation across browser sessions with localStorage integration
+
+### **Developer & Debug Features**
+- **Comprehensive Debug Console**: Multi-layered debug information with animated text effects and real-time system monitoring
+- **Performance Profiling**: Detailed frame timing, render statistics, and bottleneck identification
+- **Status Message System**: Real-time system status, audio information, and error reporting
+- **Development Tools**: Keyboard shortcuts, console management, and debugging aids
+- **Error Handling**: Robust error management with graceful degradation and user feedback
+
+## **Technologies Used**
 
 ### **Core Technologies**
-- **[Three.js](https://threejs.org/)** - 3D graphics rendering and scene management
-- **[Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)** - Real-time audio analysis and processing
-- **JavaScript ES6+** - Modern JavaScript with classes, modules, and async/await
-- **HTML5 Canvas** - Hardware-accelerated WebGL rendering
+- **[Three.js](https://threejs.org/)** - Advanced 3D graphics rendering, scene management, and particle systems
+- **[Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)** - Real-time audio analysis, processing, and frequency domain manipulation
+- **JavaScript ES6+** - Modern JavaScript with classes, modules, async/await, and advanced language features
+- **HTML5 Canvas & WebGL** - Hardware-accelerated 3D rendering with GPU optimization
 
 ### **3D Graphics & Rendering**
-- **WebGL** - Low-level 3D graphics API for optimal performance
-- **PBR Materials** - Physically-based rendering for realistic material appearance
-- **Shadow Mapping** - Dynamic shadow rendering with transparency controls
-- **Geometry Manipulation** - Real-time vertex deformation for organic effects
+- **WebGL 2.0** - Low-level graphics API for maximum performance and visual fidelity
+- **Advanced PBR Materials** - Physically-based rendering with metallic workflows and environment mapping
+- **Multi-Layer Shadow Systems** - Dynamic shadow mapping with transparency, color controls, and optimization
+- **Real-time Geometry Manipulation** - Vertex-level deformation for organic liquid effects
+- **Particle System Architecture** - Efficient particle lifecycle management with LOD optimization
 
-### **Audio Processing**
-- **FFT Analysis** - Fast Fourier Transform for frequency domain analysis
-- **AudioContext** - Low-latency audio processing pipeline
-- **Beat Detection** - Peak analysis algorithms for BPM calculation
-- **Frequency Filtering** - Band-pass filtering for precise frequency separation
+### **Audio Processing & Analysis**
+- **FFT Analysis Engine** - Fast Fourier Transform processing with 512-2048 frequency bins
+- **Multi-threaded AudioContext** - Low-latency audio processing pipeline with Web Workers support
+- **Advanced Beat Detection** - Peak analysis algorithms with adaptive threshold and tempo tracking
+- **Multi-band Frequency Filtering** - Precise frequency separation with customizable band ranges
+- **Real-time Spectrum Analysis** - Continuous frequency domain analysis with smoothing algorithms
 
-### **User Interface**
-- **CSS3** - Modern styling with backdrop-filter blur effects and transitions
-- **CSS Grid & Flexbox** - Responsive layout system
-- **Google Fonts** - JetBrains Mono for consistent typography
-- **Custom Controls** - Styled range sliders, color pickers, and file inputs
+### **User Interface & Experience**
+- **Modern CSS3** - Advanced styling with backdrop-filter blur, CSS Grid, Flexbox, and custom properties
+- **Responsive Design System** - Mobile-first approach with touch optimization and adaptive layouts
+- **Custom Control Components** - Styled range sliders, color pickers, file inputs, and interactive elements
+- **Animation Framework** - Smooth transitions and micro-interactions with hardware acceleration
+- **Touch & Gesture Support** - Full mobile compatibility with touch events and gesture recognition
 
-### **Data Management**
-- **JSON** - Settings serialization and preset management
-- **Local Storage** - Persistent configuration storage
-- **File API** - Audio file loading and settings import/export
+### **Performance & Optimization**
+- **Frame-rate Independent Animation** - Delta-time based animations for consistent performance across devices
+- **LOD (Level of Detail) Systems** - Automatic quality adjustment based on system capabilities
+- **Memory Management** - Efficient object pooling, garbage collection optimization, and resource cleanup
+- **GPU Acceleration** - Hardware-accelerated computations and rendering pipeline optimization
+- **Adaptive Quality Control** - Dynamic performance monitoring with automatic quality adjustment
+
+### **Data Management & Storage**
+- **JSON Configuration System** - Comprehensive settings serialization with validation and error handling
+- **LocalStorage Integration** - Persistent user preferences and session data management
+- **File API Implementation** - Audio file loading, settings import/export, and drag-drop support
+- **Dynamic Module Loading** - Efficient code splitting and lazy loading for optimal performance
 
 ##  **Getting Started**
 
@@ -103,119 +165,158 @@ cd artef4kt
 ```
 
 ### **Requirements**
-- Modern web browser with WebGL support (Chrome 91+, Firefox 90+, Safari 14+, Edge 91+)
-- JavaScript enabled
-- Audio playback capabilities
-- Minimum 2GB RAM recommended for optimal performance
+- Modern web browser with WebGL 2.0 support (Chrome 91+, Firefox 90+, Safari 14+, Edge 91+)
+- JavaScript enabled with modern ES6+ support
+- Audio playback capabilities with Web Audio API support
+- Minimum 4GB RAM recommended for optimal performance with all effects enabled
+- Dedicated graphics card recommended for maximum visual quality
 
 ### **Quick Start**
 1. Open `index.html` in your web browser
-2. Click the "File" button to load an audio file
+2. Click the "File" button to load an audio file or use the included sample tracks
 3. Press "PLAY" to start the visualization
-4. Hover over the right edge to access the control panel
-5. Experiment with different settings and presets
+4. Hover over the right edge of the screen to access the comprehensive control panel
+5. Experiment with different settings, presets, and effects
+6. Use mouse controls to navigate the 3D environment
+7. Try different preset configurations for varied visual experiences
 
-##  **Usage Guide**
+## **Usage Guide**
 
 ### **Loading Audio**
 - Click the "File" button in the control panel
-- Select any audio file (MP3, WAV, OGG supported)
-- Use the play/stop controls to manage playback
+- Select any supported audio file (MP3, WAV, OGG, AAC)
+- Alternatively, drag and drop audio files directly onto the visualizer
+- Use the included sample tracks in the `mp3/` directory for immediate testing
 
 ### **Camera Controls**
-- **Orbit**: Left-click and drag to rotate around the ferrofluid
-- **Pan**: Right-click and drag to move the view
-- **Zoom**: Use mouse wheel to zoom in/out
-- **Reset**: Double-click to return to optimal viewing position
+- **Orbit**: Left-click and drag to rotate around the ferrofluid with smooth momentum
+- **Pan**: Right-click and drag to move the camera view with precision control
+- **Zoom**: Use mouse wheel to zoom in/out with configurable sensitivity
+- **Reset**: Double-click anywhere to return to the optimal viewing position
+- **Touch Controls**: Full touch support for mobile devices with gesture recognition
 
-### **Customization**
-- **Sensitivity**: Adjust how responsive the visualization is to audio
-- **Smoothing**: Control the smoothness of audio analysis
-- **Colors**: Customize grid, lighting, and environment colors
-- **Grid**: Toggle visibility and adjust size/opacity
-- **Environment**: Control background sphere appearance
+### **Advanced Customization**
+- **Audio Sensitivity**: Fine-tune how responsive the visualization is to different audio characteristics
+- **Smoothing Controls**: Adjust the smoothness and responsiveness of audio analysis
+- **Color Harmonization**: Use the color harmonizer for automatically balanced color schemes
+- **Particle Systems**: Configure shockwave count, orbital blob density, and grid cell parameters
+- **Visual Effects**: Control filmic noise intensity, shadow properties, and lighting characteristics
+- **Performance Tuning**: Adjust quality settings based on your system capabilities
 
-### **Presets**
-- **Load**: Select a preset from the dropdown and click "Load"
-- **Export**: Save current settings with "Export"
-- **Import**: Load settings from a JSON file with "Import"
-- **Refresh**: Update preset list to include new custom presets
+### **Preset Management**
+- **Load Presets**: Select from 20+ built-in presets or custom user presets
+- **Create Custom Presets**: Adjust settings to preference and export as JSON files
+- **Import Settings**: Load settings from JSON files shared by other users
+- **Refresh Presets**: Update the preset list to include newly added custom presets
+- **Preset Categories**: Choose from cinematic, minimal, high-energy, or artistic preset categories
 
-##  **Project Structure**
+## **Project Structure**
 
 ```
 artef4kt/
-├── index.html              # Main HTML file
-├── script.js               # Core visualizer logic (~3500 lines)
-├── style.css               # Styling and layout
-├── update-settings-index.ps1 # Preset management script
-├── images/                 # Logo and icon assets
-│   ├── br.svg
-│   └── pixel-crusher.svg
-├── mp3/                    # Sample audio files
-│   └── bogdan-rosu-yfflon.mp3
-└── settings/               # Preset configurations
-    ├── index.json          # Preset discovery index
-    ├── default.json        # Default preset
-    ├── dark-mode.json      # Dark theme preset
-    ├── neon-vibes.json     # High energy preset
-    ├── minimal.json        # Clean minimal preset
-    ├── high-contrast.json  # Bold contrast preset
-    └── README.md           # Settings system documentation
+├── index.html                      # Main HTML file with optimized structure
+├── script.js                       # Core visualizer logic (5600+ lines)
+├── style.css                       # Advanced styling and responsive design
+├── three.min.js                    # Three.js library
+├── color-harmonizer.js             # Color theory and palette generation
+├── orbital-blobs.js                # Floating particle system management
+├── shockwave-system.js             # Dynamic shockwave effects
+├── grid-cells.js                   # 3D grid cell matrix system
+├── performance-monitor.js          # Real-time performance tracking
+├── update-mp3-index.ps1            # Audio file index generator
+├── update-settings-index.ps1       # Preset management script
+├── images/                         # Logo, icon, and graphic assets
+│   ├── br.svg                      # Artist logo (clickable)
+│   ├── pixel-crusher.svg           # Label logo (clickable)
+│   ├── favicon.svg                 # Browser favicon
+│   └── shareimage.png              # Social media preview image
+├── mp3/                            # Sample audio tracks
+│   ├── index.json                  # Audio track metadata
+│   ├── bogdan-rosu-yfflon.mp3      # Featured electronic track
+│   ├── bogdan-rosu-eargasm.mp3     # High-energy electronic
+│   ├── chantal-lemon.mp3           # Ambient electronic
+│   └── [additional sample tracks]
+└── settings/                       # Comprehensive preset library
+    ├── index.json                  # Preset discovery index
+    ├── default.json                # Default configuration
+    ├── dark-mode.json              # Dark theme preset
+    ├── neon-vibes.json             # High-energy neon preset
+    ├── minimal.json                # Clean minimal preset
+    ├── high-contrast.json          # Bold contrast preset
+    ├── deep-space-shockwaves.json  # Cinematic space theme
+    ├── soviet-red.json             # Retro communist aesthetic
+    ├── purple-haze.json            # Psychedelic purple theme
+    ├── blue-saphir.json            # Elegant blue theme
+    ├── wasp.json                   # High-energy yellow theme
+    └── [20+ additional presets]
 ```
 
-##  **Customization**
+## **Advanced Customization**
 
 ### **Creating Custom Presets**
-1. Adjust all settings to your preference in the control panel
-2. Click "Export" to save as a JSON file
-3. Place the file in the `settings/` directory
-4. Run `update-settings-index.ps1` to update the preset index
-5. Click the refresh button (⟲) in the preset selector
+1. Adjust all visual and audio parameters to your desired configuration
+2. Fine-tune particle systems, colors, and effects to your preference
+3. Click "Export" to save your configuration as a JSON file
+4. Place the exported file in the `settings/` directory
+5. Run `update-settings-index.ps1` to regenerate the preset index
+6. Click the refresh button (⟲) in the preset selector to load your new preset
 
-### **Color Schemes**
-The visualizer supports full color customization:
-- **Grid Color**: Affects grid, UI accents, and track information
-- **Bass Light**: Color for low-frequency reactive lighting
-- **Mid Light**: Color for mid-frequency reactive lighting  
-- **High Light**: Color for high-frequency reactive lighting
-- **Background**: Scene background color
-- **Environment**: Background sphere color and opacity
+### **Color Scheme Development**
+The visualizer supports comprehensive color customization with intelligent harmonization:
+- **Grid Color**: Affects grid appearance, UI accents, track information, and visual consistency
+- **Bass Light**: Color for low-frequency reactive lighting (20-250Hz response)
+- **Mid Light**: Color for mid-frequency reactive lighting (250-4000Hz response)  
+- **High Light**: Color for high-frequency reactive lighting (4000-20000Hz response)
+- **Background Color**: Primary scene background with gradient support
+- **Environment Sphere**: Background sphere color, opacity, and size controls
+- **Color Harmonizer**: Automatic generation of complementary, analogous, and triadic color relationships
 
-### **Advanced Settings**
-- **Shadow Transparency**: Control shadow darkness (0-1)
-- **Shadow Color**: Independent shadow coloring
-- **Link Shadow Color**: Sync shadow color with grid color
-- **Environment Size**: Background sphere scale
-- **Debug Encoding**: Toggle animated debug console effects
+### **Particle System Configuration**
+- **Shockwave System**: Configure count (1-10), expansion speed, size scaling, and visual opacity
+- **Orbital Blobs**: Adjust maximum count (10-50), size range, orbital speed, and audio responsiveness
+- **Grid Cells**: Customize grid density, cell size, spacing, and color responsiveness
+- **Ferrofluid Surface**: Control deformation intensity, spike count, and organic movement characteristics
 
-##  **Technical Details**
+### **Performance Optimization Settings**
+- **Quality Presets**: Choose from Ultra, High, Medium, Low, or Custom quality configurations
+- **Particle Limits**: Set maximum particle counts based on system capabilities
+- **Shadow Quality**: Adjust shadow resolution and transparency for performance balance
+- **LOD System**: Configure distance-based level of detail for complex particle systems
+- **Frame Rate Targets**: Set target FPS with automatic quality adjustment
 
-### **Performance Optimization**
-- Frame-rate independent animations using deltaTime
-- Efficient vertex manipulation with typed arrays
-- LOD system for floating blobs based on size
-- Optimized shadow rendering with selective updates
-- Memory management for floating particle lifecycle
+## **Technical Architecture**
 
-### **Audio Processing Pipeline**
-1. **Input**: Audio file loaded via HTML5 Audio API
-2. **Analysis**: Real-time FFT analysis with 512 frequency bins
-3. **Filtering**: Frequency bands separated for bass, mid, high
-4. **Processing**: Beat detection and BPM calculation
-5. **Output**: Visual parameter modulation based on audio features
+### **Performance Optimization & Scalability**
+- **Frame-rate Independent Animation System**: Delta-time based animations ensuring consistent visual behavior across all device capabilities
+- **Efficient Vertex Manipulation**: Optimized typed array operations for real-time geometry deformation
+- **Multi-tier LOD System**: Automatic level-of-detail adjustment for particles, shadows, and effects based on performance metrics
+- **GPU-Accelerated Rendering**: WebGL optimization with efficient shader compilation and uniform management
+- **Memory Management**: Comprehensive object pooling, garbage collection optimization, and resource lifecycle management
+- **Adaptive Quality Control**: Real-time performance monitoring with automatic quality adjustment and user feedback
+
+### **Audio Processing Architecture**
+1. **Audio Input Layer**: Multi-format audio file support with HTML5 Audio API and MediaElement integration
+2. **Analysis Pipeline**: Real-time FFT analysis with configurable frequency bins (512-2048) and window functions
+3. **Frequency Domain Processing**: Advanced frequency band separation with customizable crossover points and slopes
+4. **Beat Detection Engine**: Multi-algorithm peak detection with adaptive threshold and tempo tracking capabilities
+5. **Data Smoothing**: Configurable smoothing algorithms to reduce audio noise and enhance visual stability
+6. **Visual Parameter Mapping**: Sophisticated mapping from audio features to visual parameters with customizable response curves
 
 ### **3D Rendering Pipeline**
-1. **Geometry**: High-detail sphere mesh (128x128 vertices)
-2. **Deformation**: Vertex positions modified based on audio analysis
-3. **Materials**: PBR shading with metallic ferrofluid appearance
-4. **Lighting**: Dynamic colored lights responding to frequency bands
-5. **Post-processing**: Shadow mapping and environment reflections
+1. **Scene Graph Management**: Hierarchical scene organization with efficient culling and LOD management
+2. **Geometry Processing**: High-detail mesh generation (128x128 vertices) with real-time vertex deformation
+3. **Material System**: Advanced PBR shading with metallic workflows, roughness mapping, and environment reflections
+4. **Lighting Architecture**: Multi-source dynamic lighting with frequency-reactive color and intensity modulation
+5. **Shadow Mapping**: Real-time shadow generation with customizable quality, transparency, and color controls
+6. **Post-Processing Effects**: Filmic noise overlay, color grading, and visual enhancement filters
 
-### **Development Setup**
-- No build process required - pure vanilla JavaScript
-- Use a local server for development to avoid CORS issues with audio files
-- Test across multiple browsers for compatibility
+### **Modular System Architecture**
+- **Core Visualizer Engine**: Main application logic with scene management and audio integration
+- **Particle System Modules**: Independent systems for shockwaves, orbital blobs, and grid cells
+- **Color Management**: Dedicated color harmonization and palette generation system
+- **Performance Monitor**: Real-time system monitoring with optimization recommendations
+- **Settings Management**: Comprehensive configuration system with validation and error handling
+- **UI Controller**: Responsive interface management with touch optimization and accessibility features
 
 ##  **License**
 

@@ -1,111 +1,111 @@
 {
+  "lastUpdated": "2025-06-07T18:51:40.850Z",
+  "version": "1.0",
   "presets": [
     {
+      "description": "Preset: Arangiatta Lilla",
       "name": "Arangiatta Lilla",
-      "file": "arangiatta-lilla.json",
-      "description": "Preset: Arangiatta Lilla"
+      "file": "arangiatta-lilla.json"
     },
     {
+      "description": "Preset: Blue Balast",
       "name": "Blue Balast",
-      "file": "blue-balast.json",
-      "description": "Preset: Blue Balast"
+      "file": "blue-balast.json"
     },
     {
+      "description": "Preset: Blue Saphir",
       "name": "Blue Saphir",
-      "file": "blue-saphir.json",
-      "description": "Preset: Blue Saphir"
+      "file": "blue-saphir.json"
     },
     {
+      "description": "Preset: Bricks",
       "name": "Bricks",
-      "file": "bricks.json",
-      "description": "Preset: Bricks"
+      "file": "bricks.json"
     },
     {
+      "description": "Preset: Dark Mode",
       "name": "Dark Mode",
-      "file": "dark-mode.json",
-      "description": "Preset: Dark Mode"
+      "file": "dark-mode.json"
     },
     {
+      "description": "Preset: Deep Space Shockwaves",
       "name": "Deep Space Shockwaves",
-      "file": "deep-space-shockwaves.json",
-      "description": "Preset: Deep Space Shockwaves"
+      "file": "deep-space-shockwaves.json"
     },
     {
+      "description": "Preset: Default",
       "name": "Default",
-      "file": "default.json",
-      "description": "Preset: Default"
+      "file": "default.json"
     },
     {
+      "description": "Preset: Green Tinge",
       "name": "Green Tinge",
-      "file": "green-tinge.json",
-      "description": "Preset: Green Tinge"
+      "file": "green-tinge.json"
     },
     {
+      "description": "Preset: High Contrast",
       "name": "High Contrast",
-      "file": "high-contrast.json",
-      "description": "Preset: High Contrast"
+      "file": "high-contrast.json"
     },
     {
+      "description": "Preset: Lime Haze",
       "name": "Lime Haze",
-      "file": "lime-haze.json",
-      "description": "Preset: Lime Haze"
+      "file": "lime-haze.json"
     },
     {
+      "description": "Preset: Minimal",
       "name": "Minimal",
-      "file": "minimal.json",
-      "description": "Preset: Minimal"
+      "file": "minimal.json"
     },
     {
+      "description": "Preset: Neon Vibes",
       "name": "Neon Vibes",
-      "file": "neon-vibes.json",
-      "description": "Preset: Neon Vibes"
+      "file": "neon-vibes.json"
     },
     {
+      "description": "Preset: Old And Retro Green",
       "name": "Old And Retro Green",
-      "file": "old-and-retro-green.json",
-      "description": "Preset: Old And Retro Green"
+      "file": "old-and-retro-green.json"
     },
     {
+      "description": "Preset: Purple Haze",
       "name": "Purple Haze",
-      "file": "purple-haze.json",
-      "description": "Preset: Purple Haze"
+      "file": "purple-haze.json"
     },
     {
+      "description": "Preset: Purple Shockwaves",
       "name": "Purple Shockwaves",
-      "file": "purple-shockwaves.json",
-      "description": "Preset: Purple Shockwaves"
+      "file": "purple-shockwaves.json"
     },
     {
+      "description": "Preset: Red Tinge",
       "name": "Red Tinge",
-      "file": "red-tinge.json",
-      "description": "Preset: Red Tinge"
+      "file": "red-tinge.json"
     },
     {
+      "description": "Preset: Sketchy",
       "name": "Sketchy",
-      "file": "sketchy.json",
-      "description": "Preset: Sketchy"
+      "file": "sketchy.json"
     },
     {
+      "description": "Preset: Soviet Red",
       "name": "Soviet Red",
-      "file": "soviet-red.json",
-      "description": "Preset: Soviet Red"
+      "file": "soviet-red.json"
     },
     {
+      "description": "Preset: Teals",
       "name": "Teals",
-      "file": "teals.json",
-      "description": "Preset: Teals"
+      "file": "teals.json"
     },
     {
+      "description": "Preset: Wasp",
       "name": "Wasp",
-      "file": "wasp.json",
-      "description": "Preset: Wasp"
+      "file": "wasp.json"
     },
     {
+      "description": "Preset: Yellow Red",
       "name": "Yellow Red",
-      "file": "yellow-red.json",
-      "description": "Preset: Yellow Red"
+      "file": "yellow-red.json"
     }
-  ],
-  "lastUpdated": "2025-06-06T23:15:16.015Z",
-  "version": "1.0"
+  ]
 }
