@@ -19,6 +19,7 @@
   "envSphereSize": 75,
   "envVisibility": 1,
   "debugEncodingEnabled": true,
+  "gridCellsActivityEnabled": false,
   "settingsVersion": "1.0",
   "exportDate": "2025-06-01T23:52:35.516Z"
 }

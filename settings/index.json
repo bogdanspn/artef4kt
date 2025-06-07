@@ -1,56 +1,111 @@
 {
-  "version": "1.0",
-  "lastUpdated": "2025-06-03T00:28:13.034Z",
   "presets": [
     {
-      "description": "Preset: Dark Mode",
+      "name": "Arangiatta Lilla",
+      "file": "arangiatta-lilla.json",
+      "description": "Preset: Arangiatta Lilla"
+    },
+    {
+      "name": "Blue Balast",
+      "file": "blue-balast.json",
+      "description": "Preset: Blue Balast"
+    },
+    {
+      "name": "Blue Saphir",
+      "file": "blue-saphir.json",
+      "description": "Preset: Blue Saphir"
+    },
+    {
+      "name": "Bricks",
+      "file": "bricks.json",
+      "description": "Preset: Bricks"
+    },
+    {
+      "name": "Dark Mode",
       "file": "dark-mode.json",
-      "name": "Dark Mode"
+      "description": "Preset: Dark Mode"
     },
     {
-      "description": "Preset: Default",
+      "name": "Deep Space Shockwaves",
+      "file": "deep-space-shockwaves.json",
+      "description": "Preset: Deep Space Shockwaves"
+    },
+    {
+      "name": "Default",
       "file": "default.json",
-      "name": "Default"
+      "description": "Preset: Default"
     },
     {
-      "description": "Preset: Green Tinge",
+      "name": "Green Tinge",
       "file": "green-tinge.json",
-      "name": "Green Tinge"
+      "description": "Preset: Green Tinge"
     },
     {
-      "description": "Preset: High Contrast",
+      "name": "High Contrast",
       "file": "high-contrast.json",
-      "name": "High Contrast"
+      "description": "Preset: High Contrast"
     },
     {
-      "description": "Preset: Minimal",
+      "name": "Lime Haze",
+      "file": "lime-haze.json",
+      "description": "Preset: Lime Haze"
+    },
+    {
+      "name": "Minimal",
       "file": "minimal.json",
-      "name": "Minimal"
+      "description": "Preset: Minimal"
     },
     {
-      "description": "Preset: Neon Vibes",
+      "name": "Neon Vibes",
       "file": "neon-vibes.json",
-      "name": "Neon Vibes"
+      "description": "Preset: Neon Vibes"
     },
     {
-      "description": "Preset: Purple Haze",
+      "name": "Old And Retro Green",
+      "file": "old-and-retro-green.json",
+      "description": "Preset: Old And Retro Green"
+    },
+    {
+      "name": "Purple Haze",
       "file": "purple-haze.json",
-      "name": "Purple Haze"
+      "description": "Preset: Purple Haze"
     },
     {
-      "description": "Preset: Red Tinge",
+      "name": "Purple Shockwaves",
+      "file": "purple-shockwaves.json",
+      "description": "Preset: Purple Shockwaves"
+    },
+    {
+      "name": "Red Tinge",
       "file": "red-tinge.json",
-      "name": "Red Tinge"
+      "description": "Preset: Red Tinge"
     },
     {
-      "description": "Preset: Soviet Red",
+      "name": "Sketchy",
+      "file": "sketchy.json",
+      "description": "Preset: Sketchy"
+    },
+    {
+      "name": "Soviet Red",
       "file": "soviet-red.json",
-      "name": "Soviet Red"
+      "description": "Preset: Soviet Red"
     },
     {
-      "description": "Preset: Yellow Red",
+      "name": "Teals",
+      "file": "teals.json",
+      "description": "Preset: Teals"
+    },
+    {
+      "name": "Wasp",
+      "file": "wasp.json",
+      "description": "Preset: Wasp"
+    },
+    {
+      "name": "Yellow Red",
       "file": "yellow-red.json",
-      "name": "Yellow Red"
+      "description": "Preset: Yellow Red"
     }
-  ]
+  ],
+  "lastUpdated": "2025-06-06T23:15:16.015Z",
+  "version": "1.0"
 }

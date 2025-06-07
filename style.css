@@ -30,7 +30,7 @@ body {
 #ui {
     position: fixed;
     top: 0;
-    right: -320px; /* Hide off screen by default */
+    right: -340px; /* Hide off screen by default */
     left: auto;
     height: 100vh; /* Fill full height */    z-index: 2000; /* Highest z-index to be above everything */
     padding: 20px;
@@ -39,11 +39,42 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 0; /* Remove border radius for full height */
     border-right: none; /* Remove right border since it's at screen edge */
-    min-width: 320px;
+    min-width: 340px;
     max-width: 340px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
     transition: right 0.3s cubic-bezier(.4,0,.2,1);
     pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Controls container with scroll functionality */
+#controls {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 8px; /* Add padding to account for scrollbar */
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1); /* Firefox */
+}
+
+/* Custom scrollbar for controls container */
+#controls::-webkit-scrollbar {
+    width: 6px;
+}
+
+#controls::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+#controls::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+#controls::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
 }
 
 /* Hover area to trigger UI panel */
@@ -68,9 +99,8 @@ body {
     position: absolute;
     left: -22px;
     top: 60px; /* Position near the top instead of center */    width: 22px;
-    height: 60px;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(10px);
+    height: 60px;    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(6px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-right: none;
     border-radius: 8px 0 0 8px;
@@ -88,9 +118,10 @@ body {
 }
 
 #ui:hover::before, #ui:focus-within::before, #ui-hover-area:hover ~ #ui::before {
-    background: rgba(20, 20, 20, 0.8);
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(6px);
     color: rgba(255,255,255,0.9);
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Close button for mobile - only visible when UI is open */
@@ -178,6 +209,10 @@ body {
 #header {
     margin-bottom: 20px;
     text-align: left;
+    flex-shrink: 0; /* Prevent header from shrinking */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 #header h1 {
@@ -187,6 +222,22 @@ body {
     color: #fff;
     margin-bottom: 4px;
     text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+    flex: 1;
+}
+
+#header-logo {
+    width: 32px;
+    height: 32px;
+    opacity: 0.8;
+    filter: invert(1) brightness(1.2);
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+#header-logo:hover {
+    opacity: 1;
+    filter: invert(1) brightness(1.4);
+    transform: scale(1.05);
 }
 
 #header p {
@@ -305,6 +356,35 @@ body {
     width: 100%;
     height: 25px;
     max-width: 60px;
+}
+
+/* Randomize colors button styling */
+.color-control button#randomize-colors {
+    width: 100%;
+    height: 25px;
+    max-width: 60px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.color-control button#randomize-colors:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: scale(1.05);
+}
+
+.color-control button#randomize-colors:active {
+    transform: scale(0.95);
+    background: rgba(255, 255, 255, 0.3);
 }
 
 /* File input styling */
@@ -631,7 +711,10 @@ input[type="color"]::-webkit-color-swatch-wrapper {
 
 #track-bpm,
 #track-time-display,
-#track-freq-display {
+#track-freq-display,
+#performance-fps,
+#performance-quality,
+#performance-objects {
     font-size: 24px;
     font-weight: 600;
     color: #bbbbbb;
@@ -650,6 +733,8 @@ input[type="color"]::-webkit-color-swatch-wrapper {
     text-align: right;
     line-height: 1.3;
 }
+
+
 
 /* Vertical Frequency Analyzer Clone */
 #frequency-analyzer-clone {
@@ -822,6 +907,12 @@ input[type="color"]::-webkit-color-swatch-wrapper {
         box-shadow: none;
         background: rgba(0, 0, 0, 0.9); /* More opaque on mobile to cover debug console */
         backdrop-filter: blur(15px); /* Stronger blur for better readability */
+        display: flex;
+        flex-direction: column;
+    }
+    
+    #controls {
+        padding-right: 4px; /* Smaller padding on mobile */
     }
     
     #ui:hover, #ui:focus-within, #ui-hover-area:hover ~ #ui {
@@ -844,25 +935,23 @@ input[type="color"]::-webkit-color-swatch-wrapper {
     #ui-hover-area {
         width: 50px; /* Match smaller tab width */
     }
-    
-    #header h1 {
+      #header h1 {
         font-size: 18px;
+    }
+    
+    #header-logo {
+        width: 28px;
+        height: 28px;
     }
     
     button {
         padding: 8px 12px;
         font-size: 9px;
     }
-    
-    /* Ensure debug panel and status message don't interfere */
-    #debug-info-panel {
-        width: 60vw;
-        max-width: 60vw;
-        font-size: 10px;
-    }
-    
+      /* Hide debug panel and status message on tablet screens */
+    #debug-info-panel,
     #status-message {
-        font-size: 10px;
+        display: none;
     }
 }
 
@@ -872,6 +961,12 @@ input[type="color"]::-webkit-color-swatch-wrapper {
         padding: 10px;
         background: rgba(0, 0, 0, 0.95); /* Even more opaque on very small screens */
         backdrop-filter: blur(20px); /* Maximum blur for better readability */
+        display: flex;
+        flex-direction: column;
+    }
+    
+    #controls {
+        padding-right: 2px; /* Even smaller padding on very small screens */
     }
     
     /* Make tab even smaller for very small screens */
@@ -887,9 +982,13 @@ input[type="color"]::-webkit-color-swatch-wrapper {
     #ui-hover-area {
         width: 40px;
     }
-    
-    #header h1 {
+      #header h1 {
         font-size: 16px;
+    }
+    
+    #header-logo {
+        width: 24px;
+        height: 24px;
     }
     
     .control-group {
@@ -900,19 +999,10 @@ input[type="color"]::-webkit-color-swatch-wrapper {
         padding: 6px 10px;
         font-size: 8px;
     }
-    
-    #debug-info-panel {
-        width: 70vw;
-        max-width: 70vw;
-        font-size: 9px;
-        top: 20px;
-        left: 5px;
-    }
-    
+      /* Hide debug panel and status message on mobile */
+    #debug-info-panel,
     #status-message {
-        font-size: 9px;
-        top: 3px;
-        left: 5px;
+        display: none;
     }
 }
 

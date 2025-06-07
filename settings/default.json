@@ -8,6 +8,7 @@
   "gridSize": 15,
   "gridOpacity": 0.3,
   "gridColor": 12303291,
+  "gridCellsActivityEnabled": false,
   "shadowTransparency": 0.4,
   "shadowColor": 3355443,
   "linkShadowColor": false,
@@ -18,7 +19,17 @@
   "envSphereColor": 2697513,
   "envSphereSize": 100,
   "envVisibility": 1,
+  "uiOpacity": 1,
+  "mouseInteractionEnabled": true,
+  "mouseForceStrength": 0.5,
+  "mouseForceRadius": 0.2,
+  "mousePushForce": 2,
+  "shockwaveEnabled": false,
+  "shockwaveIntensity": 1,
+  "shockwaveLifetime": 3,
+  "shockwaveOpacity": 0.8,
   "debugEncodingEnabled": true,
+  "debugConsoleVisible": true,
   "settingsVersion": "1.0",
-  "exportDate": "2025-06-01T22:27:11.227Z"
+  "exportDate": "2025-06-07T00:44:17.316Z"
 }

@@ -3,10 +3,73 @@ class FerrofluidVisualizer {
         this.canvas = document.getElementById('visualizer');
         this.audioContext = null;
         this.audioSource = null;
-        this.analyser = null;        this.audioElement = null;
+        this.analyser = null;        
+        this.audioElement = null;
         this.isPlaying = false;
         this.isLooping = false;
         this.animationId = null;
+        
+        // Collision detection optimization system
+        this.collisionOptimization = {
+            // Spatial partitioning grid for efficient collision detection
+            spatialGrid: new Map(),
+            gridSize: 4.0, // Size of each grid cell
+            lastGridUpdate: 0,
+            gridUpdateInterval: 100, // Update grid every 100ms
+            
+            // Performance-based collision throttling
+            collisionFrameSkip: 0,
+            maxCollisionFrameSkip: 3, // Skip collision detection for up to 3 frames
+            currentSkipCount: 0,
+            
+            // Collision quality levels based on performance
+            qualityLevels: {
+                high: {
+                    blobToBlob: true,
+                    blobToFerrofluid: true,
+                    frameSkip: 0,
+                    maxDistance: Infinity,
+                    updateFrequency: 1.0
+                },
+                medium: {
+                    blobToBlob: true,
+                    blobToFerrofluid: true,
+                    frameSkip: 1,
+                    maxDistance: 15.0,
+                    updateFrequency: 0.7
+                },
+                low: {
+                    blobToBlob: false, // Disable blob-to-blob collisions for performance
+                    blobToFerrofluid: true,
+                    frameSkip: 2,
+                    maxDistance: 10.0,
+                    updateFrequency: 0.5
+                }
+            },
+            
+            // Current settings
+            currentQuality: 'high',
+            lastPerformanceCheck: 0,
+            performanceCheckInterval: 1000, // Check every second
+            
+            // Collision caching
+            collisionCache: new Map(),
+            cacheTimeout: 200, // Cache results for 200ms
+              // Statistics
+            stats: {
+                totalChecks: 0,
+                spatialOptimizations: 0,
+                cacheHits: 0,
+                frameSkips: 0,
+                broadPhaseCulled: 0,
+                temporalCoherenceSkips: 0,
+                cacheCleanups: 0
+            },
+            
+            // Cache management
+            lastCacheCleanup: 0
+        };
+
           // ASCII emoji collection for spawning logs
         this.spawnEmojis = [
             '(╯°□°）╯︵ ┻━┻',
@@ -62,34 +125,50 @@ class FerrofluidVisualizer {
         // Background color
         this.backgroundColor = 0x888888;        // Environment sphere color
         this.envSphereColor = 0x999999;
-        this.envSphereSize = 80;
+        this.envSphereSize = 115;        
         this.envVisibility = 1.0;
+          // Onscreen info opacity control for all UI elements
+        this.uiOpacity = 1.0; // Default to full opacity
+        
+        // Settings loading flag to prevent initializeUIValues from overwriting loaded settings
+        this.settingsLoaded = false;
         
         // Light colors for music reactivity
         this.lightBassColor = 0xff3366;  // Red
         this.lightMidColor = 0x33ff66;   // Green
         this.lightHighColor = 0x3366ff;  // Blue
-        
-        // Three.js setup
+          // Three.js setup
         this.scene = null;
         this.camera = null;
         this.renderer = null;
         this.ferrofluid = null;
+        
+        // Grid cell animation for music reactivity
+        this.gridCellAnimator = null;
         this.lightGroup = null;        // Floating blob system
         this.floatingBlobs = [];
-        this.maxFloatingBlobs = 30;
-        this.blobSpawnThreshold = 0.1; // Even lower threshold for easier spawning
+        this.maxFloatingBlobs = 18;
+        this.blobSpawnThreshold = 0.2; // Even lower threshold for easier spawning
         this.lastSpawnTime = 0;
-        this.spawnCooldown = 100; // Even faster cooldown       
-        //  BPM Detection
+        this.spawnCooldown = 100; // Even faster cooldown         //  BPM Detection - Enhanced system
         this.bpmDetector = {
             peaks: [],
             bpm: 0,
             lastBeatTime: 0,
-            beatThreshold: 0.15, // Lowered from 0.3 to 0.15 for better beat detection
+            beatThreshold: 0.2,
             minBpm: 60,
             maxBpm: 200,
-            analysisWindow: 10000 // 10 seconds
+            analysisWindow: 15000, // 15 seconds for better accuracy
+            // Enhanced detection parameters
+            energyHistory: [],
+            energyHistorySize: 43, // ~1 second at 60fps for energy smoothing
+            spectralFluxHistory: [],
+            adaptiveThreshold: 0.2,
+            thresholdMultiplier: 1.5,
+            minimumBeatInterval: 250, // Minimum 250ms between beats (240 BPM max)
+            confidenceWindow: [],
+            confidenceWindowSize: 8, // Track confidence over last 8 beats
+            minConfidence: 0.6
         };
 
         // Idle Anomaly System
@@ -154,8 +233,25 @@ class FerrofluidVisualizer {
         this.createLighting();
         this.updateShadowColors(); // Initialize shadow colors after lighting is created
         this.createEnvironment();
-        this.updateLightingFromBackground(); // Apply initial background color influence
-          
+        this.updateLightingFromBackground(); // Apply initial background color influence        // Initialize orbital blob system
+        this.orbitalBlobSystem = new OrbitalBlobSystem(this);
+          // Initialize shockwave system
+        this.shockwaveSystem = new ShockwaveSystem(this);        // Initialize performance monitor
+        this.performanceMonitor = new PerformanceMonitor(this);
+        console.log('PerformanceMonitor initialized successfully');
+        
+        // Clean up any existing duplicate performance indicators
+        const existingPerfIndicator = document.getElementById('performance-indicator');
+        if (existingPerfIndicator) {
+            existingPerfIndicator.remove();
+        }
+        console.log('Available object arrays:', {
+            floatingBlobs: !!this.floatingBlobs,
+            orbitalBlobSystem: !!this.orbitalBlobSystem,
+            shockwaveSystem: !!this.shockwaveSystem,
+            gridCellAnimator: !!this.gridCellAnimator
+        });
+        
         // Initialize frequency analyzer clone colors to match default grid color
         this.updateFrequencyAnalyzerCloneColors('#bbbbbb');
         
@@ -241,9 +337,39 @@ class FerrofluidVisualizer {
           if (lightHighColorInput) {
             const highColorHex = '#' + this.lightHighColor.toString(16).padStart(6, '0');
             lightHighColorInput.value = highColorHex;
-        }
-          // Initialize mouse interaction control values
+        }        // Initialize mouse interaction control values
         // (UI controls removed - mouse interaction is always enabled during idle mode)
+        
+        // Initialize UI opacity control values
+        const uiOpacitySlider = document.getElementById('ui-opacity');
+        const uiOpacityValue = document.getElementById('ui-opacity-value');
+        
+        if (uiOpacitySlider) {
+            uiOpacitySlider.value = this.uiOpacity;
+        }
+          if (uiOpacityValue) {
+            uiOpacityValue.textContent = this.uiOpacity.toFixed(1);
+        }        // Apply initial UI opacity setting
+        this.updateUIOpacity();
+          // Initialize shockwave controls with default values only if not already set by loaded settings
+        const shockwaveEnabledToggle = document.getElementById('shockwave-enabled');
+        if (shockwaveEnabledToggle && !this.settingsLoaded) {
+            shockwaveEnabledToggle.checked = false; // Default disabled
+        }
+          const shockwaveIntensitySlider = document.getElementById('shockwave-intensity');
+        const shockwaveIntensityValue = document.getElementById('shockwave-intensity-value');
+        if (shockwaveIntensitySlider) shockwaveIntensitySlider.value = 1.0;
+        if (shockwaveIntensityValue) shockwaveIntensityValue.textContent = '1.0';
+        
+        const shockwaveLifetimeSlider = document.getElementById('shockwave-lifetime');
+        const shockwaveLifetimeValue = document.getElementById('shockwave-lifetime-value');
+        if (shockwaveLifetimeSlider) shockwaveLifetimeSlider.value = 3.0;
+        if (shockwaveLifetimeValue) shockwaveLifetimeValue.textContent = '3.0';
+        
+        const shockwaveOpacitySlider = document.getElementById('shockwave-opacity');
+        const shockwaveOpacityValue = document.getElementById('shockwave-opacity-value');
+        if (shockwaveOpacitySlider) shockwaveOpacitySlider.value = 0.8;
+        if (shockwaveOpacityValue) shockwaveOpacityValue.textContent = '0.8';
         
         console.log('UI values initialized');
     }setupThreeJS() {
@@ -415,10 +541,11 @@ class FerrofluidVisualizer {
 
         // Create permanent floor plane for shadows (always visible, matches background)
         this.createPermanentFloor();
-        
-        // Create grid (this will handle the wireframe grid and wall shadow surfaces)
+          // Create grid (this will handle the wireframe grid and wall shadow surfaces)
         this.createGrid();
-    }    updateEnvironment() {
+        
+        // Note: We'll initialize gridCellAnimator once we have the audio loaded and analyzer available
+    }updateEnvironment() {
         // Remove the old environment sphere
         if (this.envSphere) {
             this.scene.remove(this.envSphere);
@@ -675,16 +802,17 @@ class FerrofluidVisualizer {
         sensitivitySlider.addEventListener('input', (e) => {
             this.sensitivity = parseFloat(e.target.value);
             document.getElementById('sensitivity-value').textContent = this.sensitivity.toFixed(1);
-        });
-          // Smoothing slider
+        });        // Smoothing slider
         const smoothingSlider = document.getElementById('smoothing');
         smoothingSlider.addEventListener('input', (e) => {
             this.smoothing = parseFloat(e.target.value);
             document.getElementById('smoothing-value').textContent = this.smoothing.toFixed(1);
             if (this.analyser) {
-                this.analyser.smoothingTimeConstant = this.smoothing;
+                // Clamp smoothingTimeConstant to valid range [0,1] for Web Audio API
+                const clampedSmoothing = Math.max(0, Math.min(1, this.smoothing));
+                this.analyser.smoothingTimeConstant = clampedSmoothing;
             }
-        });        // Grid controls
+        });// Grid controls
         document.getElementById('grid-toggle').addEventListener('change', (e) => {
             this.gridVisible = e.target.checked;
             if (this.gridGroup) {
@@ -693,8 +821,22 @@ class FerrofluidVisualizer {
             // Show permanent floor only when grid is disabled to avoid double shadows
             if (this.permanentFloor) {
                 this.permanentFloor.visible = !this.gridVisible;
+            }        });        
+        // Debug Console visibility toggle control
+        document.getElementById('debug-console-toggle').addEventListener('change', (e) => {
+            const debugPanel = document.getElementById('debug-info-panel');
+            if (debugPanel) {
+                debugPanel.style.display = e.target.checked ? 'block' : 'none';
+                
+                // Show immediate feedback
+                const toggleMessage = e.target.checked ? 
+                    'Debug console: ENABLED via UI' : 
+                    'Debug console: DISABLED via UI';
+                console.log(toggleMessage);
             }
-        });        // Debug Encoding toggle control
+        });
+
+        // Debug Encoding toggle control
         document.getElementById('debug-encoding-toggle').addEventListener('change', (e) => {
             if (window.debugEncodingControls) {
                 window.debugEncodingControls.setEnabled(e.target.checked);
@@ -726,13 +868,17 @@ class FerrofluidVisualizer {
             this.updateShadowColors();
             
             // Update shadow transparency to match current setting
-            this.updateShadowTransparency();
-            
-            // Update camera bounds when grid size changes
+            this.updateShadowTransparency();            // Update camera bounds when grid size changes
             if (this.cameraControls) {
                 this.clampCameraTarget();
             }
-        });        document.getElementById('grid-opacity').addEventListener('input', (e) => {
+            
+            // Recreate grid cell animator with new size
+            if (this.gridCellAnimator) {
+                this.gridCellAnimator.dispose();
+                this.gridCellAnimator = new GridCellAnimator(this.gridSize, this.scene, this.analyser, this.gridColor, this.backgroundColor);
+            }
+        });document.getElementById('grid-opacity').addEventListener('input', (e) => {
             this.gridOpacity = parseFloat(e.target.value);
             document.getElementById('grid-opacity-value').textContent = this.gridOpacity.toFixed(1);
             if (this.gridGroup) {
@@ -747,9 +893,7 @@ class FerrofluidVisualizer {
             this.shadowTransparency = parseFloat(e.target.value);
             document.getElementById('shadow-transparency-value').textContent = this.shadowTransparency.toFixed(1);
             this.updateShadowTransparency();
-        });
-
-        // Background color control
+        });        // Background color control
         document.getElementById('background-color').addEventListener('input', (e) => {
             this.backgroundColor = parseInt(e.target.value.replace('#', ''), 16);
             this.scene.background.setHex(this.backgroundColor);
@@ -760,7 +904,12 @@ class FerrofluidVisualizer {
             this.scene.fog.color.setHex(this.backgroundColor);
             // Subtle lighting influence from background color
             this.updateLightingFromBackground();
-        });        // Environment sphere color control
+            
+            // Update grid cell animator colors
+            if (this.gridCellAnimator) {
+                this.gridCellAnimator.updateColors(this.gridColor, this.backgroundColor);
+            }
+        });// Environment sphere color control
         document.getElementById('env-sphere-color').addEventListener('input', (e) => {
             this.envSphereColor = parseInt(e.target.value.replace('#', ''), 16);
             if (this.envMaterial) {
@@ -784,8 +933,7 @@ class FerrofluidVisualizer {
             this.envSphereSize = parseInt(e.target.value);
             document.getElementById('env-size-value').textContent = this.envSphereSize;
             this.updateEnvironment();
-        });
-          // Environment visibility control (checkbox)
+        });        // Environment visibility control (checkbox)
         document.getElementById('env-visibility').addEventListener('change', (e) => {
             this.envVisibility = e.target.checked ? 1.0 : 0.0;
             
@@ -800,6 +948,13 @@ class FerrofluidVisualizer {
             this.updateEnvironment();
         });
 
+        // UI opacity control
+        document.getElementById('ui-opacity').addEventListener('input', (e) => {
+            this.uiOpacity = parseFloat(e.target.value);
+            document.getElementById('ui-opacity-value').textContent = this.uiOpacity.toFixed(1);
+            this.updateUIOpacity();
+        });
+
         // Grid color control
         document.getElementById('grid-color').addEventListener('input', (e) => {
             this.gridColor = parseInt(e.target.value.replace('#', ''), 16);
@@ -811,9 +966,7 @@ class FerrofluidVisualizer {
                 document.getElementById('shadow-color').value = '#' + this.gridColor.toString(16).padStart(6, '0');
                 // Only update shadow colors when linked
                 this.updateShadowColors();
-            }
-
-            if (this.gridGroup) {
+            }            if (this.gridGroup) {
                 this.gridGroup.children.forEach(mesh => {
                     if (mesh.material && mesh.material.type !== 'ShadowMaterial') {
                         if (mesh.material.color) { // Check if color property exists
@@ -822,16 +975,24 @@ class FerrofluidVisualizer {
                     }
                 });
             }
-
-            this.updateFrequencyAnalyzerCloneColors(gridColorHex);
+              // Update grid cell animator colors
+            if (this.gridCellAnimator) {
+                this.gridCellAnimator.updateColors(this.gridColor, this.backgroundColor);
+            }            this.updateFrequencyAnalyzerCloneColors(gridColorHex);
             const trackBpm = document.getElementById('track-bpm');
             const trackNameVertical = document.getElementById('track-name-vertical');
             const trackTimeDisplay = document.getElementById('track-time-display');
             const trackFreqDisplay = document.getElementById('track-freq-display');
+            const performanceFps = document.getElementById('performance-fps');
+            const performanceQuality = document.getElementById('performance-quality');
+            const performanceObjects = document.getElementById('performance-objects');
             if (trackBpm) trackBpm.style.color = gridColorHex;
             if (trackNameVertical) trackNameVertical.style.color = gridColorHex;
             if (trackTimeDisplay) trackTimeDisplay.style.color = gridColorHex;
             if (trackFreqDisplay) trackFreqDisplay.style.color = gridColorHex;
+            if (performanceFps) performanceFps.style.color = gridColorHex;
+            if (performanceQuality) performanceQuality.style.color = gridColorHex;
+            if (performanceObjects) performanceObjects.style.color = gridColorHex;
         });        // Shadow color control
         document.getElementById('shadow-color').addEventListener('input', (e) => {
             this.shadowColor = parseInt(e.target.value.replace('#', ''), 16);
@@ -877,9 +1038,15 @@ class FerrofluidVisualizer {
                 this.togglePlayPause();
             }
         });        // Settings event listeners
-        document.getElementById('load-preset').addEventListener('click', () => {
-            this.loadSelectedSettings();
-        });        document.getElementById('refresh-presets').addEventListener('click', (e) => {
+        // Auto-load presets when selected from dropdown
+        document.getElementById('settings-dropdown').addEventListener('change', (e) => {
+            const selectedValue = e.target.value;
+            if (selectedValue) {
+                this.loadSelectedSettings();
+            }
+        });
+
+        document.getElementById('refresh-presets').addEventListener('click', (e) => {
             const button = e.target;
             button.classList.add('rotating');
             setTimeout(() => button.classList.remove('rotating'), 300);
@@ -897,17 +1064,490 @@ class FerrofluidVisualizer {
                 this.handleSettingsFileImport(e.target.files[0]);
             }
         });
+          // Grid Cells Activity toggle
+        const gridCellsActivityToggle = document.getElementById('grid-cells-activity-toggle');
+        if (gridCellsActivityToggle) {
+            this.gridCellsActivityEnabled = gridCellsActivityToggle.checked;
+            gridCellsActivityToggle.addEventListener('change', (e) => {
+                this.gridCellsActivityEnabled = e.target.checked;
+            });
+        }        // Populate and handle track selector
+        this.populateTrackSelector();
+        const trackSelectElement = document.getElementById('track-select');
+        if (trackSelectElement) {
+            trackSelectElement.addEventListener('change', async (e) => {
+                const selectedTrack = e.target.value;
+                if (selectedTrack) {
+                    await this.loadAndPlayTrack(selectedTrack);
+                }
+            });        }        // Randomize colors button
+        document.getElementById('randomize-colors').addEventListener('click', () => {
+            this.randomizeColors();
+        });        // Shockwave System Controls
+        const shockwaveEnabledToggle = document.getElementById('shockwave-enabled');
+        if (shockwaveEnabledToggle) {
+            shockwaveEnabledToggle.addEventListener('change', (e) => {
+                if (this.shockwaveSystem) {
+                    this.shockwaveSystem.setEnabled(e.target.checked);
+                }
+            });        }
+        
+        const shockwaveIntensitySlider = document.getElementById('shockwave-intensity');
+        if (shockwaveIntensitySlider) {
+            shockwaveIntensitySlider.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                document.getElementById('shockwave-intensity-value').textContent = value.toFixed(1);
+                if (this.shockwaveSystem) {
+                    this.shockwaveSystem.config.intensity = value;
+                }
+            });        }
+        
+        const shockwaveLifetimeSlider = document.getElementById('shockwave-lifetime');
+        if (shockwaveLifetimeSlider) {
+            shockwaveLifetimeSlider.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                document.getElementById('shockwave-lifetime-value').textContent = value.toFixed(1);
+                if (this.shockwaveSystem) {
+                    this.shockwaveSystem.config.lifetime = value;
+                }
+            });
+        }
+        
+        const shockwaveOpacitySlider = document.getElementById('shockwave-opacity');
+        if (shockwaveOpacitySlider) {
+            shockwaveOpacitySlider.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                document.getElementById('shockwave-opacity-value').textContent = value.toFixed(1);
+                if (this.shockwaveSystem) {
+                    this.shockwaveSystem.config.opacity = value;
+                    // Update material opacities immediately
+                    Object.values(this.shockwaveSystem.materials).forEach(material => {
+                        material.opacity = value;
+                    });
+                }
+            });
+        }
+    }// Randomize colors using harmonious color schemes
+    randomizeColors() {
+        if (!window.ColorHarmonizer) {
+            console.error('ColorHarmonizer not available. Make sure color-harmonizer.js is loaded.');
+            return;
+        }
+
+        const harmonizer = new ColorHarmonizer();
+        const colorScheme = harmonizer.generateRandomScheme();
+        
+        console.log('Applied color scheme:', colorScheme.name);
+
+        // Convert hex colors to integers for Three.js
+        this.gridColor = harmonizer.hexToRgbInt(colorScheme.grid);
+        const gridColorInput = document.getElementById('grid-color');
+        if (gridColorInput) {
+            gridColorInput.value = colorScheme.grid;
+        }
+
+        // Apply shadow color (if not linked to grid)
+        if (!this.linkShadowColor) {
+            this.shadowColor = harmonizer.hexToRgbInt(colorScheme.shadow);
+            const shadowColorInput = document.getElementById('shadow-color');
+            if (shadowColorInput) {
+                shadowColorInput.value = colorScheme.shadow;
+            }
+        } else {
+            // If linked, shadow color will sync with grid color automatically
+            this.shadowColor = this.gridColor;
+        }
+
+        // Apply background color
+        this.backgroundColor = harmonizer.hexToRgbInt(colorScheme.background);
+        const backgroundColorInput = document.getElementById('background-color');
+        if (backgroundColorInput) {
+            backgroundColorInput.value = colorScheme.background;
+        }
+
+        // Apply environment sphere color
+        this.envSphereColor = harmonizer.hexToRgbInt(colorScheme.environment);
+        const envColorInput = document.getElementById('env-sphere-color');
+        if (envColorInput) {
+            envColorInput.value = colorScheme.environment;
+        }
+
+        // Apply light colors (lights is an array of 3 hex colors)
+        if (colorScheme.lights && colorScheme.lights.length >= 3) {
+            this.lightBassColor = harmonizer.hexToRgbInt(colorScheme.lights[0]);
+            this.lightMidColor = harmonizer.hexToRgbInt(colorScheme.lights[1]);
+            this.lightHighColor = harmonizer.hexToRgbInt(colorScheme.lights[2]);
+
+            const bassColorInput = document.getElementById('light-bass-color');
+            const midColorInput = document.getElementById('light-mid-color');
+            const highColorInput = document.getElementById('light-high-color');
+
+            if (bassColorInput) {
+                bassColorInput.value = colorScheme.lights[0];
+            }
+            if (midColorInput) {
+                midColorInput.value = colorScheme.lights[1];
+            }
+            if (highColorInput) {
+                highColorInput.value = colorScheme.lights[2];
+            }
+        }
+
+        // Update the visualizer with new colors
+        this.updateVisualizerColors();
+    }    // Update all visualizer components with current colors
+    updateVisualizerColors() {
+        // Update scene background
+        if (this.scene) {
+            this.scene.background.setHex(this.backgroundColor);
+            if (this.scene.fog) {
+                this.scene.fog.color.setHex(this.backgroundColor);
+            }
+        }
+
+        // Update grid colors
+        if (this.gridGroup) {
+            this.gridGroup.children.forEach(mesh => {
+                if (mesh.material && mesh.material.type !== 'ShadowMaterial') {
+                    if (mesh.material.color) {
+                        mesh.material.color.setHex(this.gridColor);
+                    }
+                }
+            });
+        }
+
+        // Update environment sphere
+        if (this.envMaterial) {
+            this.envMaterial.color.setHex(this.envSphereColor);
+        }
+
+        // Update lighting
+        this.updateLightingFromBackground();
+
+        // Update shadow colors
+        this.updateShadowColors();
+
+        // Update grid cell animator colors
+        if (this.gridCellAnimator) {
+            this.gridCellAnimator.updateColors(this.gridColor, this.backgroundColor);
+        }
+
+        // Update frequency analyzer colors
+        const gridColorHex = '#' + this.gridColor.toString(16).padStart(6, '0');
+        this.updateFrequencyAnalyzerCloneColors(gridColorHex);        // Update track info elements
+        const trackBpm = document.getElementById('track-bpm');
+        const trackNameVertical = document.getElementById('track-name-vertical');
+        const trackTimeDisplay = document.getElementById('track-time-display');
+        const trackFreqDisplay = document.getElementById('track-freq-display');
+        const performanceFps = document.getElementById('performance-fps');
+        const performanceQuality = document.getElementById('performance-quality');
+        const performanceObjects = document.getElementById('performance-objects');
+        
+        if (trackBpm) trackBpm.style.color = gridColorHex;
+        if (trackNameVertical) trackNameVertical.style.color = gridColorHex;
+        if (trackTimeDisplay) trackTimeDisplay.style.color = gridColorHex;
+        if (trackFreqDisplay) trackFreqDisplay.style.color = gridColorHex;
+        if (performanceFps) performanceFps.style.color = gridColorHex;
+        if (performanceQuality) performanceQuality.style.color = gridColorHex;
+        if (performanceObjects) performanceObjects.style.color = gridColorHex;
+
+        // Update debug panel and status message colors
+        const debugPanel = document.getElementById('debug-info-panel');
+        const statusMessage = document.getElementById('status-message');
+        if (debugPanel) debugPanel.style.color = gridColorHex;
+        if (statusMessage) statusMessage.style.color = gridColorHex;
+    }async populateTrackSelector() {
+        const trackSelectElement = document.getElementById('track-select');
+        if (!trackSelectElement) {
+            console.warn('Track select element not found.');
+            return;
+        }
+
+        // Clear existing options (except the default placeholder)
+        while (trackSelectElement.options.length > 1) {
+            trackSelectElement.remove(1);
+        }
+
+        try {
+            // Fetch MP3 index
+            const response = await fetch('mp3/index.json');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const indexData = await response.json();
+            const mp3Files = indexData.files || [];
+            
+            console.log(`Loading ${mp3Files.length} MP3 files from index`);
+
+            mp3Files.forEach(fileName => {
+                const option = document.createElement('option');
+                option.value = fileName;
+                
+                // Create display name: remove .mp3 extension and replace underscores
+                let displayName = fileName.replace(/\.mp3$/i, '').replace(/_/g, ' ');
+                
+                // Truncate long names with ellipsis (max 35 characters to fit nicely in dropdown)
+                const maxLength = 35;
+                if (displayName.length > maxLength) {
+                    displayName = displayName.substring(0, maxLength - 3) + '...';
+                }
+                
+                option.textContent = displayName;
+                option.title = fileName.replace(/\.mp3$/i, '').replace(/_/g, ' '); // Full name in tooltip
+                trackSelectElement.appendChild(option);
+            });
+            
+        } catch (error) {
+            console.error('Error loading MP3 index:', error);
+            // Fallback: Add a message option
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'Error loading tracks';
+            option.disabled = true;
+            trackSelectElement.appendChild(option);
+        }
+    }
+
+    async loadAndPlayTrack(fileName) {
+        if (this.isPlaying) {
+            this.stop(); // Stop current track if playing
+        }
+        
+        const filePath = `mp3/${fileName}`;
+        console.log(`Loading and playing track: ${filePath}`);
+        
+        // Update the file name display immediately
+        const fileNameDisplay = document.getElementById('file-name-display');
+        if (fileNameDisplay) {
+            fileNameDisplay.innerHTML = this.formatTrackName(fileName);
+        }
+
+        try {
+            await this.loadAudioFromURL(filePath); // This method should handle loading and preparing for play
+
+            if (this.audioElement && !this.isPlaying) { // Ensure it plays after loading
+                if (this.audioContext.state === 'suspended') {
+                    await this.audioContext.resume();
+                }
+                await this.audioElement.play();
+                this.isPlaying = true;
+                document.getElementById('play-pause').textContent = '❚❚ PAUSE';
+                document.getElementById('play-pause').classList.add('playing');
+                if (!this.animationId) { // Start animation loop if not already running
+                    this.animate();
+                }
+                this.updateStatusMessage();
+            }
+        } catch (error) {
+            console.error(`Error loading or playing track ${fileName}:`, error);
+            this.updateStatusMessageWithText(`Error loading ${fileName}. Check console.`);
+        }
     }
     
-    // Test function to manually spawn a blob
-    testSpawnBlob() {
-        const testPosition = new THREE.Vector3(
-            (Math.random() - 0.5) * 8,
-            2 + Math.random() * 4,
-            (Math.random() - 0.5) * 8
-        );        this.createFloatingBlob(testPosition, 0.8, 'test');
-        console.log('Test blob spawned at:', testPosition);
-        console.log(this.getRandomSpawnEmoji());
+    // ==========================================
+    // COLLISION DETECTION OPTIMIZATION SYSTEM
+    // ==========================================
+  
+    
+    /**
+     * Create spatial partitioning grid for efficient collision detection
+     */
+    updateSpatialGrid() {
+        const now = performance.now();
+        if (now - this.collisionOptimization.lastGridUpdate < this.collisionOptimization.gridUpdateInterval) {
+            return; // Don't update too frequently
+        }
+        
+        this.collisionOptimization.spatialGrid.clear();
+        this.collisionOptimization.lastGridUpdate = now;
+        
+        // Add all floating blobs to spatial grid
+        for (let i = 0; i < this.floatingBlobs.length; i++) {
+            const blob = this.floatingBlobs[i];
+            const position = blob.mesh.position;
+            const radius = blob.baseSize * blob.currentScale;
+            
+            // Calculate which grid cells this blob occupies
+            const minX = Math.floor((position.x - radius) / this.collisionOptimization.gridSize);
+            const maxX = Math.floor((position.x + radius) / this.collisionOptimization.gridSize);
+            const minY = Math.floor((position.y - radius) / this.collisionOptimization.gridSize);
+            const maxY = Math.floor((position.y + radius) / this.collisionOptimization.gridSize);
+            const minZ = Math.floor((position.z - radius) / this.collisionOptimization.gridSize);
+            const maxZ = Math.floor((position.z + radius) / this.collisionOptimization.gridSize);
+            
+            // Add blob to all grid cells it occupies
+            for (let x = minX; x <= maxX; x++) {
+                for (let y = minY; y <= maxY; y++) {
+                    for (let z = minZ; z <= maxZ; z++) {
+                        const cellKey = `${x},${y},${z}`;
+                        if (!this.collisionOptimization.spatialGrid.has(cellKey)) {
+                            this.collisionOptimization.spatialGrid.set(cellKey, []);
+                        }
+                        this.collisionOptimization.spatialGrid.get(cellKey).push(i);
+                    }
+                }
+            }
+        }
+    }
+      /**
+     * Get potential collision pairs using spatial partitioning with enhanced optimizations
+     */
+    getPotentialCollisionPairs() {
+        const pairs = new Set();
+        const maxDistance = this.collisionOptimization.qualityLevels[this.collisionOptimization.currentQuality].maxDistance;
+        const now = performance.now();
+        
+        // Enhanced broad-phase culling: Skip very small or nearly stationary blobs
+        const activeBlobs = this.floatingBlobs.filter((blob, index) => {
+            const size = blob.baseSize * blob.currentScale;
+            const velocity = blob.velocity ? blob.velocity.length() : 0;
+            
+            // Skip very small blobs (< 0.3 size) or nearly stationary blobs (< 0.1 velocity)
+            if (size < 0.3 || velocity < 0.1) {
+                this.collisionOptimization.stats.broadPhaseCulled++;
+                return false;
+            }
+            return true;
+        });
+        
+        // Iterate through each grid cell
+        for (const [cellKey, blobIndices] of this.collisionOptimization.spatialGrid) {
+            // Check all pairs within this cell
+            for (let i = 0; i < blobIndices.length; i++) {
+                for (let j = i + 1; j < blobIndices.length; j++) {
+                    const idx1 = blobIndices[i];
+                    const idx2 = blobIndices[j];
+                    
+                    // Skip if already processed
+                    const pairKey = `${Math.min(idx1, idx2)}-${Math.max(idx1, idx2)}`;
+                    if (pairs.has(pairKey)) continue;
+                    
+                    // Temporal coherence optimization: Check collision cache
+                    const cacheKey = pairKey;
+                    const cachedResult = this.collisionOptimization.collisionCache.get(cacheKey);
+                    if (cachedResult && (now - cachedResult.timestamp) < this.collisionOptimization.cacheTimeout) {
+                        // Validate cache entry with position change
+                        const blob1 = this.floatingBlobs[idx1];
+                        const blob2 = this.floatingBlobs[idx2];
+                        const positionChange1 = blob1.mesh.position.distanceTo(cachedResult.pos1);
+                        const positionChange2 = blob2.mesh.position.distanceTo(cachedResult.pos2);
+                        
+                        if (positionChange1 < 0.5 && positionChange2 < 0.5) {
+                            // Use cached result
+                            if (cachedResult.shouldCollide) {
+                                pairs.add(pairKey);
+                            }
+                            this.collisionOptimization.stats.cacheHits++;
+                            this.collisionOptimization.stats.temporalCoherenceSkips++;
+                            continue;
+                        }
+                    }
+                    
+                    // Distance check for performance
+                    const blob1 = this.floatingBlobs[idx1];
+                    const blob2 = this.floatingBlobs[idx2];
+                    const distance = blob1.mesh.position.distanceTo(blob2.mesh.position);
+                    
+                    const shouldCollide = distance <= maxDistance;
+                    if (shouldCollide) {
+                        pairs.add(pairKey);
+                        this.collisionOptimization.stats.totalChecks++;
+                    } else {
+                        this.collisionOptimization.stats.spatialOptimizations++;
+                    }
+                    
+                    // Cache the result for temporal coherence
+                    this.collisionOptimization.collisionCache.set(cacheKey, {
+                        shouldCollide: shouldCollide,
+                        timestamp: now,
+                        pos1: blob1.mesh.position.clone(),
+                        pos2: blob2.mesh.position.clone()
+                    });
+                }
+            }
+        }
+        
+        // Periodic cache cleanup
+        this.cleanupCollisionCache(now);
+        
+        return Array.from(pairs).map(pair => {
+            const [idx1, idx2] = pair.split('-').map(Number);
+            return [idx1, idx2];
+        });
+    }
+    
+    /**
+     * Clean up old collision cache entries to prevent memory buildup
+     */
+    cleanupCollisionCache(currentTime) {
+        const cleanupInterval = 5000; // Clean every 5 seconds
+        if (!this.collisionOptimization.lastCacheCleanup) {
+            this.collisionOptimization.lastCacheCleanup = currentTime;
+            return;
+        }
+        
+        if (currentTime - this.collisionOptimization.lastCacheCleanup > cleanupInterval) {
+            let removedCount = 0;
+            for (const [key, entry] of this.collisionOptimization.collisionCache) {
+                if (currentTime - entry.timestamp > this.collisionOptimization.cacheTimeout * 2) {
+                    this.collisionOptimization.collisionCache.delete(key);
+                    removedCount++;
+                }
+            }
+            this.collisionOptimization.stats.cacheCleanups += removedCount;
+            this.collisionOptimization.lastCacheCleanup = currentTime;
+        }
+    }
+    
+    /**
+     * Check if collision detection should be performed this frame
+     */
+    shouldPerformCollisionDetection() {
+        const quality = this.collisionOptimization.qualityLevels[this.collisionOptimization.currentQuality];
+        
+        // Performance-based frame skipping
+        if (quality.frameSkip > 0) {
+            this.collisionOptimization.currentSkipCount++;
+            if (this.collisionOptimization.currentSkipCount <= quality.frameSkip) {
+                this.collisionOptimization.stats.frameSkips++;
+                return false;
+            }
+            this.collisionOptimization.currentSkipCount = 0;
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Adjust collision detection quality based on performance
+     */
+    adjustCollisionQuality() {
+        const now = performance.now();
+        if (now - this.collisionOptimization.lastPerformanceCheck < this.collisionOptimization.performanceCheckInterval) {
+            return;
+        }
+        
+        this.collisionOptimization.lastPerformanceCheck = now;
+        
+        // Get performance metrics from performance monitor
+        if (this.performanceMonitor && this.performanceMonitor.frameRates.length > 30) {
+            const avgFPS = this.performanceMonitor.frameRates.reduce((sum, fps) => sum + fps, 0) / this.performanceMonitor.frameRates.length;
+            const currentQuality = this.collisionOptimization.currentQuality;
+            const qualityLevels = ['high', 'medium', 'low'];
+            const currentIndex = qualityLevels.indexOf(currentQuality);
+            
+            // Decrease quality if performance is poor
+            if (avgFPS < 45 && currentIndex < qualityLevels.length - 1) {
+                this.collisionOptimization.currentQuality = qualityLevels[currentIndex + 1];
+                console.log(`🔧 Collision quality decreased to: ${this.collisionOptimization.currentQuality} (FPS: ${avgFPS.toFixed(1)})`);
+            }
+            // Increase quality if performance is good
+            else if (avgFPS > 55 && currentIndex > 0) {
+                this.collisionOptimization.currentQuality = qualityLevels[currentIndex - 1];
+                console.log(`⚡ Collision quality increased to: ${this.collisionOptimization.currentQuality} (FPS: ${avgFPS.toFixed(1)})`);
+            }
+        }
     }
     
     async loadAudioFile(file) {
@@ -926,14 +1566,15 @@ class FerrofluidVisualizer {
             }
               this.audioElement = new Audio();
             this.audioElement.src = URL.createObjectURL(file);
-            this.audioElement.crossOrigin = 'anonymous';
-            this.audioElement.loop = this.isLooping; // Set loop property based on current state
+            this.audioElement.crossOrigin = 'anonymous';            this.audioElement.loop = this.isLooping; // Set loop property based on current state
             
             // Setup audio analysis
             this.audioSource = this.audioContext.createMediaElementSource(this.audioElement);
             this.analyser = this.audioContext.createAnalyser();
             this.analyser.fftSize = 1024;
-            this.analyser.smoothingTimeConstant = this.smoothing;
+            // Clamp smoothingTimeConstant to valid range [0,1] for Web Audio API
+            const clampedSmoothing = Math.max(0, Math.min(1, this.smoothing));
+            this.analyser.smoothingTimeConstant = clampedSmoothing;
             
             // Create EQ filters: bass (lowshelf), mid (peaking), high (highshelf)
             this.bassEQ = this.audioContext.createBiquadFilter();
@@ -981,10 +1622,16 @@ class FerrofluidVisualizer {
                 const gain = parseFloat(e.target.value);
                 this.highEQ.gain.value = gain;
                 eqHighValue.textContent = `${gain} dB`;
-            });
-              this.bufferLength = this.analyser.frequencyBinCount;
+            });            this.bufferLength = this.analyser.frequencyBinCount;
             this.dataArray = new Uint8Array(this.bufferLength);
-            this.frequencyData = new Float32Array(this.bufferLength);            // Update new vertical track display
+            this.frequencyData = new Float32Array(this.bufferLength);
+              // Initialize or recreate grid cell animator now that we have an analyzer
+            if (this.gridCellAnimator) {
+                this.gridCellAnimator.dispose();
+            }
+            this.gridCellAnimator = new GridCellAnimator(this.gridSize, this.scene, this.analyser, this.gridColor, this.backgroundColor);
+            
+            // Update new vertical track display
             document.getElementById('track-name-vertical').textContent = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
             document.getElementById('play-pause').disabled = false;
             
@@ -1048,19 +1695,94 @@ class FerrofluidVisualizer {
               } catch (error) {
             console.error('Error loading audio file:', error);
         }
-    }
-      async loadAudioFromURL(url) {
+    }      async loadAudioFromURL(url) {
         try {
             console.log(`Attempting to load audio from URL: ${url}`);
             
             // Check if we're running from file:// protocol
             if (window.location.protocol === 'file:') {
-                console.warn('Running from file:// protocol - cannot load external audio files due to CORS restrictions');
-                console.log('Please serve this application from a local web server to enable audio loading');
-                return; // Exit gracefully without throwing an error
+                console.log('Running from file:// protocol - using direct audio element approach');
+                
+                // For local files, create audio element directly
+                if (this.audioElement) {
+                    this.audioElement.pause();
+                    this.audioElement.remove();
+                }
+                
+                // Create audio context if needed
+                if (!this.audioContext) {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                
+                this.audioElement = new Audio();
+                this.audioElement.src = url;
+                this.audioElement.crossOrigin = 'anonymous';
+                this.audioElement.loop = this.isLooping;
+                  // Setup audio analysis
+                this.audioSource = this.audioContext.createMediaElementSource(this.audioElement);
+                this.analyser = this.audioContext.createAnalyser();
+                this.analyser.fftSize = 1024;
+                // Clamp smoothingTimeConstant to valid range [0,1] for Web Audio API
+                const clampedSmoothing = Math.max(0, Math.min(1, this.smoothing));
+                this.analyser.smoothingTimeConstant = clampedSmoothing;
+                
+                // Create EQ filters
+                this.bassEQ = this.audioContext.createBiquadFilter();
+                this.bassEQ.type = 'lowshelf';
+                this.bassEQ.frequency.value = 250;
+                this.bassEQ.gain.value = 0;
+
+                this.midEQ = this.audioContext.createBiquadFilter();
+                this.midEQ.type = 'peaking';
+                this.midEQ.frequency.value = 1000;
+                this.midEQ.Q.value = 1;
+                this.midEQ.gain.value = 0;
+
+                this.highEQ = this.audioContext.createBiquadFilter();
+                this.highEQ.type = 'highshelf';
+                this.highEQ.frequency.value = 4000;
+                this.highEQ.gain.value = 0;
+
+                // Connect audio graph
+                this.audioSource.connect(this.bassEQ);
+                this.bassEQ.connect(this.midEQ);
+                this.midEQ.connect(this.highEQ);
+                this.highEQ.connect(this.analyser);
+                this.analyser.connect(this.audioContext.destination);
+                
+                this.bufferLength = this.analyser.frequencyBinCount;
+                this.dataArray = new Uint8Array(this.bufferLength);
+                this.frequencyData = new Float32Array(this.bufferLength);
+                
+                // Initialize or recreate grid cell animator
+                if (this.gridCellAnimator) {
+                    this.gridCellAnimator.dispose();
+                }
+                this.gridCellAnimator = new GridCellAnimator(this.gridSize, this.scene, this.analyser, this.gridColor, this.backgroundColor);
+                
+                // Enable play button
+                document.getElementById('play-pause').disabled = false;
+                
+                // Handle track ending
+                this.audioElement.addEventListener('ended', () => {
+                    if (this.isLooping) {
+                        this.audioElement.currentTime = 0;
+                        this.audioElement.play().catch(error => {
+                            console.error('Error restarting loop:', error);
+                        });
+                    } else {
+                        this.isPlaying = false;
+                        document.getElementById('play-pause').textContent = '▶ PLAY';
+                        document.getElementById('play-pause').classList.remove('playing');
+                        this.updateStatusMessage();
+                    }
+                });
+                
+                console.log(`Successfully loaded audio from local URL: ${url}`);
+                return;
             }
             
-            // Fetch the file
+            // For HTTP/HTTPS protocols, use fetch approach
             const response = await fetch(url);
             if (!response.ok) {
                 throw new Error(`Failed to fetch audio file: ${response.status}`);
@@ -1122,7 +1844,35 @@ class FerrofluidVisualizer {
         
         return `${firstLine}<br>${secondLine}`;
     }    async togglePlayPause() {
-        if (!this.audioElement) return;
+        if (!this.audioElement) {
+            // If no audio element, try loading default or selected track
+            const trackSelect = document.getElementById('track-select');
+            if (trackSelect && trackSelect.value) {
+                await this.loadAndPlayTrack(trackSelect.value);
+                return; // loadAndPlayTrack will handle playback
+            } else {
+                await this.loadDefaultAudio();
+                // After loading default, try to play if we now have an audio element
+                if (this.audioElement && this.audioContext.state === 'suspended') {
+                    await this.audioContext.resume();
+                }
+                if (this.audioElement && !this.isPlaying) {
+                    try {
+                        await this.audioElement.play();
+                        this.isPlaying = true;
+                        document.getElementById('play-pause').textContent = '❚❚ PAUSE';
+                        document.getElementById('play-pause').classList.add('playing');
+                        if (!this.animationId) {
+                            this.animate();
+                        }
+                    } catch (error) {
+                        console.error("Error playing audio:", error);
+                    }
+                }
+                this.updateStatusMessage();
+                return;
+            }
+        }
         
         if (this.isPlaying) {
             this.audioElement.pause();
@@ -1137,8 +1887,11 @@ class FerrofluidVisualizer {
                 }
                 await this.audioElement.play();
                 this.isPlaying = true;
-                document.getElementById('play-pause').textContent = '⏸ PAUSE';
+                document.getElementById('play-pause').textContent = '❚❚ PAUSE';
                 document.getElementById('play-pause').classList.add('playing');
+                if (!this.animationId) {
+                    this.animate();
+                }
                 console.log('Playback started');
             } catch (error) {
                 console.error('Error starting playback:', error);
@@ -1160,11 +1913,15 @@ class FerrofluidVisualizer {
         this.isPlaying = false;
         document.getElementById('play-pause').textContent = '▶ PLAY';
         document.getElementById('play-pause').classList.remove('playing');
-        
-        // Reset visualization
+          // Reset visualization
         this.bassIntensity = 0;
         this.midIntensity = 0;
         this.highIntensity = 0;
+        
+        // Clean up grid cell animator
+        if (this.gridCellAnimator) {
+            this.gridCellAnimator.dispose();
+        }
           // Update status message after stop
         this.updateStatusMessage();
     }    toggleLoop() {
@@ -1184,8 +1941,7 @@ class FerrofluidVisualizer {
         }
         
         console.log(`Loop ${this.isLooping ? 'enabled' : 'disabled'}`);
-    }
-      updateTimeDisplay() {
+    }    updateTimeDisplay() {
         if (!this.audioElement) return;
         
         const current = this.audioElement.currentTime;
@@ -1199,7 +1955,28 @@ class FerrofluidVisualizer {
         
         document.getElementById('track-time-display').textContent = 
             `${formatTime(current)} / ${formatTime(duration)}`;
-    }    // Status message update methods
+    }    updatePerformanceDisplay() {
+        if (!this.performanceMonitor) return;
+        
+        const stats = this.performanceMonitor.getStats();
+        
+        // Update FPS display (keep FPS label)
+        document.getElementById('performance-fps').textContent = 
+            `${Math.round(stats.avgFPS)}`;
+        
+        // Update quality level display - use abbreviated form
+        const qualityDisplayNames = {
+            'high': 'H',
+            'medium': 'M', 
+            'low': 'L'
+        };
+        document.getElementById('performance-quality').textContent = 
+            `${qualityDisplayNames[stats.currentQuality] || stats.currentQuality}`;
+          // Update object count display - use abbreviated form
+        const totalObjects = Object.values(stats.objectCounts).reduce((sum, count) => sum + count, 0);
+        document.getElementById('performance-objects').textContent = 
+            `${totalObjects}`;
+    }// Status message update methods
     updateStatusMessage() {
         const statusElement = document.getElementById('status-message');
         if (!statusElement) return;
@@ -1733,25 +2510,25 @@ createFloatingBlob(spawnPosition, intensity, type) {
         
         // Enhanced blob size variation with different "personalities"
         const blobPersonality = Math.random();
-        let baseSize, growthPotential, growthRate;        if (blobPersonality < 0.4) {
-            // Small, agile blobs (40%) - EXTREMELY limited growth to prevent overgrowth
-            baseSize = 0.06 + Math.random() * 0.08; // 0.06-0.14 (smaller)
-            growthPotential = 1.02 + Math.random() * 0.08; // Can grow 1.02x-1.10x (much more restricted)
+        let baseSize, growthPotential, growthRate;        if (blobPersonality < 0.6) {
+            // Small, agile blobs (60%) - minimal growth to prevent performance issues
+            baseSize = 0.08 + Math.random() * 0.08; // 0.08-0.16
+            growthPotential = 1.01 + Math.random() * 0.04; // Can grow 1.01x-1.05x (very limited)
             growthRate = 0.5 + Math.random() * 0.3; // Moderate growth speed
-        } else if (blobPersonality < 0.65) {
-            // Medium blobs (25%) - very limited growth
-            baseSize = 0.12 + Math.random() * 0.12; // 0.12-0.24 (smaller)
-            growthPotential = 1.08 + Math.random() * 0.17; // Can grow 1.08x-1.25x (reduced)
+        } else if (blobPersonality < 0.8) {
+            // Medium blobs (20%) - limited growth
+            baseSize = 0.12 + Math.random() * 0.10; // 0.12-0.22
+            growthPotential = 1.03 + Math.random() * 0.07; // Can grow 1.03x-1.10x (reduced)
             growthRate = 0.3 + Math.random() * 0.4; // Slower growth speed
-        } else if (blobPersonality < 0.85) {
-            // Large, slow blobs (20%) - moderate growth
-            baseSize = 0.18 + Math.random() * 0.15; // 0.18-0.33 (slightly smaller)
-            growthPotential = 1.3 + Math.random() * 0.4; // Can grow 1.3x-1.7x (reduced)
+        } else if (blobPersonality < 0.95) {
+            // Large, slow blobs (15%) - moderate growth
+            baseSize = 0.16 + Math.random() * 0.12; // 0.16-0.28
+            growthPotential = 1.05 + Math.random() * 0.15; // Can grow 1.05x-1.20x (much reduced)
             growthRate = 0.25 + Math.random() * 0.35; // Slower growth
         } else {
-            // Rare giant blobs (15%) - these can grow more as they use ferrofluid behavior
-            baseSize = 0.22 + Math.random() * 0.23; // 0.22-0.45
-            growthPotential = 1.5 + Math.random() * 0.5; // Can grow 1.5x-2.0x (reduced from before)
+            // Rare giant blobs (5%) - controlled growth
+            baseSize = 0.20 + Math.random() * 0.18; // 0.20-0.38
+            growthPotential = 1.1 + Math.random() * 0.2; // Can grow 1.1x-1.3x (significantly reduced)
             growthRate = 0.2 + Math.random() * 0.3; // Slow growth
         }
         
@@ -2274,30 +3051,153 @@ createFloatingBlob(spawnPosition, intensity, type) {
                 this.floatingBlobs.splice(i, 1);
             }
         }
+          // ==========================================
+        // OPTIMIZED COLLISION DETECTION SYSTEM
+        // ==========================================
         
-        // Smooth collision detection & response between blobs
-const blobs = this.floatingBlobs;
-for (let a = 0; a < blobs.length; a++) {
-    for (let b = a + 1; b < blobs.length; b++) {
-        const bd1 = blobs[a];
-        const bd2 = blobs[b];
-        const p1 = bd1.mesh.position;
-        const p2 = bd2.mesh.position;
-        const delta = new THREE.Vector3().subVectors(p2, p1);
-        const dist = delta.length();
-        const r1 = bd1.baseSize * bd1.currentScale;
-        const r2 = bd2.baseSize * bd2.currentScale;
-        const minDist = r1 + r2;
-        if (dist > 0 && dist < minDist) {
-            const overlap = minDist - dist;
-            const normal = delta.clone().divideScalar(dist);
-            // Resolve overlap: move smaller blob out fully
-            if (r1 > r2) {
-                bd2.mesh.position.addScaledVector(normal, overlap + 0.001);
-                bd2.velocity.addScaledVector(normal, overlap * 0.2);
-            } else {
-                bd1.mesh.position.addScaledVector(normal, -overlap - 0.001);
-                bd1.velocity.addScaledVector(normal, -overlap * 0.2);
+        // Adjust collision quality based on performance
+        this.adjustCollisionQuality();
+        
+        // Enhanced collision detection & response between blobs with spatial optimization
+        const qualitySettings = this.collisionOptimization.qualityLevels[this.collisionOptimization.currentQuality];
+        const blobs = this.floatingBlobs;
+        
+        // Only perform blob-to-blob collisions if quality allows and frame skipping permits
+        if (qualitySettings.blobToBlob && this.shouldPerformCollisionDetection() && blobs.length > 1) {
+            // Update spatial grid for efficient collision detection
+            this.updateSpatialGrid();
+            
+            // Get optimized collision pairs using spatial partitioning
+            const collisionPairs = this.getPotentialCollisionPairs();
+            
+            // Process collision pairs with optimized algorithm
+            for (const [a, b] of collisionPairs) {
+                const bd1 = blobs[a];
+                const bd2 = blobs[b];
+                
+                // Skip if blobs don't exist (safety check)
+                if (!bd1 || !bd2) continue;
+                
+                const p1 = bd1.mesh.position;
+                const p2 = bd2.mesh.position;
+                const delta = new THREE.Vector3().subVectors(p2, p1);
+                const dist = delta.length();
+                const r1 = bd1.baseSize * bd1.currentScale;
+                const r2 = bd2.baseSize * bd2.currentScale;
+                const minDist = r1 + r2;
+                
+                if (dist > 0 && dist < minDist) {
+                    const overlap = minDist - dist;
+                    const normal = delta.clone().normalize();
+                    
+                    // Calculate masses based on volume (radius cubed)
+                    const mass1 = r1 * r1 * r1;
+                    const mass2 = r2 * r2 * r2;
+                    const totalMass = mass1 + mass2;
+                    
+                    // Apply quality-based update frequency
+                    const updateIntensity = qualitySettings.updateFrequency;
+                    
+                    // Distribute separation based on inverse mass ratio
+                    const separation1 = (mass2 / totalMass) * (overlap + 0.02) * updateIntensity;
+                    const separation2 = (mass1 / totalMass) * (overlap + 0.02) * updateIntensity;
+                    
+                    // Move both blobs to resolve overlap
+                    bd1.mesh.position.addScaledVector(normal, -separation1);
+                    bd2.mesh.position.addScaledVector(normal, separation2);
+                    
+                    // Apply velocity responses based on mass and overlap
+                    const velocityResponse = overlap * 0.4 * updateIntensity; // Quality-scaled response
+                    bd1.velocity.addScaledVector(normal, -velocityResponse * (mass2 / totalMass));
+                    bd2.velocity.addScaledVector(normal, velocityResponse * (mass1 / totalMass));
+                    
+                    // Add slight bounce effect for more realistic collision
+                    const bounceEffect = 0.1 * updateIntensity;
+                    bd1.velocity.multiplyScalar(1 + bounceEffect);
+                    bd2.velocity.multiplyScalar(1 + bounceEffect);
+                }
+            }
+              // Enhanced performance statistics logging
+            if (Math.random() < 0.001) { // 0.1% chance per frame
+                const stats = this.collisionOptimization.stats;
+                console.log(`🔧 Enhanced Collision Stats - Quality: ${this.collisionOptimization.currentQuality}`);
+                console.log(`   • Total Checks: ${stats.totalChecks}, Spatial Opts: ${stats.spatialOptimizations}`);
+                console.log(`   • Broad-Phase Culled: ${stats.broadPhaseCulled}, Cache Hits: ${stats.cacheHits}`);
+                console.log(`   • Frame Skips: ${stats.frameSkips}, Temporal Skips: ${stats.temporalCoherenceSkips}`);
+                console.log(`   • Cache Cleanups: ${stats.cacheCleanups}, Cache Size: ${this.collisionOptimization.collisionCache.size}`);
+            }
+        }
+
+// Dynamic spike-aware ferrofluid collision detection & response
+if (this.ferrofluid) {
+    const mainBlobPosition = this.ferrofluid.position;
+    
+    for (const bd of blobs) {
+        const floatingBlobPosition = bd.mesh.position;
+        const floatingBlobRadius = bd.baseSize * bd.currentScale;
+        
+        // Calculate direction from main ferrofluid to floating blob
+        const delta = new THREE.Vector3().subVectors(floatingBlobPosition, mainBlobPosition);
+        const distance = delta.length();
+        
+        if (distance > 0) {
+            const direction = delta.clone().normalize();
+            
+            // Calculate dynamic ferrofluid radius in this direction by checking for spike extensions
+            const baseRadius = 3.0;
+            let maxExtension = baseRadius;
+            
+            // Check current spike data for extensions in this direction
+            if (this.currentBlobCenters) {
+                for (const blob of this.currentBlobCenters) {
+                    // Calculate how aligned this spike is with the direction to the floating blob
+                    const spikeDirection = blob.position.clone().normalize();
+                    const alignment = spikeDirection.dot(direction);
+                    
+                    // Only consider spikes pointing somewhat toward the floating blob
+                    if (alignment > 0.3) { // 30% alignment threshold
+                        // Calculate spike extension based on type and strength
+                        let spikeExtension = baseRadius;
+                        
+                        if (blob.type === 'high') {
+                            // High frequency spikes extend the most
+                            spikeExtension = baseRadius + blob.strength * alignment;
+                        } else if (blob.type === 'mid') {
+                            // Mid frequency spikes have moderate extension
+                            spikeExtension = baseRadius + blob.strength * 0.8 * alignment;
+                        } else if (blob.type === 'bass') {
+                            // Bass waves have minimal extension but wide influence
+                            spikeExtension = baseRadius + blob.strength * 0.5 * alignment;
+                        }
+                        
+                        // Track the maximum extension in this direction
+                        maxExtension = Math.max(maxExtension, spikeExtension);
+                    }
+                }
+            }
+            
+            // Add small safety margin to account for deformation interpolation
+            const dynamicRadius = maxExtension + 0.5;
+            const minDistance = dynamicRadius + floatingBlobRadius;
+            
+            // Check for collision with dynamic radius
+            if (distance < minDistance) {
+                const overlap = minDistance - distance;
+                const normal = direction;
+                
+                // Push floating blob away from main ferrofluid
+                bd.mesh.position.addScaledVector(normal, overlap + 0.1);
+                
+                // Add velocity to push blob away (stronger for spike collisions)
+                const pushForce = overlap * 1.2; // Increased force for spike collisions
+                bd.velocity.addScaledVector(normal, pushForce);
+                
+                // Add slight upward component and random variation for more dynamic separation
+                bd.velocity.y += Math.abs(pushForce) * 0.4;
+                
+                // Add small random perpendicular component to prevent sticking
+                const perpendicular = new THREE.Vector3(-normal.z, 0, normal.x).normalize();
+                bd.velocity.addScaledVector(perpendicular, (Math.random() - 0.5) * pushForce * 0.3);
             }
         }
     }
@@ -2455,9 +3355,7 @@ this.spawnFloatingBlobs();
             spotlight.shadow.camera.near = 1;
             spotlight.shadow.camera.far = 50;
         }
-    }
-
-    // Update shadow material color if applicable
+    }    // Update shadow material color if applicable
     if (this.gridGroup) {
         this.gridGroup.children.forEach(mesh => {
             if (mesh.material && mesh.material.type === 'ShadowMaterial') {
@@ -2465,7 +3363,49 @@ this.spawnFloatingBlobs();
             }
         });
     }
+      // Also update permanent floor shadow material when grid is disabled
+    if (this.permanentFloorMaterial && this.permanentFloorMaterial.type === 'ShadowMaterial') {
+        this.permanentFloorMaterial.color.setHex(colorToUse);
+    }
 }
+
+    updateUIOpacity() {        // Apply opacity to all onscreen UI elements
+        const uiElements = [
+            // Status message and debug panel
+            document.getElementById('status-message'),
+            document.getElementById('debug-info-panel'),
+            
+            // Track information display (includes performance monitor now)
+            document.getElementById('track-info-display'),
+            document.getElementById('track-bpm'),
+            document.getElementById('track-name-vertical'),
+            document.getElementById('track-time-display'),
+            document.getElementById('track-freq-display'),
+            document.getElementById('performance-fps'),
+            document.getElementById('performance-quality'),
+            document.getElementById('performance-objects'),
+            
+            // Frequency analyzer
+            document.getElementById('frequency-analyzer-clone'),
+            
+            // SVG logos container
+            document.getElementById('svg-logos-container')
+        ];
+
+        // Apply opacity to each element, hide completely if opacity is 0
+        uiElements.forEach(element => {
+            if (element) {
+                if (this.uiOpacity === 0) {
+                    element.style.display = 'none';
+                } else {
+                    element.style.display = '';
+                    element.style.opacity = this.uiOpacity.toString();
+                }
+            }
+        });
+
+        console.log(`UI opacity updated to: ${this.uiOpacity}`);
+    }
 
     updateFrequencyIndicators() {
         // Update the visual frequency bars in the UI
@@ -2761,9 +3701,26 @@ this.spawnFloatingBlobs();
                 this.mouse.prevX = this.mouse.x;
                 this.mouse.prevY = this.mouse.y;
             }
-        });
-          // Mouse wheel for zoom
+        });        // Mouse wheel for zoom
         document.addEventListener('wheel', (e) => {
+            // Check if mouse is over UI panel or UI hover area
+            const uiPanel = document.getElementById('ui');
+            const uiHoverArea = document.getElementById('ui-hover-area');
+            
+            // Get element under cursor
+            const elementUnderMouse = document.elementFromPoint(e.clientX, e.clientY);
+            
+            // Check if the mouse is over the UI panel or any of its children
+            const isOverUI = uiPanel && (uiPanel.contains(elementUnderMouse) || elementUnderMouse === uiPanel);
+            const isOverHoverArea = uiHoverArea && (uiHoverArea.contains(elementUnderMouse) || elementUnderMouse === uiHoverArea);
+            
+            // If mouse is over UI elements, let the browser handle scrolling normally
+            if (isOverUI || isOverHoverArea) {
+                // Don't prevent default - let the UI panel scroll naturally
+                return;
+            }
+            
+            // Otherwise, prevent default and use for camera zoom
             e.preventDefault();
             const zoomSpeed = 0.1;
             this.cameraControls.distance += e.deltaY * zoomSpeed;
@@ -2775,7 +3732,7 @@ this.spawnFloatingBlobs();
             // Trigger manual override for automatic camera movement
             this.cameraControls.autoMovement.manualOverride = true;
             this.cameraControls.autoMovement.overrideTimeout = performance.now();
-        }, { passive: false });        // Double-click to reset camera
+        }, { passive: false });// Double-click to reset camera
         document.addEventListener('dblclick', () => {
             this.cameraControls.distance = 18;  // Reset to optimal distance
             this.cameraControls.azimuth = 0;
@@ -3162,8 +4119,7 @@ this.spawnFloatingBlobs();
         // Look at target
         this.camera.lookAt(controls.targetX, controls.targetY, controls.targetZ);
     }
-    
-    animate() {
+      animate() {
         this.animationId = requestAnimationFrame(() => this.animate());
         
         // Calculate delta time for frame-rate independent animation
@@ -3173,9 +4129,37 @@ this.spawnFloatingBlobs();
         this.updateAnomalySystem(); // Update anomaly system for idle effects
         this.updateFerrofluid();
         this.updateFloatingBlobs(deltaTime);
+          // Update orbital blob system
+        if (this.orbitalBlobSystem) {
+            this.orbitalBlobSystem.update(deltaTime);
+        }
+        
+        // Update shockwave system
+        if (this.shockwaveSystem) {
+            this.shockwaveSystem.update(deltaTime);
+        }
+          // Update grid cell animation
+        if (this.gridCellAnimator) {
+            this.gridCellAnimator.update(
+                now,
+                deltaTime,
+                this.bassIntensity,
+                this.midIntensity,
+                this.highIntensity,
+                this.gridVisible && this.gridCellsActivityEnabled, // Only animate if both grid and activity are enabled
+                this.gridOpacity
+            );
+        }
+        
         this.updateLighting();
         this.updateAutomaticCameraMovement(deltaTime);
-        this.updateCameraPosition();
+        this.updateCameraPosition();        // Update performance monitor and apply quality adjustments
+        if (this.performanceMonitor) {
+            this.performanceMonitor.update();
+            
+            // Update performance display in UI
+            this.updatePerformanceDisplay();
+        }
         
         this.renderer.render(this.scene, this.camera);
     }
@@ -3202,8 +4186,7 @@ this.spawnFloatingBlobs();
         
         if (this.audioContext) {
             this.audioContext.close();
-        }
-          // Clean up floating blobs
+        }        // Clean up floating blobs
         if (this.floatingBlobs) {
             this.floatingBlobs.forEach(blobData => {
                 this.scene.remove(blobData.mesh);
@@ -3211,6 +4194,11 @@ this.spawnFloatingBlobs();
                 blobData.mesh.material.dispose();
             });
             this.floatingBlobs = [];
+        }
+
+        // Clean up orbital blob system
+        if (this.orbitalBlobSystem) {
+            this.orbitalBlobSystem.clearAll();
         }
 
         // Clean up inner ferrofluid sphere
@@ -3221,41 +4209,85 @@ this.spawnFloatingBlobs();
         }
         
         this.renderer.dispose();
-    }
-      // BPM Detection method
+    }    // Enhanced BPM Detection method
     detectBPM() {
         const now = performance.now();
-        const totalIntensity = this.bassIntensity + this.midIntensity + this.highIntensity;
-          // Debug: Log bass intensity occasionally
-        if (Math.random() < 0.02) { // 2% chance to log (increased for debugging)
-            console.log(`BPM Debug - Bass: ${this.bassIntensity.toFixed(3)}, Threshold: ${this.bpmDetector.beatThreshold}, Peaks: ${this.bpmDetector.peaks.length}`);
+        
+        // Calculate spectral energy across frequency bands
+        const bassEnergy = this.bassIntensity;
+        const midEnergy = this.midIntensity;
+        const highEnergy = this.highIntensity;
+        
+        // Weight different frequency bands for beat detection
+        // Bass and low-mids are most important for beat detection
+        const totalEnergy = (bassEnergy * 2.0) + (midEnergy * 1.5) + (highEnergy * 0.8);
+        
+        // Store energy in history for onset detection
+        this.bpmDetector.energyHistory.push(totalEnergy);
+        if (this.bpmDetector.energyHistory.length > this.bpmDetector.energyHistorySize) {
+            this.bpmDetector.energyHistory.shift();
         }
         
-        // Detect beat based on bass intensity threshold
-        if (this.bassIntensity > this.bpmDetector.beatThreshold) {
-            const timeSinceLastBeat = now - this.bpmDetector.lastBeatTime;
+        // Calculate spectral flux (energy change) for onset detection
+        if (this.bpmDetector.energyHistory.length >= 2) {
+            const currentEnergy = totalEnergy;
+            const previousEnergy = this.bpmDetector.energyHistory[this.bpmDetector.energyHistory.length - 2];
+            const spectralFlux = Math.max(0, currentEnergy - previousEnergy); // Only positive changes
             
-            // Avoid detecting multiple beats too close together (minimum 300ms between beats = 200 BPM max)
-            if (timeSinceLastBeat > 300) {
-                this.bpmDetector.peaks.push(now);
-                this.bpmDetector.lastBeatTime = now;
+            this.bpmDetector.spectralFluxHistory.push(spectralFlux);
+            if (this.bpmDetector.spectralFluxHistory.length > this.bpmDetector.energyHistorySize) {
+                this.bpmDetector.spectralFluxHistory.shift();
+            }
+            
+            // Calculate adaptive threshold based on recent spectral flux history
+            if (this.bpmDetector.spectralFluxHistory.length >= 10) {
+                const recentFlux = this.bpmDetector.spectralFluxHistory.slice(-20); // Last 20 frames
+                const meanFlux = recentFlux.reduce((sum, val) => sum + val, 0) / recentFlux.length;
+                const variance = recentFlux.reduce((sum, val) => sum + Math.pow(val - meanFlux, 2), 0) / recentFlux.length;
+                const stdDev = Math.sqrt(variance);
                 
-                // Debug: Log beat detection
-                console.log(`Beat detected! Bass: ${this.bassIntensity.toFixed(3)}, Total peaks: ${this.bpmDetector.peaks.length}`);
+                // Adaptive threshold: mean + (multiplier * standard deviation)
+                this.bpmDetector.adaptiveThreshold = meanFlux + (this.bpmDetector.thresholdMultiplier * stdDev);
                 
-                // Remove old peaks outside of analysis window
-                const windowStart = now - this.bpmDetector.analysisWindow;
-                this.bpmDetector.peaks = this.bpmDetector.peaks.filter(peak => peak > windowStart);
-                
-                // Calculate BPM if we have enough peaks
-                if (this.bpmDetector.peaks.length >= 4) {
-                    this.calculateBPM();
+                // Detect onset when spectral flux exceeds adaptive threshold
+                if (spectralFlux > this.bpmDetector.adaptiveThreshold) {
+                    const timeSinceLastBeat = now - this.bpmDetector.lastBeatTime;
+                    
+                    // Enforce minimum interval between beats
+                    if (timeSinceLastBeat > this.bpmDetector.minimumBeatInterval) {
+                        // Additional validation: ensure this is a significant energy increase
+                        const energyIncrease = currentEnergy / Math.max(previousEnergy, 0.01);
+                        
+                        if (energyIncrease > 1.1) { // At least 10% energy increase
+                            this.bpmDetector.peaks.push(now);
+                            this.bpmDetector.lastBeatTime = now;
+                            
+                            // Debug: Log beat detection occasionally
+                            if (Math.random() < 0.1) {
+                                console.log(`Enhanced Beat detected! Flux: ${spectralFlux.toFixed(3)}, Threshold: ${this.bpmDetector.adaptiveThreshold.toFixed(3)}, Energy increase: ${(energyIncrease * 100 - 100).toFixed(1)}%`);
+                            }
+                            
+                            // Remove old peaks outside of analysis window
+                            const windowStart = now - this.bpmDetector.analysisWindow;
+                            this.bpmDetector.peaks = this.bpmDetector.peaks.filter(peak => peak > windowStart);
+                            
+                            // Calculate BPM if we have enough peaks
+                            if (this.bpmDetector.peaks.length >= 6) { // Require more peaks for accuracy
+                                this.calculateBPM();
+                            }
+                        }
+                    }
                 }
             }
         }
+        
+        // Debug logging occasionally
+        if (Math.random() < 0.01) {
+            console.log(`BPM Debug - Total Energy: ${totalEnergy.toFixed(3)}, Adaptive Threshold: ${this.bpmDetector.adaptiveThreshold.toFixed(3)}, Peaks: ${this.bpmDetector.peaks.length}`);
+        }
     }    calculateBPM() {
-        if (this.bpmDetector.peaks.length < 4) {
-            console.log(`ARTEFAKT BPM: Not enough peaks (${this.bpmDetector.peaks.length}/4 required)`);
+        if (this.bpmDetector.peaks.length < 6) {
+            console.log(`ARTEFAKT BPM: Not enough peaks (${this.bpmDetector.peaks.length}/6 required)`);
             return;
         }
         
@@ -3265,44 +4297,101 @@ this.spawnFloatingBlobs();
             intervals.push(this.bpmDetector.peaks[i] - this.bpmDetector.peaks[i - 1]);
         }
         
-        console.log(`ARTEFAKT BPM: Raw intervals (${intervals.length}):`, intervals.map(i => Math.round(i)).join(', '));
-        
-        // Remove outliers (intervals that are too different from the median)
+        // Enhanced statistical analysis
         intervals.sort((a, b) => a - b);
-        const median = intervals[Math.floor(intervals.length / 2)];
+        
+        // Calculate quartiles for better outlier detection
+        const q1Index = Math.floor(intervals.length * 0.25);
+        const q3Index = Math.floor(intervals.length * 0.75);
+        const medianIndex = Math.floor(intervals.length * 0.5);
+        
+        const q1 = intervals[q1Index];
+        const q3 = intervals[q3Index];
+        const median = intervals[medianIndex];
+        const iqr = q3 - q1;
+        
+        // Use interquartile range for more robust outlier detection
+        const lowerBound = q1 - (1.5 * iqr);
+        const upperBound = q3 + (1.5 * iqr);
+        
         const filteredIntervals = intervals.filter(interval => 
-            Math.abs(interval - median) < median * 0.3 // Within 30% of median
+            interval >= lowerBound && interval <= upperBound
         );
         
-        console.log(`ARTEFAKT BPM: Median: ${Math.round(median)}ms, Filtered intervals (${filteredIntervals.length}):`, filteredIntervals.map(i => Math.round(i)).join(', '));
+        console.log(`ARTEFAKT BPM: Raw intervals (${intervals.length}), Filtered (${filteredIntervals.length}), Median: ${Math.round(median)}ms`);
         
-        if (filteredIntervals.length < 2) {
-            console.log(`ARTEFAKT BPM: Not enough filtered intervals (${filteredIntervals.length}/2 required)`);
+        if (filteredIntervals.length < 3) {
+            console.log(`ARTEFAKT BPM: Not enough filtered intervals (${filteredIntervals.length}/3 required)`);
             return;
         }
-          // Calculate average interval
-        const avgInterval = filteredIntervals.reduce((sum, interval) => sum + interval, 0) / filteredIntervals.length;
         
-        // Convert to BPM (60000 ms = 1 minute)
-        const calculatedBPM = Math.round(60000 / avgInterval);
+        // Calculate weighted average (give more weight to intervals closer to median)
+        let weightedSum = 0;
+        let totalWeight = 0;
         
-        console.log(`ARTEFAKT BPM: Average interval: ${Math.round(avgInterval)}ms, Calculated BPM: ${calculatedBPM}, Valid range: ${this.bpmDetector.minBpm}-${this.bpmDetector.maxBpm}`);
-          // Validate BPM range
-        if (calculatedBPM >= this.bpmDetector.minBpm && calculatedBPM <= this.bpmDetector.maxBpm) {
+        filteredIntervals.forEach(interval => {
+            const distanceFromMedian = Math.abs(interval - median);
+            const weight = 1 / (1 + distanceFromMedian / median); // Weight inversely proportional to distance from median
+            weightedSum += interval * weight;
+            totalWeight += weight;
+        });
+        
+        const avgInterval = weightedSum / totalWeight;
+        
+        // Convert to BPM with rounding to nearest integer
+        let calculatedBPM = Math.round(60000 / avgInterval);
+        
+        // Apply harmonic analysis to detect potential half-time or double-time issues
+        const halfTimeBPM = Math.round(calculatedBPM / 2);
+        const doubleTimeBPM = Math.round(calculatedBPM * 2);
+        
+        // Check if half-time or double-time makes more sense based on typical BPM ranges
+        if (calculatedBPM > 160 && halfTimeBPM >= 70) {
+            // Likely detecting double-time, use half-time instead
+            console.log(`ARTEFAKT BPM: Detected potential double-time (${calculatedBPM}), using half-time: ${halfTimeBPM}`);
+            calculatedBPM = halfTimeBPM;
+        } else if (calculatedBPM < 80 && doubleTimeBPM <= 180) {
+            // Likely detecting half-time, use double-time instead
+            console.log(`ARTEFAKT BPM: Detected potential half-time (${calculatedBPM}), using double-time: ${doubleTimeBPM}`);
+            calculatedBPM = doubleTimeBPM;
+        }
+        
+        // Calculate confidence based on interval consistency
+        const intervalVariance = filteredIntervals.reduce((sum, interval) => 
+            sum + Math.pow(interval - avgInterval, 2), 0) / filteredIntervals.length;
+        const intervalStdDev = Math.sqrt(intervalVariance);
+        const coefficientOfVariation = intervalStdDev / avgInterval;
+        const confidence = Math.max(0, 1 - coefficientOfVariation * 2); // Lower CV = higher confidence
+        
+        // Store confidence for this BPM calculation
+        this.bpmDetector.confidenceWindow.push(confidence);
+        if (this.bpmDetector.confidenceWindow.length > this.bpmDetector.confidenceWindowSize) {
+            this.bpmDetector.confidenceWindow.shift();
+        }
+        
+        // Calculate average confidence over recent calculations
+        const avgConfidence = this.bpmDetector.confidenceWindow.reduce((sum, c) => sum + c, 0) / this.bpmDetector.confidenceWindow.length;
+        
+        console.log(`ARTEFAKT BPM: Calculated: ${calculatedBPM}, Confidence: ${(confidence * 100).toFixed(1)}%, Avg Confidence: ${(avgConfidence * 100).toFixed(1)}%`);
+        
+        // Only update BPM if confidence is high enough and BPM is in valid range
+        if (calculatedBPM >= this.bpmDetector.minBpm && 
+            calculatedBPM <= this.bpmDetector.maxBpm && 
+            avgConfidence >= this.bpmDetector.minConfidence) {
+            
             this.bpmDetector.bpm = calculatedBPM;
             const bpmElement = document.getElementById('track-bpm');
             if (bpmElement) {
                 bpmElement.textContent = calculatedBPM.toString();
-                console.log(`ARTEFAKT BPM updated to: ${calculatedBPM}, element found: ${bpmElement.tagName}`);
-            } else {
-                console.log(`ARTEFAKT BPM element not found! Calculated BPM: ${calculatedBPM}`);
+                console.log(`ARTEFAKT BPM updated to: ${calculatedBPM} (confidence: ${(avgConfidence * 100).toFixed(1)}%)`);
             }
         } else {
-            console.log(`ARTEFAKT BPM ${calculatedBPM} rejected (outside valid range ${this.bpmDetector.minBpm}-${this.bpmDetector.maxBpm})`);
+            const reason = calculatedBPM < this.bpmDetector.minBpm || calculatedBPM > this.bpmDetector.maxBpm 
+                ? `outside valid range ${this.bpmDetector.minBpm}-${this.bpmDetector.maxBpm}` 
+                : `low confidence ${(avgConfidence * 100).toFixed(1)}% < ${(this.bpmDetector.minConfidence * 100)}%`;
+            console.log(`ARTEFAKT BPM ${calculatedBPM} rejected (${reason})`);
         }
-    }
-
-    // Settings Methods
+    }// Settings Methods
     getUISettings() {
         return {
             // Audio settings
@@ -3317,6 +4406,7 @@ this.spawnFloatingBlobs();
             gridSize: this.gridSize,
             gridOpacity: this.gridOpacity,
             gridColor: this.gridColor,
+            gridCellsActivityEnabled: this.gridCellsActivityEnabled, // Persist toggle
             
             // Shadow settings
             shadowTransparency: this.shadowTransparency,
@@ -3332,17 +4422,22 @@ this.spawnFloatingBlobs();
             lightHighColor: this.lightHighColor,
               // Environment settings
             envSphereColor: this.envSphereColor,
-            envSphereSize: this.envSphereSize,
-            envVisibility: this.envVisibility,
+            envSphereSize: this.envSphereSize,            envVisibility: this.envVisibility,
             
-            // Mouse interaction settings
-            mouseInteractionEnabled: this.mouseInteraction.enabled,
-            mouseForceStrength: this.mouseInteraction.forceStrength,
-            mouseForceRadius: this.mouseInteraction.forceRadius,
-            mousePushForce: this.mouseInteraction.pushForce,
-            
-            // Debug settings
+            // Onscreen info settings
+            uiOpacity: this.uiOpacity,
+              // Mouse interaction settings
+            mouseInteractionEnabled: this.mouseInteraction ? this.mouseInteraction.enabled : true,
+            mouseForceStrength: this.mouseInteraction ? this.mouseInteraction.forceStrength : 0.5,
+            mouseForceRadius: this.mouseInteraction ? this.mouseInteraction.forceRadius : 0.2,
+            mousePushForce: this.mouseInteraction ? this.mouseInteraction.pushForce : 2,            // Shockwave system settings (simplified - only configurable settings)
+            shockwaveEnabled: this.shockwaveSystem ? this.shockwaveSystem.enabled : true,
+            shockwaveIntensity: this.shockwaveSystem ? this.shockwaveSystem.config.intensity : 1.0,
+            shockwaveLifetime: this.shockwaveSystem ? this.shockwaveSystem.config.lifetime : 3.0,
+            shockwaveOpacity: this.shockwaveSystem ? this.shockwaveSystem.config.opacity : 0.8,            // Debug settings
             debugEncodingEnabled: window.debugEncodingSettings ? window.debugEncodingSettings.enabled : false,
+            debugConsoleVisible: document.getElementById('debug-console-toggle') ? 
+                document.getElementById('debug-console-toggle').checked : true,
             
             // Metadata
             settingsVersion: "1.0",
@@ -3360,15 +4455,16 @@ this.spawnFloatingBlobs();
                 if (sensitivitySlider) sensitivitySlider.value = this.sensitivity;
                 if (sensitivityValue) sensitivityValue.textContent = this.sensitivity.toFixed(1);
             }
-            
-            if (settings.smoothing !== undefined) {
+              if (settings.smoothing !== undefined) {
                 this.smoothing = settings.smoothing;
                 const smoothingSlider = document.getElementById('smoothing');
                 const smoothingValue = document.getElementById('smoothing-value');
                 if (smoothingSlider) smoothingSlider.value = this.smoothing;
                 if (smoothingValue) smoothingValue.textContent = this.smoothing.toFixed(1);
                 if (this.analyser) {
-                    this.analyser.smoothingTimeConstant = this.smoothing;
+                    // Clamp smoothingTimeConstant to valid range [0,1] for Web Audio API
+                    const clampedSmoothing = Math.max(0, Math.min(1, this.smoothing));
+                    this.analyser.smoothingTimeConstant = clampedSmoothing;
                 }
             }
               // Grid settings
@@ -3390,10 +4486,14 @@ this.spawnFloatingBlobs();
                 const gridSizeSlider = document.getElementById('grid-size');
                 const gridSizeValue = document.getElementById('grid-size-value');
                 if (gridSizeSlider) gridSizeSlider.value = this.gridSize;
-                if (gridSizeValue) gridSizeValue.textContent = this.gridSize;
-                this.createGrid(); // Recreate grid with new size
+                if (gridSizeValue) gridSizeValue.textContent = this.gridSize;                this.createGrid(); // Recreate grid with new size
                 if (this.cameraControls) {
                     this.clampCameraTarget();
+                }
+                  // Recreate grid cell animator with new size
+                if (this.gridCellAnimator) {
+                    this.gridCellAnimator.dispose();
+                    this.gridCellAnimator = new GridCellAnimator(this.gridSize, this.scene, this.analyser, this.gridColor, this.backgroundColor);
                 }
             }
             
@@ -3429,22 +4529,31 @@ this.spawnFloatingBlobs();
                 }                // Update frequency analyzer colors
                 const gridColorHex = '#' + this.gridColor.toString(16).padStart(6, '0');
                 this.updateFrequencyAnalyzerCloneColors(gridColorHex);
-                
-                // Update track info elements
+                  // Update track info elements
                 const trackBpm = document.getElementById('track-bpm');
                 const trackNameVertical = document.getElementById('track-name-vertical');
                 const trackTimeDisplay = document.getElementById('track-time-display');
                 const trackFreqDisplay = document.getElementById('track-freq-display');
+                const performanceFps = document.getElementById('performance-fps');
+                const performanceQuality = document.getElementById('performance-quality');
+                const performanceObjects = document.getElementById('performance-objects');
                 if (trackBpm) trackBpm.style.color = gridColorHex;
                 if (trackNameVertical) trackNameVertical.style.color = gridColorHex;
                 if (trackTimeDisplay) trackTimeDisplay.style.color = gridColorHex;
                 if (trackFreqDisplay) trackFreqDisplay.style.color = gridColorHex;
-                
-                // Update debug panel and status message colors
+                if (performanceFps) performanceFps.style.color = gridColorHex;
+                if (performanceQuality) performanceQuality.style.color = gridColorHex;
+                if (performanceObjects) performanceObjects.style.color = gridColorHex;
+                  // Update debug panel and status message colors
                 const debugPanel = document.getElementById('debug-info-panel');
                 const statusMessage = document.getElementById('status-message');
                 if (debugPanel) debugPanel.style.color = gridColorHex;
                 if (statusMessage) statusMessage.style.color = gridColorHex;
+                
+                // Update grid cell animator colors
+                if (this.gridCellAnimator) {
+                    this.gridCellAnimator.updateColors(this.gridColor, this.backgroundColor);
+                }
             }
             
             // Shadow settings
@@ -3474,8 +4583,7 @@ this.spawnFloatingBlobs();
                     shadowColorInput.disabled = this.linkShadowColor;
                 }
             }
-            
-            // Background settings
+              // Background settings
             if (settings.backgroundColor !== undefined) {
                 this.backgroundColor = settings.backgroundColor;
                 const backgroundColorInput = document.getElementById('background-color');
@@ -3489,6 +4597,11 @@ this.spawnFloatingBlobs();
                     }
                 }
                 this.updateLightingFromBackground();
+                
+                // Update grid cell animator colors
+                if (this.gridCellAnimator) {
+                    this.gridCellAnimator.updateColors(this.gridColor, this.backgroundColor);
+                }
             }
             
             // Light colors
@@ -3535,25 +4648,116 @@ this.spawnFloatingBlobs();
                 if (envSizeSlider) envSizeSlider.value = this.envSphereSize;
                 if (envSizeValue) envSizeValue.textContent = this.envSphereSize;
                 this.updateEnvironment();
-            }
-              if (settings.envVisibility !== undefined) {
+            }            if (settings.envVisibility !== undefined) {
                 this.envVisibility = settings.envVisibility;
                 const envToggle = document.getElementById('env-visibility');
                 if (envToggle) envToggle.checked = this.envVisibility > 0;
                 this.updateEnvironment();
-            }            
-            // Mouse interaction settings (internal only - no UI controls)
+            }
+              // UI opacity settings - default to 1.0 for backward compatibility
+            this.uiOpacity = settings.uiOpacity !== undefined ? settings.uiOpacity : 1.0;
+            const uiOpacitySlider = document.getElementById('ui-opacity');
+            const uiOpacityValue = document.getElementById('ui-opacity-value');
+            if (uiOpacitySlider) uiOpacitySlider.value = this.uiOpacity;
+            if (uiOpacityValue) uiOpacityValue.textContent = this.uiOpacity.toFixed(1);
+            this.updateUIOpacity();
+              // Mouse interaction settings (internal only - no UI controls)
             // Mouse interaction is always enabled during idle mode
-            
-            // Debug settings
+              // Grid Cells Activity setting
+            if (settings.gridCellsActivityEnabled !== undefined) {
+                this.gridCellsActivityEnabled = settings.gridCellsActivityEnabled;
+                const gridCellsActivityToggle = document.getElementById('grid-cells-activity-toggle');
+                if (gridCellsActivityToggle) gridCellsActivityToggle.checked = this.gridCellsActivityEnabled;
+            }
+              // Grid Cells Activity setting
+            if (settings.gridCellsActivityEnabled !== undefined) {
+                this.gridCellsActivityEnabled = settings.gridCellsActivityEnabled;
+                const gridCellsActivityToggle = document.getElementById('grid-cells-activity-toggle');
+                if (gridCellsActivityToggle) gridCellsActivityToggle.checked = this.gridCellsActivityEnabled;
+            }
+              // Debug settings
             if (settings.debugEncodingEnabled !== undefined && window.debugEncodingControls) {
                 window.debugEncodingControls.setEnabled(settings.debugEncodingEnabled);
-                const debugToggle = document.getElementById('debug-encoding-toggle');
-                if (debugToggle) debugToggle.checked = settings.debugEncodingEnabled;
+                const debugToggle = document.getElementById('debug-encoding-toggle');            if (debugToggle) debugToggle.checked = settings.debugEncodingEnabled;
+            }            // Debug console settings
+            const debugPanel = document.getElementById('debug-info-panel');
+            const debugConsoleToggle = document.getElementById('debug-console-toggle');
+            if (debugPanel && debugConsoleToggle) {
+                // Set to the loaded value if present, otherwise default to true
+                const debugConsoleVisible = settings.debugConsoleVisible !== undefined ? settings.debugConsoleVisible : true;
+                debugPanel.style.display = debugConsoleVisible ? 'block' : 'none';
+                debugConsoleToggle.checked = debugConsoleVisible;
+            }
+              // Shockwave settings
+            const shockwaveEnabledToggle = document.getElementById('shockwave-enabled');
+            if (shockwaveEnabledToggle) {
+                // Set to the loaded value if present, otherwise default to false
+                const shockwaveEnabled = settings.shockwaveEnabled !== undefined ? settings.shockwaveEnabled : false;
+                shockwaveEnabledToggle.checked = shockwaveEnabled;
+                if (this.shockwaveSystem) {
+                    this.shockwaveSystem.setEnabled(shockwaveEnabled);
+                }
             }
             
-            // Update shadow colors after all settings are applied
+            if (settings.shockwaveIntensity !== undefined) {
+                const shockwaveIntensitySlider = document.getElementById('shockwave-intensity');
+                const shockwaveIntensityValue = document.getElementById('shockwave-intensity-value');
+                if (shockwaveIntensitySlider) shockwaveIntensitySlider.value = settings.shockwaveIntensity;
+                if (shockwaveIntensityValue) shockwaveIntensityValue.textContent = settings.shockwaveIntensity.toFixed(1);
+                if (this.shockwaveSystem) {
+                    this.shockwaveSystem.config.intensity = settings.shockwaveIntensity;
+                }
+            }
+            
+            if (settings.shockwaveLineCount !== undefined) {
+                const shockwaveCountSlider = document.getElementById('shockwave-count');
+                const shockwaveCountValue = document.getElementById('shockwave-count-value');
+                if (shockwaveCountSlider) shockwaveCountSlider.value = settings.shockwaveLineCount;
+                if (shockwaveCountValue) shockwaveCountValue.textContent = settings.shockwaveLineCount;
+                if (this.shockwaveSystem) {
+                    this.shockwaveSystem.config.maxLines = settings.shockwaveLineCount;
+                    this.shockwaveSystem.maxShockwaves = Math.min(settings.shockwaveLineCount, 12);
+                }
+            }
+            
+            if (settings.shockwaveExpansionSpeed !== undefined) {
+                const shockwaveSpeedSlider = document.getElementById('shockwave-speed');
+                const shockwaveSpeedValue = document.getElementById('shockwave-speed-value');
+                if (shockwaveSpeedSlider) shockwaveSpeedSlider.value = settings.shockwaveExpansionSpeed;
+                if (shockwaveSpeedValue) shockwaveSpeedValue.textContent = settings.shockwaveExpansionSpeed.toFixed(1);
+                if (this.shockwaveSystem) {
+                    this.shockwaveSystem.config.expansionSpeed = settings.shockwaveExpansionSpeed;
+                }
+            }
+            
+            if (settings.shockwaveLifetime !== undefined) {
+                const shockwaveLifetimeSlider = document.getElementById('shockwave-lifetime');
+                const shockwaveLifetimeValue = document.getElementById('shockwave-lifetime-value');
+                if (shockwaveLifetimeSlider) shockwaveLifetimeSlider.value = settings.shockwaveLifetime;
+                if (shockwaveLifetimeValue) shockwaveLifetimeValue.textContent = settings.shockwaveLifetime.toFixed(1);
+                if (this.shockwaveSystem) {
+                    this.shockwaveSystem.config.lifetime = settings.shockwaveLifetime;
+                }
+            }
+            
+            if (settings.shockwaveOpacity !== undefined) {
+                const shockwaveOpacitySlider = document.getElementById('shockwave-opacity');
+                const shockwaveOpacityValue = document.getElementById('shockwave-opacity-value');
+                if (shockwaveOpacitySlider) shockwaveOpacitySlider.value = settings.shockwaveOpacity;
+                if (shockwaveOpacityValue) shockwaveOpacityValue.textContent = settings.shockwaveOpacity.toFixed(1);
+                if (this.shockwaveSystem) {
+                    this.shockwaveSystem.config.opacity = settings.shockwaveOpacity;
+                    // Update material opacities immediately
+                    Object.values(this.shockwaveSystem.materials).forEach(material => {
+                        material.opacity = settings.shockwaveOpacity;
+                    });
+                }
+            }
+              // Update shadow colors after all settings are applied
             this.updateShadowColors();
+            
+            // Mark that settings have been loaded to prevent initializeUIValues from overwriting
+            this.settingsLoaded = true;
             
             console.log('Settings applied successfully');
             return true;
@@ -3561,7 +4765,15 @@ this.spawnFloatingBlobs();
             console.error('Error applying settings:', error);
             return false;
         }
-    }    async refreshSettingsDropdown() {
+    }
+
+    // Helper function to add cache-busting timestamp parameter to URLs
+    addCacheBusting(url) {
+        const separator = url.includes('?') ? '&' : '?';
+        return `${url}${separator}_t=${Date.now()}`;
+    }
+
+    async refreshSettingsDropdown() {
         const dropdown = document.getElementById('settings-dropdown');
         if (!dropdown) {
             console.warn('Settings dropdown not found');
@@ -3573,20 +4785,18 @@ this.spawnFloatingBlobs();
             dropdown.innerHTML = '<option value="">Select a preset...</option>';
             
             let loadedCount = 0;
-            
-            // First, try to fetch a settings index file that lists all available presets
+              // First, try to fetch a settings index file that lists all available presets
             try {
-                const indexResponse = await fetch('settings/index.json');
+                const indexResponse = await fetch(this.addCacheBusting('settings/index.json'));
                 if (indexResponse.ok) {
                     const indexData = await indexResponse.json();
                     if (indexData.presets && Array.isArray(indexData.presets)) {
-                        console.log('Loading presets from index.json');
-                        for (const preset of indexData.presets) {
+                        console.log('Loading presets from index.json');                        for (const preset of indexData.presets) {
                             const filename = preset.file || preset;
                             const displayName = preset.name || filename.replace('.json', '').replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                             
                             try {
-                                const response = await fetch(`settings/${filename}`);
+                                const response = await fetch(this.addCacheBusting(`settings/${filename}`));
                                 if (response.ok) {
                                     const option = document.createElement('option');
                                     option.value = `settings/${filename}`;
@@ -3610,10 +4820,9 @@ this.spawnFloatingBlobs();
             // Fallback: Try to discover JSON files by attempting common patterns
             // This is a compromise solution for static web apps
             const discoveryAttempts = [];
-            
-            // Try to fetch the settings directory listing (works on some servers)
+              // Try to fetch the settings directory listing (works on some servers)
             try {
-                const dirResponse = await fetch('settings/');
+                const dirResponse = await fetch(this.addCacheBusting('settings/'));
                 if (dirResponse.ok) {
                     const dirText = await dirResponse.text();
                     // Look for .json files in directory listing HTML
@@ -3642,11 +4851,10 @@ this.spawnFloatingBlobs();
                     'soviet-red.json'
                 );
             }
-            
-            // Load discovered/known files
+              // Load discovered/known files
             for (const filename of discoveryAttempts) {
                 try {
-                    const response = await fetch(`settings/${filename}`);
+                    const response = await fetch(this.addCacheBusting(`settings/${filename}`));
                     if (response.ok) {
                         const option = document.createElement('option');
                         option.value = `settings/${filename}`;
@@ -3674,9 +4882,8 @@ this.spawnFloatingBlobs();
             console.warn('No preset selected');
             return;
         }
-        
-        try {
-            const response = await fetch(dropdown.value);
+          try {
+            const response = await fetch(this.addCacheBusting(dropdown.value));
             if (!response.ok) {
                 throw new Error(`Failed to load preset: ${response.status}`);
             }
@@ -3990,8 +5197,7 @@ this.spawnFloatingBlobs();
     console.log = function(...args) {
         const cleanArgs = args.map(formatArg);
         const text = cleanArgs.join(' ');
-        
-        // Check if encoding is enabled to avoid duplication
+          // Check if encoding is enabled to avoid duplication
         if (window.debugEncodingSettings && window.debugEncodingSettings.enabled) {
             // When encoding enabled, let addEncodedLine handle everything
             addEncodedLine(text);
@@ -4002,7 +5208,8 @@ this.spawnFloatingBlobs();
             updateDebugPanel();
         }
         
-        origLog.apply(console, args);
+        // Suppress console.log from real browser console (only show in debug panel)
+        // origLog.apply(console, args); // Commented out to mute real console
     };
     
     // Also patch console.warn and console.error for completeness
@@ -4010,8 +5217,7 @@ this.spawnFloatingBlobs();
     console.warn = function(...args) {
         const cleanArgs = args.map(formatArg);
         const text = '[WARN] ' + cleanArgs.join(' ');
-        
-        // Check if encoding is enabled to avoid duplication
+          // Check if encoding is enabled to avoid duplication
         if (window.debugEncodingSettings && window.debugEncodingSettings.enabled) {
             // When encoding enabled, let addEncodedLine handle everything
             addEncodedLine(text);
@@ -4022,7 +5228,8 @@ this.spawnFloatingBlobs();
             updateDebugPanel();
         }
         
-        origWarn.apply(console, args);
+        // Suppress console.warn from real browser console (only show in debug panel)
+        // origWarn.apply(console, args); // Commented out to mute real console
     };
     
     const origErr = console.error;
@@ -4038,9 +5245,9 @@ this.spawnFloatingBlobs();
             // When encoding disabled, add directly to buffer
             debugBuffer.push(text);
             if (debugBuffer.length > MAX_LINES) debugBuffer = debugBuffer.slice(-MAX_LINES);
-            updateDebugPanel();
-        }
+            updateDebugPanel();        }
         
+        // Keep console.error in real browser console for debugging purposes
         origErr.apply(console, args);
     };
       // Configuration for decoding effect

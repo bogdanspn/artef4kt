@@ -4,35 +4,66 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ARTEF4KT - Ferrofluid Inspired Music Visualizer</title>
+    <link rel="icon" type="image/svg+xml" href="images/favicon.svg">
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
-<body>    <div id="container">
+<body>    
+    <div id="container">
+
         <canvas id="visualizer"></canvas>
         
         <div id="ui-hover-area"></div>
-        <div id="ui">
+          <div id="ui">
             <div id="header">
                 <h1>ARTEF4KT</h1>
+                <img src="images/favicon.svg" alt="ARTEF4KT Logo" id="header-logo">
             </div>
             
-            <div id="controls">                
-                <div class="control-group">
-                    <label for="audio-file">Load Audio File</label>
-                    <div class="custom-file-input">
-                        <input type="file" id="audio-file" accept="audio/*" style="display: none;">
-                        <button id="file-button" type="button">File</button>
-                        <span id="file-name-display">bogdan-rosu-yfflon.mp3</span>
+            <div id="controls">  
+                <div class="control-section">                
+                    <div class="control-group">
+                        <div class="section-name">Load Audio File</div>
+                        <div class="custom-file-input">
+                            <input type="file" id="audio-file" accept="audio/*" style="display: none;">
+                            <button id="file-button" type="button">File</button>
+                            <span id="file-name-display">bogdan-rosu-yfflon.mp3</span>
+                        </div>
                     </div>
-                </div>                
-                <div class="control-group player-buttons">
-                    <button id="play-pause">▶ PLAY</button>
-                    <button id="loop">⟲</button>
-                    <button id="stop">⏹ STOP</button>
-                </div>
+                    <div class="control-group">
+                        <div class="settings-selector-group">
+                            <select id="track-select">
+                                <option value="">Select a Track...</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group player-buttons">
+                        <button id="play-pause">▶ PLAY</button>
+                        <button id="loop">⟲</button>
+                        <button id="stop">⏹ STOP</button>
+                    </div>
 
+                    <!-- Settings Controls -->
+                    <div class="control-group settings-controls">
+                        <div class="section-name">Settings</div>
+                        <div class="settings-control">                        
+                            <div class="settings-selector-group">
+                                <select id="settings-dropdown">
+                                    <option value="">Select a preset...</option>
+                                </select>
+                                <button id="refresh-presets" title="Refresh preset list">⟲</button>
+                            </div>
+                            <div class="settings-file-group">
+                                <input type="file" id="settings-file-input" accept=".json" style="display: none;">
+                                <button id="import-settings" title="Import settings from JSON file">Import</button>
+                                <button id="export-settings" title="Export current settings to JSON file">Export</button>
+                            </div>                    
+                        </div>                
+                    </div>                
+                </div>
                 <div class="control-section">
                     <div class="section-name">Main Sensorics</div>
                     <div class="control-group slider-control">
@@ -48,7 +79,7 @@
                             <label for="smoothing">Smoothing</label>
                             <span id="smoothing-value">0.8</span>
                         </div>
-                        <input type="range" id="smoothing" min="0" max="2" step="0.1" value="0.8">                
+                        <input type="range" id="smoothing" min="0" max="1" step="0.1" value="0.8">                
                     </div>
                 </div>
                 <div class="control-section">
@@ -74,32 +105,50 @@
                         </div>
                         <input type="range" id="grid-opacity" min="0.1" max="0.8" step="0.1" value="0.3">
                     </div>
-                </div>
-
+                </div>                
                 <div class="control-section">
                     <div class="section-name">Environment Control</div>
                     <div class="control-group slider-control">
                         <div class="control-header">
                             <label for="env-size">Environment Size</label>
-                            <span id="env-size-value">80</span>
+                            <span id="env-size-value">115</span>
                         </div>
-                        <input type="range" id="env-size" min="50" max="200" step="5" value="80">
+                        <input type="range" id="env-size" min="50" max="200" step="5" value="115">
                     </div>
+
+                    <div class="control-group slider-control">
+                        <div class="control-header">
+                            <label for="ui-opacity">Info Opacity</label>
+                            <span id="ui-opacity-value">1.0</span>
+                        </div>
+                        <input type="range" id="ui-opacity" min="0" max="1" step="0.1" value="1.0">
+                    </div>      
                     
                     <div class="control-group checkbox-control">
                         <div class="control-header">
                             <label for="env-visibility">Environment Visibility</label>
                             <input type="checkbox" id="env-visibility" checked>
                         </div>
-                    </div>   
+                    </div>                    <div class="control-group checkbox-control">
+                        <div class="control-header">
+                            <label for="debug-console-toggle">Debug Console</label>
+                            <input type="checkbox" id="debug-console-toggle" checked>
+                        </div>
+                    </div>
                     <div class="control-group checkbox-control">
                         <div class="control-header">
                             <label for="debug-encoding-toggle">Debug Encoding</label>
                             <input type="checkbox" id="debug-encoding-toggle" checked>
                         </div>
-                    </div>                    
-                </div>                 
-
+                    </div>
+                    <div class="control-group checkbox-control">
+                        <div class="control-header">
+                            <label for="grid-cells-activity-toggle">Grid Cells Activity</label>
+                            <input type="checkbox" id="grid-cells-activity-toggle" checked>
+                        </div>
+                    </div>     
+           
+                </div>                     
 
                 <div class="control-section">
                     <div class="section-name">Shadow Control</div>
@@ -131,7 +180,8 @@
                         <div class="color-control">
                             <label for="shadow-color">Shdcolor</label>
                             <input type="color" id="shadow-color" value="#333333">
-                        </div>                    <div class="color-control">
+                        </div>                    
+                        <div class="color-control">
                             <label for="env-sphere-color">Envcolor</label>
                             <input type="color" id="env-sphere-color" value="#999999">
                         </div>
@@ -146,18 +196,50 @@
                         <div class="color-control">
                             <label for="light-mid-color">Mid Spot</label>
                             <input type="color" id="light-mid-color" value="#33ff66">
-                        </div>
+                        </div>                        
                         <div class="color-control">
                             <label for="light-high-color">High Spot</label>
                             <input type="color" id="light-high-color" value="#3366ff">
                         </div>
                         <div class="color-control">
-                            
-                        </div>
+                            <label for="randomize-colors">Random</label>
+                            <button id="randomize-colors" title="Generate harmonious color scheme">🎲</button>
+                        </div>                    
                     </div> 
                 </div>  
                 <div class="control-section">
-                    <div class="section-name">Equalizer</div>                                  
+                    <div class="section-name">Shockwave System</div>                    
+                    <div class="control-group checkbox-control">                        
+                        <div class="control-header">
+                            <label for="shockwave-enabled">Enable Shockwaves</label>
+                            <input type="checkbox" id="shockwave-enabled">                
+                        </div>
+                    </div>
+                    
+                    <div class="control-group slider-control">
+                        <div class="control-header">
+                            <label for="shockwave-intensity">Intensity</label>
+                            <span id="shockwave-intensity-value">1.0</span>
+                        </div>
+                        <input type="range" id="shockwave-intensity" min="0.1" max="3.0" step="0.1" value="1.0">
+                    </div>                    
+                    <div class="control-group slider-control">
+                        <div class="control-header">
+                            <label for="shockwave-lifetime">Lifetime</label>
+                            <span id="shockwave-lifetime-value">3.0</span>
+                        </div>
+                        <input type="range" id="shockwave-lifetime" min="1.0" max="8.0" step="0.2" value="3.0">
+                    </div>
+                    <div class="control-group slider-control">
+                        <div class="control-header">
+                            <label for="shockwave-opacity">Opacity</label>
+                            <span id="shockwave-opacity-value">0.8</span>
+                        </div>
+                        <input type="range" id="shockwave-opacity" min="0.1" max="1.0" step="0.1" value="0.8">
+                    </div>
+                </div>
+                <div class="control-section">
+                    <div class="section-name">Equalizer</div>
                     <div class="control-group slider-control">
                         <div class="control-header">
                             <label for="eq-bass">EQ Bass</label>
@@ -207,30 +289,20 @@
                         </div>
                     </div>
                 </div>                
-                <!-- Settings Controls -->
-                <div class="control-group">
-                    <label>Settings</label>
-                    <div class="settings-control">
-                        <div class="settings-selector-group">
-                            <select id="settings-dropdown">
-                                <option value="">Select a preset...</option>
-                            </select>
-                            <button id="load-preset" title="Load selected preset">Load</button>
-                            <button id="refresh-presets" title="Refresh preset list">⟲</button>
-                        </div>
-                        <div class="settings-file-group">
-                            <input type="file" id="settings-file-input" accept=".json" style="display: none;">
-                            <button id="import-settings" title="Import settings from JSON file">Import</button>
-                            <button id="export-settings" title="Export current settings to JSON file">Export</button>
-                        </div>
-                    </div>
-                </div></div></div>
+
+                
+            </div>
+        </div>
+    </div>
         
         <!-- Status message display (above debug console) -->
         <div id="status-message">Push space [_] to start visualization</div>
-        <div id="debug-info-panel"></div><!-- Track info display above frequency analyzer -->
+        <div id="debug-info-panel"></div><!-- Track info display above frequency analyzer -->        
         <div id="track-info-display">
             <div id="track-numbers-line">
+                <span id="performance-fps">FPS: --</span>
+                <span id="performance-quality">Q: --</span>
+                <span id="performance-objects">OBJ: --</span>
                 <span id="track-freq-display">0 Hz</span>
                 <span id="track-bpm">--</span>
                 <span id="track-time-display">00:00 / 00:00</span>
@@ -254,8 +326,7 @@
                 <div class="freq-bar-vertical">
                     <div class="freq-level-vertical" id="high-level-clone"></div>
                 </div>
-            </div>
-        </div>
+            </div>        </div>
         
         <!-- SVG logos container -->
         <div id="svg-logos-container">
@@ -264,11 +335,14 @@
             </div>
             <div class="svg-logo">
                 <img src="images/pixel-crusher.svg" alt="Pixel Crusher" id="pixel-crusher-logo">
-            </div>
-        </div>
-    </div>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+            </div>        </div>
+    </div>    
+    <script src="three.min.js"></script>
+    <script src="color-harmonizer.js"></script>
+    <script src="grid-cells.js"></script>
+    <script src="orbital-blobs.js"></script>
+    <script src="shockwave-system.js"></script>    
+    <script src="performance-monitor.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
