@@ -2,7 +2,9 @@
 *Advanced Ferrofluid Interactive Music Visualizer*
 
 [![Built with Three.js](https://img.shields.io/badge/Built%20with-Three.js-000000?style=flat&logo=three.js)](https://threejs.org/)
-[![Web Audio API](https://img.shields.io/badge/Audio-Web%20Audio%20API-orange?style=flat)](https://de### **Technical Architecture**
+[![Web Audio API](https://img.shields.io/badge/Audio-Web%20Audio%20API-orange?style=flat)](#)
+
+**Technical Architecture**
 
 ### **GPU Shader System Architecture**
 - **Custom GLSL Shader Pipeline**: High-performance vertex and fragment shaders with audio-reactive capabilities
@@ -11,7 +13,7 @@
 - **Performance Adaptive Rendering**: Dynamic shader quality adjustment based on system performance metrics
 - **Fallback Material System**: Automatic fallback to standard Three.js materials for compatibility
 
-### **Performance Optimization & Scalability**oper.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
+### **Performance Optimization & Scalability**oper.mozilla.org/en-US/docs/Web/API/Web_Audio_API
 [![JavaScript](https://img.shields.io/badge/Language-JavaScript-yellow?style=flat&logo=javascript)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 
 A state-of-the-art 3D music visualizer that simulates complex ferrofluid behavior with advanced particle systems, shockwave effects, and cinematic post-processing. Experience music through an immersive liquid metal environment that responds dynamically to every beat, frequency, and musical nuance.
