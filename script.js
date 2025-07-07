@@ -1,6 +1,14 @@
 class FerrofluidVisualizer {
     constructor() {
         this.canvas = document.getElementById('visualizer');
+        
+        if (!this.canvas) {
+            console.error('❌ Canvas not found! Check id="visualizer"');
+            return;
+        }
+        
+        console.log('✅ Canvas found:', this.canvas);
+        
         this.audioContext = null;
         this.audioSource = null;
         this.analyser = null;        
@@ -39,7 +47,7 @@ class FerrofluidVisualizer {
                     updateFrequency: 0.7
                 },
                 low: {
-                    blobToBlob: false, // Disable blob-to-blob collisions for performance
+                    blobToBlob: true, 
                     blobToFerrofluid: true,
                     frameSkip: 2,
                     maxDistance: 10.0,
@@ -72,36 +80,36 @@ class FerrofluidVisualizer {
 
           // ASCII emoji collection for spawning logs
         this.spawnEmojis = [
-            '(╯°□°）╯︵ ┻━┻',
-            'ദ്ദി( • ᴗ - ) ✧',
-            '⸜(｡ ˃ ᵕ ˂ )⸝♡',
-            'ᕕ(⌐■_■)ᕗ ♪♬',
-            '(-(-_-(-_(-_(-_-)_-)-_-)_-)_-)_-)-)',
-            '(っ^з^)♪♬',
-            '(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧',
-            '｡◕‿◕｡',
-            '(∩▂∩)',
-            'ヾ(⌐■_■)ノ♪',
-            '(｡♥‿♥｡)',
-            '(╯✧▽✧)╯',
-            '└(★ω★)┘',
-            '♪┏(・o･)┛♪',
-            '(☆▽☆)',
-            '✧*｡٩(ˊᗜˋ*)و✧*｡',
-            '(＾◡＾)',
-            '( ͡° ͜ʖ ͡°)',
-            '༼ つ ◕_◕ ༽つ',
-            '(つ°ヮ°)つ',
-            '＼(^o^)／',
-            '(╮°-°)╮┳━━┳ (╯°□°)╯┻━━┻',
-            'ᕕ( ᐛ )ᕗ',
-            '(☞ﾟヮﾟ)☞',
-            '✨(ﾉ◕ヮ◕)ﾉ✨',
-            'ಠ_ಠ',
-            '¯\\_(ツ)_/¯',
-            '(づ｡◕‿‿◕｡)づ',
-            '(ง ͠° ͟ل͜ ͡°)ง',
-            '♪(┌・。・)┌'
+            '//////////////////////////////////////////////////////',
+            '//////////////////////////////////////////////////////',
+            '//////////////////////////////////////////////////////',
+            '//////////////////////////////////////////////////////',
+            '//////////////////////////////////////////////////////',
+            '//////////////////////////////////////////////////////',
+            '//////////////////////////////////////////////////////',
+            '//////////////////////////////////////////////////////',
+            '//////////////////////////////////////////////////////',
+            '//////////////////////////////////////////////////////',
+            '//////////////////////////////////////////////////////',
+            '//////////////////////////////////////////////////////',
+            '//////////////////////////////////////////////////////',
+            '//////////////////////////////////////////////////////',
+            '//////////////////////////////////////////////////////',
+            '//////////////////////////////////////////////////////',
+            '//////////////////////////////////////////////////////',
+            '//////////////////////////////////////////////////////',
+            '//////////////////////////////////////////////////////',
+            '//////////////////////////////////////////////////////',
+            '//////////////////////////////////////////////////////',
+            '//////////////////////////////////////////////////////',
+            '//////////////////////////////////////////////////////',
+            '//////////////////////////////////////////////////////',
+            '//////////////////////////////////////////////////////',
+            '//////////////////////////////////////////////////////',
+            '///////////////////¯\\_(ツ)_/¯////////////////////////',
+            '//////////////////////////////////////////////////////',
+            '//////////////////////////////////////////////////////',
+            '//////////////////////////////////////////////////////'
         ];
         
         // Audio analysis
@@ -147,10 +155,11 @@ class FerrofluidVisualizer {
         this.gridCellAnimator = null;
         this.lightGroup = null;        // Floating blob system
         this.floatingBlobs = [];
-        this.maxFloatingBlobs = 18;
-        this.blobSpawnThreshold = 0.2; // Even lower threshold for easier spawning
+        this.maxFloatingBlobs = 12;
+        this.blobSpawnThreshold = 0.5; // Much higher threshold - only spawn during intense music activity
         this.lastSpawnTime = 0;
-        this.spawnCooldown = 100; // Even faster cooldown         //  BPM Detection - Enhanced system
+        this.spawnCooldown = 400; // Longer cooldown to prevent over-spawning at music start         
+        //  BPM Detection - Enhanced system
         this.bpmDetector = {
             peaks: [],
             bpm: 0,
@@ -173,11 +182,11 @@ class FerrofluidVisualizer {
 
         // Idle Anomaly System
         this.anomalySystem = {
-            isActive: false,
+            isActive: false, // Start active to ensure initial ripples
             lastTriggerTime: 0,
             nextTriggerTime: 0,
             duration: 0,
-            intensity: 0,
+            intensity: 0.3, // Start with some initial intensity
             minInterval: 8000,  // Minimum 8 seconds between anomalies
             maxInterval: 25000, // Maximum 25 seconds between anomalies
             minDuration: 2000,  // Minimum 2 seconds anomaly duration
@@ -213,7 +222,8 @@ class FerrofluidVisualizer {
             waveSpeed: 2.5           // Further decreased from 4.0 - much slower propagation like thick honey
         };
         
-        this.init();
+        // Initialize skip flag for performance optimization
+        this.skipFloatingBlobUpdate = false;
         this.loadDefaultAudio(); // Automatically load the default audio file
         this.updateStatusMessage(); // Initialize status message
         this.setupEventListeners(); // This calls initMouseControls() which sets up this.mouseInteraction
@@ -221,6 +231,9 @@ class FerrofluidVisualizer {
         
         // Initialize settings dropdown with built-in presets
         this.refreshSettingsDropdown();
+        
+        // Initialize Three.js and scene
+        this.init();
         
         this.animate();    }
 
@@ -234,18 +247,38 @@ class FerrofluidVisualizer {
         this.updateShadowColors(); // Initialize shadow colors after lighting is created
         this.createEnvironment();
         this.updateLightingFromBackground(); // Apply initial background color influence        // Initialize orbital blob system
-        this.orbitalBlobSystem = new OrbitalBlobSystem(this);
-          // Initialize shockwave system
-        this.shockwaveSystem = new ShockwaveSystem(this);        // Initialize performance monitor
+        this.orbitalBlobSystem = new OrbitalBlobSystem(this);        // Initialize shockwave system
+        this.shockwaveSystem = new ShockwaveSystem(this);
+
+        // Initialize blob shader system for enhanced performance (temporarily disabled for debugging)
+        try {
+            // this.gpuParticleSystem = new BlobShaderSystem(this);
+            console.log('Artefact Shader System disabled - using standard materials');
+            this.gpuParticleSystem = null;
+        } catch (error) {
+            console.error('Failed to init Artefact Shader System:', error);
+            this.gpuParticleSystem = null;
+        }
+
+        // Initialize performance monitor
         this.performanceMonitor = new PerformanceMonitor(this);
-        console.log('PerformanceMonitor initialized successfully');
+        console.log('PerfMonitor init OK');
+
+        // Performance monitoring
+        this.performanceStats = {
+            frameCount: 0,
+            lastTime: performance.now(),
+            lastLogTime: performance.now(),
+            fps: 0,
+            gpuParticleCount: 0
+        };
         
         // Clean up any existing duplicate performance indicators
         const existingPerfIndicator = document.getElementById('performance-indicator');
         if (existingPerfIndicator) {
             existingPerfIndicator.remove();
         }
-        console.log('Available object arrays:', {
+        console.log('Object arrays:', {
             floatingBlobs: !!this.floatingBlobs,
             orbitalBlobSystem: !!this.orbitalBlobSystem,
             shockwaveSystem: !!this.shockwaveSystem,
@@ -253,9 +286,7 @@ class FerrofluidVisualizer {
         });
         
         // Initialize frequency analyzer clone colors to match default grid color
-        this.updateFrequencyAnalyzerCloneColors('#bbbbbb');
-        
-        // Ensure SVG colors are set after images load with proper image loading detection
+        this.updateFrequencyAnalyzerCloneColors('#bbbbbb');        // Ensure SVG colors are set after images load with proper image loading detection
         this.initializeSvgColors();
         
         this.resize();
@@ -370,9 +401,10 @@ class FerrofluidVisualizer {
         const shockwaveOpacityValue = document.getElementById('shockwave-opacity-value');
         if (shockwaveOpacitySlider) shockwaveOpacitySlider.value = 0.8;
         if (shockwaveOpacityValue) shockwaveOpacityValue.textContent = '0.8';
-        
-        console.log('UI values initialized');
-    }setupThreeJS() {
+          console.log('UI values init OK');
+    }
+
+    setupThreeJS() {
         // Scene
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(this.backgroundColor);
@@ -446,7 +478,7 @@ class FerrofluidVisualizer {
         this.scene.add(this.ferrofluid);
 
         // Create inner black sphere to hide seams when the outer sphere deforms
-        const innerGeometry = new THREE.SphereGeometry(2.85, 64, 64); // Slightly smaller than outer sphere
+        const innerGeometry = new THREE.SphereGeometry(2.5, 64, 64); // Much smaller to avoid showing through deformations
         const innerMaterial = new THREE.MeshBasicMaterial({
             color: 0x000000, // Pure black
             side: THREE.BackSide // Only render the inside faces
@@ -455,6 +487,18 @@ class FerrofluidVisualizer {
         this.ferrofluidInner = new THREE.Mesh(innerGeometry, innerMaterial);
         this.ferrofluidInner.position.set(0, 0, 0);
         this.scene.add(this.ferrofluidInner);
+
+        // Store original inner core scale for adaptive sizing
+        this.originalInnerCoreScale = 2.5;
+        
+        // Store original positions for inner core deformation
+        this.innerCoreOriginalPositions = innerGeometry.attributes.position.array.slice();
+        this.innerCoreCurrentPositions = new Float32Array(this.innerCoreOriginalPositions.length);
+        
+        // Initialize inner core current positions
+        for (let i = 0; i < this.innerCoreOriginalPositions.length; i++) {
+            this.innerCoreCurrentPositions[i] = this.innerCoreOriginalPositions[i];
+        }
 
         // Animation properties
         this.baseRotation = { x: 0, y: 0, z: 0 };
@@ -580,7 +624,7 @@ class FerrofluidVisualizer {
             }
         }
         
-        console.log(`Environment updated: Size=${this.envSphereSize}, Visibility=${this.envVisibility > 0 ? 'On' : 'Off'}`);
+        console.log(`Env: Size=${this.envSphereSize}, Vis=${this.envVisibility > 0 ? 'On' : 'Off'}`);
     }
 
     createColoredShadowMaterial() {
@@ -830,8 +874,8 @@ class FerrofluidVisualizer {
                 
                 // Show immediate feedback
                 const toggleMessage = e.target.checked ? 
-                    'Debug console: ENABLED via UI' : 
-                    'Debug console: DISABLED via UI';
+                    'Debug console: ON' : 
+                    'Debug console: OFF';
                 console.log(toggleMessage);
             }
         });
@@ -843,8 +887,8 @@ class FerrofluidVisualizer {
                 
                 // Show immediate feedback
                 const toggleMessage = e.target.checked ? 
-                    'Decoding animation: ENABLED via UI' : 
-                    'Decoding animation: DISABLED via UI';
+                    'Decode animation: ON' : 
+                    'Decode animation: OFF';
                 console.log(toggleMessage);
             }
         });        // Mouse Interaction Controls
@@ -1136,14 +1180,14 @@ class FerrofluidVisualizer {
     }// Randomize colors using harmonious color schemes
     randomizeColors() {
         if (!window.ColorHarmonizer) {
-            console.error('ColorHarmonizer not available. Make sure color-harmonizer.js is loaded.');
+            console.error('ColorHarmonizer not found. Check color-harmonizer.js');
             return;
         }
 
         const harmonizer = new ColorHarmonizer();
         const colorScheme = harmonizer.generateRandomScheme();
         
-        console.log('Applied color scheme:', colorScheme.name);
+        console.log('Color scheme:', colorScheme.name);
 
         // Convert hex colors to integers for Three.js
         this.gridColor = harmonizer.hexToRgbInt(colorScheme.grid);
@@ -1265,7 +1309,7 @@ class FerrofluidVisualizer {
     }async populateTrackSelector() {
         const trackSelectElement = document.getElementById('track-select');
         if (!trackSelectElement) {
-            console.warn('Track select element not found.');
+            console.warn('Track select not found.');
             return;
         }
 
@@ -1284,7 +1328,7 @@ class FerrofluidVisualizer {
             const indexData = await response.json();
             const mp3Files = indexData.files || [];
             
-            console.log(`Loading ${mp3Files.length} MP3 files from index`);
+            console.log(`Loading ${mp3Files.length} MP3s from index`);
 
             mp3Files.forEach(fileName => {
                 const option = document.createElement('option');
@@ -1321,7 +1365,7 @@ class FerrofluidVisualizer {
         }
         
         const filePath = `mp3/${fileName}`;
-        console.log(`Loading and playing track: ${filePath}`);
+        console.log(`Loading track: ${filePath}`);
         
         // Update the file name display immediately
         const fileNameDisplay = document.getElementById('file-name-display');
@@ -1346,7 +1390,7 @@ class FerrofluidVisualizer {
                 this.updateStatusMessage();
             }
         } catch (error) {
-            console.error(`Error loading or playing track ${fileName}:`, error);
+            console.error(`Error loading track ${fileName}:`, error);
             this.updateStatusMessageWithText(`Error loading ${fileName}. Check console.`);
         }
     }
@@ -1559,12 +1603,12 @@ class FerrofluidVisualizer {
             // Decrease quality if performance is poor
             if (avgFPS < 45 && currentIndex < qualityLevels.length - 1) {
                 this.collisionOptimization.currentQuality = qualityLevels[currentIndex + 1];
-                console.log(`🔧 Collision quality decreased to: ${this.collisionOptimization.currentQuality} (FPS: ${avgFPS.toFixed(1)})`);
+                console.log(`🔧 Quality↓: ${this.collisionOptimization.currentQuality} (FPS: ${avgFPS.toFixed(1)})`);
             }
             // Increase quality if performance is good
             else if (avgFPS > 55 && currentIndex > 0) {
                 this.collisionOptimization.currentQuality = qualityLevels[currentIndex - 1];
-                console.log(`⚡ Collision quality increased to: ${this.collisionOptimization.currentQuality} (FPS: ${avgFPS.toFixed(1)})`);
+                console.log(`⚡ Quality↑: ${this.collisionOptimization.currentQuality} (FPS: ${avgFPS.toFixed(1)})`);
             }
         }
     }
@@ -1692,7 +1736,7 @@ class FerrofluidVisualizer {
                 // Resume AudioContext if suspended (this is triggered by user file selection)
                 if (this.audioContext.state === 'suspended') {
                     await this.audioContext.resume();
-                    console.log('AudioContext resumed for new file');
+                    console.log('AudioCtx resumed');
                 }
                 
                 // Always attempt to start playback when loading a new file
@@ -1700,10 +1744,10 @@ class FerrofluidVisualizer {
                 this.isPlaying = true;
                 document.getElementById('play-pause').textContent = '⏸ PAUSE';
                 document.getElementById('play-pause').classList.add('playing');
-                console.log('New audio file loaded and auto-started');
+                console.log('Audio loaded, auto-started');
                 
             } catch (error) {
-                console.log('Auto-play blocked by browser - user interaction required:', error.message);
+                console.log('Auto-play blocked - user action needed:', error.message);
                 this.isPlaying = false;
                 document.getElementById('play-pause').textContent = '▶ PLAY';
                 document.getElementById('play-pause').classList.remove('playing');
@@ -1716,11 +1760,11 @@ class FerrofluidVisualizer {
         }
     }      async loadAudioFromURL(url) {
         try {
-            console.log(`Attempting to load audio from URL: ${url}`);
+            console.log(`Loading audio: ${url}`);
             
             // Check if we're running from file:// protocol
             if (window.location.protocol === 'file:') {
-                console.log('Running from file:// protocol - using direct audio element approach');
+                console.log('file:// mode - using direct element');
                 
                 // For local files, create audio element directly
                 if (this.audioElement) {
@@ -1797,7 +1841,7 @@ class FerrofluidVisualizer {
                     }
                 });
                 
-                console.log(`Successfully loaded audio from local URL: ${url}`);
+                console.log(`Audio loaded (local): ${url}`);
                 return;
             }
             
@@ -1814,7 +1858,7 @@ class FerrofluidVisualizer {
             
             // Use the existing loadAudioFile method
             await this.loadAudioFile(file);
-            console.log(`Successfully loaded audio from URL: ${url}`);
+            console.log(`Audio loaded: ${url}`);
         } catch (error) {
             console.error('Error loading audio from URL:', error);
             // Don't throw the error - just log it so the app continues to work
@@ -1823,7 +1867,7 @@ class FerrofluidVisualizer {
     
     async loadDefaultAudio() {
         const defaultAudioPath = 'mp3/bogdan-rosu-yfflon.mp3';
-        console.log('Loading default audio file...');
+        console.log('Loading default audio...');
         await this.loadAudioFromURL(defaultAudioPath);
     }
     
@@ -1902,7 +1946,7 @@ class FerrofluidVisualizer {
             try {
                 if (this.audioContext.state === 'suspended') {
                     await this.audioContext.resume();
-                    console.log('AudioContext resumed successfully');
+                    console.log('AudioCtx resumed OK');
                 }
                 await this.audioElement.play();
                 this.isPlaying = true;
@@ -2030,12 +2074,12 @@ class FerrofluidVisualizer {
 
         // Display random anomaly message in console
         const message = this.anomalySystem.messages[Math.floor(Math.random() * this.anomalySystem.messages.length)];
-        console.log(`══════════════════════════════════════════════════════════`);
+        console.log(`/////////////////////////////////////////////////////////`);
         console.log(`${message.padStart(25)} `);
         console.log(`                                                            `);
-        console.log(`  ▲▲▲ FERROFLUID STABILITY COMPROMISED ▲▲▲ `);
-        console.log(`  System attempting autonomous correction...`);
-        console.log(`══════════════════════════════════════════════════════════`);
+        console.log(`  ▲▲▲ ARTEFACT STABILITY COMPROMISED ▲▲▲ `);
+        console.log(`  System attempting auto-correction...`);
+        console.log(`/////////////////////////////////////////////////////////`);
 
         // Schedule the end of this anomaly
         setTimeout(() => {
@@ -2048,10 +2092,10 @@ class FerrofluidVisualizer {
         this.anomalySystem.intensity = 0;
         this.anomalySystem.spawnBlobCount = 0;
         
-        console.log(`══════════════════════════════════════════════════════════`);
+        console.log(`/////////////////////////////////////////////////////////`);
         console.log(`ANOMALY STABILIZED`);
-        console.log(`System integrity restored. Returning to idle state...`);
-        console.log(`══════════════════════════════════════════════════════════`);
+        console.log(`System integrity restored. Idle state resumed...`);
+        console.log(`/////////////////////////////////////////////////////////`);
 
         // Schedule next anomaly
         this.scheduleNextAnomaly();
@@ -2096,7 +2140,7 @@ class FerrofluidVisualizer {
         const intensity = 0.3 + Math.random() * 0.4; // 0.3 to 0.7 intensity
         const blob = this.createFloatingBlob(spawnPosition, intensity, 'anomaly');
         
-        console.log(`⚠️ Anomaly blob spawned at ${spawnPosition.x.toFixed(1)}, ${spawnPosition.y.toFixed(1)}, ${spawnPosition.z.toFixed(1)}`);
+        console.log(`Anomaly artefact at ${spawnPosition.x.toFixed(1)}, ${spawnPosition.y.toFixed(1)}, ${spawnPosition.z.toFixed(1)}`);
     }
     analyzeAudio() {
         if (!this.analyser || !this.isPlaying) {
@@ -2181,11 +2225,11 @@ class FerrofluidVisualizer {
         this.detectBPM();        
         // Debug info (can be removed later)
         if (Math.random() < 0.01) { // Log occasionally to avoid spam
-            console.log(`Sample Rate: ${sampleRate}Hz, Bin Width: ${frequencyBinWidth.toFixed(1)}Hz`);
-            console.log(`Bass bins: ${bassBinStart}-${bassBinEnd} (${bassFreqRange.min}-${bassFreqRange.max}Hz)`);
-            console.log(`Mid bins: ${midBinStart}-${midBinEnd} (${midFreqRange.min}-${midFreqRange.max}Hz)`);
-            console.log(`High bins: ${highBinStart}-${highBinEnd} (${highFreqRange.min}-${highFreqRange.max}Hz)`);
-            console.log(`Intensities - Bass: ${this.bassIntensity.toFixed(3)}, Mid: ${this.midIntensity.toFixed(3)}, High: ${this.highIntensity.toFixed(3)}`);
+            console.log(`Sample: ${sampleRate}Hz, Bin: ${frequencyBinWidth.toFixed(1)}Hz`);
+            console.log(`Bass: ${bassBinStart}-${bassBinEnd} (${bassFreqRange.min}-${bassFreqRange.max}Hz)`);
+            console.log(`Mid: ${midBinStart}-${midBinEnd} (${midFreqRange.min}-${midFreqRange.max}Hz)`);
+            console.log(`High: ${highBinStart}-${highBinEnd} (${highFreqRange.min}-${highFreqRange.max}Hz)`);
+            console.log(`Audio - Bass: ${this.bassIntensity.toFixed(3)}, Mid: ${this.midIntensity.toFixed(3)}, High: ${this.highIntensity.toFixed(3)}`);
         }
     }
       // Simple 3D noise function for organic movement
@@ -2195,8 +2239,9 @@ class FerrofluidVisualizer {
             Math.sin(x * 0.1) * Math.cos(y * 0.1) * Math.sin(z * 0.1) +
             Math.sin(x * 0.2 + 1.3) * Math.cos(y * 0.2 + 2.1) * Math.sin(z * 0.2 + 3.7) * 0.5 +
             Math.sin(x * 0.4 + 2.7) * Math.cos(y * 0.4 + 1.9) * Math.sin(z * 0.4 + 4.2) * 0.25
-        ) / 1.75;
-    }    updateFerrofluid() {
+        ) / 1.75;    }
+    
+    updateFerrofluid() {
         if (!this.ferrofluid) return;
         
         const geometry = this.ferrofluid.geometry;
@@ -2231,7 +2276,7 @@ class FerrofluidVisualizer {
             const noiseX = x + time * noiseOffset.speed;
             const noiseY = y + time * noiseOffset.speed * 0.8;
             const noiseZ = z + time * noiseOffset.speed * 1.2;
-            const baseNoise = this.noise3D(noiseX, noiseY, noiseZ) * 0.3;
+            const baseNoise = this.noise3D(noiseX, noiseY, noiseZ) * 0.5; // Increased from 0.3 for more visible ripples
               // Calculate influence from each dynamic blob center (optimized)
             let totalBlobInfluence = 0;
             
@@ -2338,12 +2383,12 @@ class FerrofluidVisualizer {
                 this.targetPositions[i + 2] = z + finalNormal.z * combinedDeformation;
             } else if (this.anomalySystem.isActive && !this.isPlaying) {
                 // Anomaly effects when not playing music with mouse ripples
-                const combinedDeformation = baseNoise * 0.3 + anomalyDeformation + mouseRippleDeformation;
+                const combinedDeformation = baseNoise * 0.8 + anomalyDeformation + mouseRippleDeformation; // Increased from 0.3
                 this.targetPositions[i] = x + finalNormal.x * combinedDeformation;
                 this.targetPositions[i + 1] = y + finalNormal.y * combinedDeformation;
                 this.targetPositions[i + 2] = z + finalNormal.z * combinedDeformation;            } else {
                 // When paused or no audio, target the original sphere shape with mouse ripples
-                const combinedDeformation = baseNoise * 0.3 + mouseRippleDeformation;
+                const combinedDeformation = baseNoise * 0.8 + mouseRippleDeformation; // Increased from 0.3 for more visible ripples
                 this.targetPositions[i] = x + finalNormal.x * combinedDeformation;
                 this.targetPositions[i + 1] = y + finalNormal.y * combinedDeformation;
                 this.targetPositions[i + 2] = z + finalNormal.z * combinedDeformation;
@@ -2398,8 +2443,13 @@ class FerrofluidVisualizer {
         }
     }
       generateDynamicBlobCenters(time) {
-        const blobCenters = [];        // === BASS DEFORMATIONS: Very wide, very shallow surface undulations ===
-        if (this.bassIntensity > 0.2) { // Even higher threshold - bass needs to be very strong to trigger
+        const blobCenters = [];
+        
+        // Different time scales for each frequency band to prevent competition
+        const bassTime = time * 0.2; // Much slower for bass - very wobbly
+        const midTime = time * 0.5;  // Medium speed for mids - moderate wobble
+        const highTime = time * 1.0; // Normal speed for highs - keep responsive        // === BASS DEFORMATIONS: Very wide, very shallow surface undulations ===
+        if (this.bassIntensity > 0.05) { // Very low threshold so bass can always work with other frequencies
             const numBassBlobs = Math.floor(1 + this.bassIntensity * 0.8); // Even fewer bass areas
             for (let i = 0; i < numBassBlobs; i++) {
                 // Add randomness to prevent symmetric patterns (similar to mid-frequency)
@@ -2407,8 +2457,8 @@ class FerrofluidVisualizer {
                 const randomAngleOffset2 = (Math.random() - 0.5) * 1.2; // ±0.6 radian variation  
                 const randomSpeedVariation = 0.8 + Math.random() * 0.4; // 0.8x to 1.2x speed (slower than mids)
                 
-                const angle1 = time * 0.15 * randomSpeedVariation + i * Math.PI * 2 / numBassBlobs + randomAngleOffset1; // Even slower movement with randomness
-                const angle2 = Math.sin(time * 0.25 + i) * 0.5 + randomAngleOffset2;
+                const angle1 = bassTime * 0.08 * randomSpeedVariation + i * Math.PI * 2 / numBassBlobs + randomAngleOffset1; // Ultra-slow bass timing
+                const angle2 = Math.sin(bassTime * 0.12 + i) * 0.5 + randomAngleOffset2;
                 
                 const position = new THREE.Vector3(
                     Math.cos(angle1) * Math.cos(angle2) * 3.35,
@@ -2425,12 +2475,13 @@ class FerrofluidVisualizer {
                     radius: (2.8 + this.bassIntensity * 1.5) * randomSizeFactor, // Varied radius
                     intensity: Math.pow(this.bassIntensity, 1.0), // Even steeper power curve
                     strength: (0.15 + this.bassIntensity * 0.3) * randomStrengthFactor, // Varied height
-                    type: 'bass'
+                    type: 'bass',
+                    animationSpeed: 0.2 // Ultra-slow animation for very wobbly bass
                 });
             }
         }
           // === MID PROTRUSIONS: Moderate height, medium width ===
-        if (this.midIntensity > 0.08) {
+        if (this.midIntensity > 0.04) { // Very low threshold for better layering with other frequencies
             const numMidBlobs = Math.floor(2 + this.midIntensity * 4);
             for (let i = 0; i < numMidBlobs; i++) {
                 // Add randomness to prevent symmetric patterns
@@ -2438,8 +2489,8 @@ class FerrofluidVisualizer {
                 const randomAngleOffset2 = (Math.random() - 0.5) * 1.8; // ±0.9 radian variation
                 const randomSpeedVariation = 0.7 + Math.random() * 0.6; // 0.7x to 1.3x speed
                 
-                const angle1 = time * 0.8 * randomSpeedVariation + i * Math.PI * 1.2 + randomAngleOffset1;
-                const angle2 = Math.cos(time * 0.6 + i * 1.4) * 1.1 + randomAngleOffset2;
+                const angle1 = midTime * 0.8 * randomSpeedVariation + i * Math.PI * 1.2 + randomAngleOffset1; // Mid-speed timing
+                const angle2 = Math.cos(midTime * 0.6 + i * 1.4) * 1.1 + randomAngleOffset2;
                 
                 const position = new THREE.Vector3(
                     Math.cos(angle1) * Math.cos(angle2) * 3.2,
@@ -2456,11 +2507,12 @@ class FerrofluidVisualizer {
                     radius: (0.8 + this.midIntensity * 0.6) * randomSizeFactor, // REDUCED: Much smaller radius for mid-range protrusions
                     intensity: Math.pow(this.midIntensity, 1.1), // Slightly steeper curve
                     strength: (2.2 + this.midIntensity * 2.5) * randomStrengthFactor, // Varied height
-                    type: 'mid'
+                    type: 'mid',
+                    animationSpeed: 0.5 // Medium animation speed
                 });
             }
         }        // === HIGH SPIKES: ULTRA-TALL, razor-sharp needle-like protrusions ===
-        if (this.highIntensity > 0.03) { // Lower threshold for even more responsiveness
+        if (this.highIntensity > 0.02) { // Keep low threshold for high responsiveness
             const numHighBlobs = Math.floor(8 + this.highIntensity * 20); // More spikes possible
             for (let i = 0; i < numHighBlobs; i++) {
                 // Create truly uniform distribution across sphere surface
@@ -2468,8 +2520,8 @@ class FerrofluidVisualizer {
                 const u = Math.random(); // Random value 0-1
                 const v = Math.random(); // Random value 0-1
                 
-                // Add time-based movement for animation
-                const timeOffset = time * 2.8 + i * Math.PI * 0.4;
+                // Add time-based movement for animation using high-frequency timing
+                const timeOffset = highTime * 2.8 + i * Math.PI * 0.4; // Fast high-frequency timing
                 const uAnimated = (u + Math.sin(timeOffset) * 0.1) % 1.0;
                 const vAnimated = (v + Math.cos(timeOffset * 1.3) * 0.1) % 1.0;
                 
@@ -2514,7 +2566,8 @@ class FerrofluidVisualizer {
                     radius: baseRadius * radiusVariation, // Varied thickness based on spike type
                     intensity: Math.pow(this.highIntensity, 3.2), // More aggressive power curve
                     strength: (10.0 + this.highIntensity * 22.0) * strengthMultiplier * randomStrengthFactor, // Increased height range for taller high frequency spikes
-                    type: 'high'
+                    type: 'high',
+                    animationSpeed: 1.0 // Normal speed for responsive highs
                 });
             }
     }
@@ -2524,7 +2577,7 @@ class FerrofluidVisualizer {
       
 // Floating blob system methods
 createFloatingBlob(spawnPosition, intensity, type) {
-        console.log(`Creating deformable floating blob at position:`, spawnPosition, `intensity: ${intensity.toFixed(3)}, type: ${type}`);
+        console.log(`Creating artefact at:`, spawnPosition, `intensity: ${intensity.toFixed(3)}, type: ${type}`);
         console.log(this.getRandomSpawnEmoji());
         
         // Enhanced blob size variation with different "personalities"
@@ -2585,7 +2638,7 @@ createFloatingBlob(spawnPosition, intensity, type) {
         const innerCore = new THREE.Mesh(innerGeometry, innerMaterial);
         innerCore.position.copy(spawnPosition);
         
-        console.log(`Deformable blob created with size: ${baseSize.toFixed(3)}, growth potential: ${growthPotential.toFixed(2)}x, position:`, blob.position);
+        console.log(`Artefact size: ${baseSize.toFixed(3)}, growth: ${growthPotential.toFixed(2)}x, pos:`, blob.position);
           // Enhanced physics properties and deformation data with growth system
         const blobData = {
             mesh: blob,
@@ -2648,65 +2701,104 @@ createFloatingBlob(spawnPosition, intensity, type) {
         };this.scene.add(blob);
         this.scene.add(innerCore); // Add inner core to scene
         this.floatingBlobs.push(blobData);
-        console.log(`Deformable blob added to scene and array. Total floating blobs: ${this.floatingBlobs.length}`);
+        console.log(`Artefact added to scene. Total: ${this.floatingBlobs.length}`);
         console.log(this.getRandomSpawnEmoji());
-    }spawnFloatingBlobs() {
+    }    spawnFloatingBlobs() {
         const now = performance.now();
+        
+        // Calculate total intensity first (needed for various checks)
+        const totalIntensity = this.bassIntensity + this.midIntensity + this.highIntensity;
+        
+        // Debug: Log intensity values when music is playing
+        if (this.isPlaying && Math.random() < 0.05) { // 5% chance to log (more frequent)
+            console.log(`Music - Bass: ${this.bassIntensity.toFixed(3)}, Mid: ${this.midIntensity.toFixed(3)}, High: ${this.highIntensity.toFixed(3)}, Total: ${totalIntensity.toFixed(3)}`);
+            console.log(`Spawn: threshold ${this.blobSpawnThreshold}, cooldown ${this.spawnCooldown}ms, last ${(now - this.lastSpawnTime).toFixed(0)}ms ago`);
+            console.log(`Playing: ${this.isPlaying}, Audio: ${!!this.audioElement}`);
+        }
         
         // Check cooldown
         if (now - this.lastSpawnTime < this.spawnCooldown) {
-            if (Math.random() < 0.01) console.log(`Spawn blocked by cooldown: ${(now - this.lastSpawnTime).toFixed(0)}ms < ${this.spawnCooldown}ms`);
+            if (Math.random() < 0.01) console.log(`Spawn blocked: cooldown ${(now - this.lastSpawnTime).toFixed(0)}ms < ${this.spawnCooldown}ms`);
             return;
         }
         
-        // Check if we have space for more blobs
-        if (this.floatingBlobs.length >= this.maxFloatingBlobs) {
-            if (Math.random() < 0.01) console.log(`Spawn blocked: max blobs reached (${this.floatingBlobs.length}/${this.maxFloatingBlobs})`);
+        // Check if we have space for more blobs (reduce during intense music)
+        const maxBlobsCurrently = totalIntensity > 0.7 ? Math.floor(this.maxFloatingBlobs * 0.6) : this.maxFloatingBlobs;
+        if (this.floatingBlobs.length >= maxBlobsCurrently) {
+            if (Math.random() < 0.01) console.log(`Spawn blocked: max artefacts (${this.floatingBlobs.length}/${maxBlobsCurrently})`);
             return;
         }
-        
-        // Calculate total intensity
-        const totalIntensity = this.bassIntensity + this.midIntensity + this.highIntensity;
         
         // Enhanced debug logging
         if (Math.random() < 0.05) { // More frequent logging
             console.log(`Audio - Bass: ${this.bassIntensity.toFixed(3)}, Mid: ${this.midIntensity.toFixed(3)}, High: ${this.highIntensity.toFixed(3)}`);
-            console.log(`Spawn Check - Total: ${totalIntensity.toFixed(3)}, Threshold: ${this.blobSpawnThreshold}, Blobs: ${this.floatingBlobs.length}`);
-            console.log(`Timing - Now: ${now.toFixed(0)}, Last: ${this.lastSpawnTime.toFixed(0)}, Cooldown: ${this.spawnCooldown}ms`);
+            console.log(`Spawn Check - Total: ${totalIntensity.toFixed(3)}, Threshold: ${this.blobSpawnThreshold}, Artefacts: ${this.floatingBlobs.length}`);
+            console.log(`Timing - Now: ${now.toFixed(0)}, Last: ${this.lastSpawnTime.toFixed(0)}, CD: ${this.spawnCooldown}ms`);
         }
         
-        // Only spawn during intense moments
-        if (totalIntensity < this.blobSpawnThreshold) {
-            if (Math.random() < 0.01) console.log(`Spawn blocked: intensity too low (${totalIntensity.toFixed(3)} < ${this.blobSpawnThreshold})`);
+        // Only spawn during intense moments OR during anomaly sequences
+        const isAnomalyActive = this.anomalySystem && this.anomalySystem.isActive;
+        const effectiveIntensity = isAnomalyActive ? 
+            Math.max(totalIntensity, this.anomalySystem.intensity || 0.6) : 
+            totalIntensity;
+            
+        if (!isAnomalyActive && effectiveIntensity < this.blobSpawnThreshold) {
+            if (this.isPlaying && Math.random() < 0.05) { // Log when music is playing but intensity too low
+                console.log(`Spawn blocked: low intensity (${effectiveIntensity.toFixed(3)} < ${this.blobSpawnThreshold}) - Music: ${this.isPlaying}`);
+            }
             return;
-        }        // Higher chance of spawning with higher intensity
-        const spawnChance = Math.min((totalIntensity - this.blobSpawnThreshold) * 5, 0.9); // Increased multiplier
-        console.log(`Spawn chance: ${(spawnChance * 100).toFixed(1)}% (intensity: ${totalIntensity.toFixed(3)})`);
-        console.log(this.getRandomSpawnEmoji());        if (Math.random() > spawnChance) {
+        }        // Higher chance of spawning with higher intensity (or during anomalies)
+        const spawnChance = isAnomalyActive ? 
+            0.3 + (this.anomalySystem.intensity || 0.6) * 0.5 : // 30-80% chance during anomalies
+            Math.min((effectiveIntensity - this.blobSpawnThreshold) * 2, 0.4); // Reduced multiplier and max chance
+            
+        if (Math.random() < 0.05) { // Debug logging
+            console.log(`Spawn chance: ${(spawnChance * 100).toFixed(1)}% (intensity: ${effectiveIntensity.toFixed(3)}, anomaly: ${isAnomalyActive})`);
+        }        if (Math.random() > spawnChance) {
             console.log(`Spawn failed random check`);
             console.log(this.getRandomSpawnEmoji());
             return;
         }
         
-        console.log(`Spawn conditions met! Looking for spike locations...`);
+        console.log(`Spawn OK! Finding spike locations...`);
         console.log(this.getRandomSpawnEmoji());        // Find high spike locations for spawning
         const blobCenters = this.generateDynamicBlobCenters(this.fluidTime);
-        console.log(`Generated ${blobCenters.length} blob centers`);
+        console.log(`Generated ${blobCenters.length} artefact centers`);
         console.log(this.getRandomSpawnEmoji());
         
         const highSpikes = blobCenters.filter(blob => 
-            blob.type === 'high' && blob.intensity > 0.3 // Lowered spike intensity threshold
+            blob.type === 'high' && blob.intensity > 0.4 // Higher threshold for more selective spawning
         );
         
-        console.log(`Found ${highSpikes.length} high spikes`);
+        console.log(`Found ${highSpikes.length} high spikes (threshold: 0.4)`);
         console.log(this.getRandomSpawnEmoji());
         
         if (highSpikes.length === 0) {
             // If no high spikes, try mid spikes as backup
             const midSpikes = blobCenters.filter(blob => 
-                blob.type === 'mid' && blob.intensity > 0.5
+                blob.type === 'mid' && blob.intensity > 0.5 // Keep mid spike threshold higher
             );
-            console.log(`No high spikes, found ${midSpikes.length} mid spikes`);
+            console.log(`No high spikes, found ${midSpikes.length} mid (thresh: 0.5)`);
+            
+            if (midSpikes.length === 0) {
+                // If no mid spikes either, try bass spikes (only during very intense bass)
+                const bassSpikes = blobCenters.filter(blob => 
+                    blob.type === 'bass' && blob.intensity > 0.6 // Higher bass threshold
+                );
+                console.log(`No mid spikes, found ${bassSpikes.length} bass (thresh: 0.6)`);
+                
+                if (bassSpikes.length > 0) {
+                    const spawnBlob = bassSpikes[Math.floor(Math.random() * bassSpikes.length)];
+                    const spawnDirection = spawnBlob.position.clone().normalize();
+                    const spawnDistance = 3.5 + spawnBlob.strength * 0.8;
+                    const spawnPosition = spawnDirection.multiplyScalar(spawnDistance);
+                    this.createFloatingBlob(spawnPosition, spawnBlob.intensity, spawnBlob.type);
+                    this.lastSpawnTime = now;
+                    console.log('Artefact from bass spike:', spawnPosition);
+                    console.log(this.getRandomSpawnEmoji());
+                    return;
+                }
+            }
             
             if (midSpikes.length > 0) {
                 const spawnBlob = midSpikes[Math.floor(Math.random() * midSpikes.length)];
@@ -2714,10 +2806,10 @@ createFloatingBlob(spawnPosition, intensity, type) {
                 const spawnDistance = 3.5 + spawnBlob.strength * 0.8;
                 const spawnPosition = spawnDirection.multiplyScalar(spawnDistance);                this.createFloatingBlob(spawnPosition, spawnBlob.intensity, spawnBlob.type);
                 this.lastSpawnTime = now;
-                console.log('Spawned blob from mid spike at:', spawnPosition);
+                console.log('Artefact from mid spike:', spawnPosition);
                 console.log(this.getRandomSpawnEmoji());
             } else {
-                console.log('No suitable spikes found for spawning');
+                console.log('No suitable spikes for spawning');
                 console.log(this.getRandomSpawnEmoji());
             }
             return;
@@ -2732,9 +2824,23 @@ createFloatingBlob(spawnPosition, intensity, type) {
         this.createFloatingBlob(spawnPosition, spawnBlob.intensity, spawnBlob.type);
         
         this.lastSpawnTime = now;
-        console.log('Spawned blob from high spike at:', spawnPosition);
+        console.log('Artefact from high spike:', spawnPosition);
         console.log(this.getRandomSpawnEmoji());
     }      updateFloatingBlobs(deltaTime) {
+        // Always try to spawn new blobs first, regardless of performance optimizations
+        this.spawnFloatingBlobs();
+        
+        // Early exit if no blobs to process
+        if (this.floatingBlobs.length === 0) return;
+        
+        // Performance optimization: Throttle updates during heavy audio activity
+        const totalMusicInfluence = this.bassIntensity + this.midIntensity + this.highIntensity;
+        if (totalMusicInfluence > 0.8) {
+            // Skip every other frame during intense music to prevent freezing
+            this.skipFloatingBlobUpdate = !this.skipFloatingBlobUpdate;
+            if (this.skipFloatingBlobUpdate) return;
+        }
+        
         // Update existing floating blobs
         for (let i = this.floatingBlobs.length - 1; i >= 0; i--) {
             const blobData = this.floatingBlobs[i];
@@ -2746,12 +2852,14 @@ createFloatingBlob(spawnPosition, intensity, type) {
             blobData.independentTimer += deltaTime;
             const blobTime = blobData.independentTimer + blobData.timeOffset;
               // === DEFORMATION LOGIC (enhanced for different blob sizes) ===
-            
-            // Calculate individual frequency influences
+            // Calculate individual frequency influences first
             const bassInfluence = this.bassIntensity * blobData.musicResponse;
             const midInfluence = this.midIntensity * blobData.musicResponse;
             const highInfluence = this.highIntensity * blobData.musicResponse;
             const totalMusicInfluence = bassInfluence + midInfluence + highInfluence;
+            
+            // Performance optimization: reduce deformation complexity during intense music
+            const simplifyDeformation = totalMusicInfluence > 0.8;
             
             // Determine deformation method based on blob size - larger blobs get main ferrofluid behavior
             const effectiveSize = blobData.baseSize * blobData.currentScale;
@@ -2770,10 +2878,15 @@ createFloatingBlob(spawnPosition, intensity, type) {
                 }));
             }
 
-            // Apply deformation to each vertex
+            // Apply deformation to each vertex (with performance optimization)
             let maxDeformation = 0; // Track the maximum deformation this frame
-            for (let j = 0; j < positions.length; j += 3) {
+            const vertexStep = simplifyDeformation ? 2 : 1; // Skip vertices during intense music
+            
+            for (let j = 0; j < positions.length; j += 3 * vertexStep) {
                 const vertexIndex = j / 3;
+                
+                // Skip if vertex doesn't exist (safety check for vertex stepping)
+                if (vertexIndex >= blobData.originalPositions.length / 3) continue;
                 const x = blobData.originalPositions[j];
                 const y = blobData.originalPositions[j + 1];
                 const z = blobData.originalPositions[j + 2];
@@ -3083,67 +3196,99 @@ createFloatingBlob(spawnPosition, intensity, type) {
         
         // Only perform blob-to-blob collisions if quality allows and frame skipping permits
         if (qualitySettings.blobToBlob && this.shouldPerformCollisionDetection() && blobs.length > 1) {
-            // Update spatial grid for efficient collision detection
-            this.updateSpatialGrid();
+            // During intense music, use simplified collision detection to prevent freezing
+            if (totalMusicInfluence > 0.7) {
+                // Simplified collision detection for performance
+                for (let i = 0; i < blobs.length; i++) {
+                    for (let j = i + 1; j < Math.min(blobs.length, i + 5); j++) { // Limit pairs checked
+                        const bd1 = blobs[i];
+                        const bd2 = blobs[j];
+                        
+                        if (!bd1 || !bd2 || !bd1.mesh || !bd2.mesh) continue;
+                        
+                        const p1 = bd1.mesh.position;
+                        const p2 = bd2.mesh.position;
+                        const delta = new THREE.Vector3().subVectors(p2, p1);
+                        const dist = delta.length();
+                        const r1 = bd1.baseSize * bd1.currentScale;
+                        const r2 = bd2.baseSize * bd2.currentScale;
+                        const minDist = r1 + r2;
+                        
+                        if (dist > 0 && dist < minDist) {
+                            const overlap = minDist - dist;
+                            const normal = delta.clone().normalize();
+                            
+                            // Simple separation
+                            const separation = overlap * 0.5;
+                            bd1.mesh.position.addScaledVector(normal, -separation);
+                            bd2.mesh.position.addScaledVector(normal, separation);
+                        }
+                    }
+                }
+            } else {
+                // Full collision detection during normal music levels
+                // Update spatial grid for efficient collision detection
+                this.updateSpatialGrid();
+                
+                // Get optimized collision pairs using spatial partitioning
+                const collisionPairs = this.getPotentialCollisionPairs();
             
-            // Get optimized collision pairs using spatial partitioning
-            const collisionPairs = this.getPotentialCollisionPairs();
-            
-            // Process collision pairs with optimized algorithm
-            for (const [a, b] of collisionPairs) {
-                const bd1 = blobs[a];
-                const bd2 = blobs[b];
-                
-                // Skip if blobs don't exist (safety check)
-                if (!bd1 || !bd2) continue;
-                
-                const p1 = bd1.mesh.position;
-                const p2 = bd2.mesh.position;
-                const delta = new THREE.Vector3().subVectors(p2, p1);
-                const dist = delta.length();
-                const r1 = bd1.baseSize * bd1.currentScale;
-                const r2 = bd2.baseSize * bd2.currentScale;
-                const minDist = r1 + r2;
-                
-                if (dist > 0 && dist < minDist) {
-                    const overlap = minDist - dist;
-                    const normal = delta.clone().normalize();
+                // Process collision pairs with optimized algorithm
+                for (const [a, b] of collisionPairs) {
+                    const bd1 = blobs[a];
+                    const bd2 = blobs[b];
                     
-                    // Calculate masses based on volume (radius cubed)
-                    const mass1 = r1 * r1 * r1;
-                    const mass2 = r2 * r2 * r2;
-                    const totalMass = mass1 + mass2;
+                    // Skip if blobs don't exist (safety check)
+                    if (!bd1 || !bd2) continue;
                     
-                    // Apply quality-based update frequency
-                    const updateIntensity = qualitySettings.updateFrequency;
+                    const p1 = bd1.mesh.position;
+                    const p2 = bd2.mesh.position;
+                    const delta = new THREE.Vector3().subVectors(p2, p1);
+                    const dist = delta.length();
+                    const r1 = bd1.baseSize * bd1.currentScale;
+                    const r2 = bd2.baseSize * bd2.currentScale;
+                    const minDist = r1 + r2;
                     
-                    // Distribute separation based on inverse mass ratio
-                    const separation1 = (mass2 / totalMass) * (overlap + 0.02) * updateIntensity;
-                    const separation2 = (mass1 / totalMass) * (overlap + 0.02) * updateIntensity;
-                    
-                    // Move both blobs to resolve overlap
-                    bd1.mesh.position.addScaledVector(normal, -separation1);
-                    bd2.mesh.position.addScaledVector(normal, separation2);
-                    
-                    // Apply velocity responses based on mass and overlap
-                    const velocityResponse = overlap * 0.4 * updateIntensity; // Quality-scaled response
-                    bd1.velocity.addScaledVector(normal, -velocityResponse * (mass2 / totalMass));
-                    bd2.velocity.addScaledVector(normal, velocityResponse * (mass1 / totalMass));
-                    
-                    // Add slight bounce effect for more realistic collision
-                    const bounceEffect = 0.1 * updateIntensity;
-                    bd1.velocity.multiplyScalar(1 + bounceEffect);
-                    bd2.velocity.multiplyScalar(1 + bounceEffect);
+                    if (dist > 0 && dist < minDist) {
+                        const overlap = minDist - dist;
+                        const normal = delta.clone().normalize();
+                        
+                        // Calculate masses based on volume (radius cubed)
+                        const mass1 = r1 * r1 * r1;
+                        const mass2 = r2 * r2 * r2;
+                        const totalMass = mass1 + mass2;
+                        
+                        // Apply quality-based update frequency
+                        const updateIntensity = qualitySettings.updateFrequency;
+                        
+                        // Distribute separation based on inverse mass ratio
+                        const separation1 = (mass2 / totalMass) * (overlap + 0.02) * updateIntensity;
+                        const separation2 = (mass1 / totalMass) * (overlap + 0.02) * updateIntensity;
+                        
+                        // Move both blobs to resolve overlap
+                        bd1.mesh.position.addScaledVector(normal, -separation1);
+                        bd2.mesh.position.addScaledVector(normal, separation2);
+                        
+                        // Apply velocity responses based on mass and overlap
+                        const velocityResponse = overlap * 0.4 * updateIntensity; // Quality-scaled response
+                        bd1.velocity.addScaledVector(normal, -velocityResponse * (mass2 / totalMass));
+                        bd2.velocity.addScaledVector(normal, velocityResponse * (mass1 / totalMass));
+                        
+                        // Add slight bounce effect for more realistic collision
+                        const bounceEffect = 0.1 * updateIntensity;
+                        bd1.velocity.multiplyScalar(1 + bounceEffect);
+                        bd2.velocity.multiplyScalar(1 + bounceEffect);
+                    }
                 }
             }
               // Enhanced performance statistics logging
             if (Math.random() < 0.001) { // 0.1% chance per frame
                 const stats = this.collisionOptimization.stats;
-                console.log(`🔧 Enhanced Collision Stats - Quality: ${this.collisionOptimization.currentQuality}`);
-                console.log(`   • Total Checks: ${stats.totalChecks}, Spatial Opts: ${stats.spatialOptimizations}`);
-                console.log(`   • Broad-Phase Culled: ${stats.broadPhaseCulled}, Cache Hits: ${stats.cacheHits}`);
-                console.log(`   • Frame Skips: ${stats.frameSkips}, Temporal Skips: ${stats.temporalCoherenceSkips}`);
-                console.log(`   • Cache Cleanups: ${stats.cacheCleanups}, Cache Size: ${this.collisionOptimization.collisionCache.size}`);
+                console.log(`Collision Stats - Quality: ${this.collisionOptimization.currentQuality}`);
+                console.log(`   • Checks: ${stats.totalChecks}, Spatial: ${stats.spatialOptimizations}`);
+                console.log(`   • Culled: ${stats.broadPhaseCulled}, Cache: ${stats.cacheHits}`);
+                console.log(`   • Skips: ${stats.frameSkips}, Temporal: ${stats.temporalCoherenceSkips}`);
+                console.log(`   • Cleanups: ${stats.cacheCleanups}, Size: ${this.collisionOptimization.collisionCache.size}`);
             }
         }
 
@@ -3233,9 +3378,6 @@ for (const bd of blobs) {
     if (p.z - r < -limit) { p.z = -limit + r; bd.velocity.z *= -bounceFactor; }
     else if (p.z + r > limit) { p.z = limit - r; bd.velocity.z *= -bounceFactor; }
 }
-
-// Spawn new blobs
-this.spawnFloatingBlobs();
     }
     
     updateLighting() {
@@ -3421,7 +3563,7 @@ this.spawnFloatingBlobs();
                     element.style.opacity = this.uiOpacity.toString();
                 }
             }
-        });        console.log(`UI opacity updated to: ${this.uiOpacity}`);
+        });        console.log(`UI opacity: ${this.uiOpacity}`);
     }
 
     // Initialize dynamic CSS-based filmic noise system
@@ -3435,7 +3577,7 @@ this.spawnFloatingBlobs();
         
         // Store animation reference for cleanup
         this.filmicNoiseActive = true;
-        console.log('🎬 Filmic noise system initialized');
+        console.log('Filmic noise init OK');
     }
 
     // Stop dynamic filmic noise system
@@ -3458,7 +3600,7 @@ this.spawnFloatingBlobs();
             overlay.style.setProperty('--grain-bg-after', 'transparent');
         }
         
-        console.log('🎬 Filmic noise system stopped');
+        console.log('🎬 Filmic noise stopped');
     }
 
     // Generate moving CSS-based grain patterns
@@ -3667,8 +3809,8 @@ this.spawnFloatingBlobs();
       fetchAndUpdateSvg(svgUrl, imgElement, hexColor) {
         // Check for file:// protocol which would cause CORS issues
         if (window.location.protocol === 'file:') {
-            console.warn('SVG color modification not available when serving from file:// protocol due to CORS restrictions.');
-            console.warn('For full functionality, serve the application from a local HTTP server.');
+            console.warn('SVG color mod unavailable from file:// due to CORS.');
+            console.warn('Use local HTTP server for full functionality.');
             // Fallback to CSS filter approach
             const gridColorRgb = this.hexToRgb(hexColor);
             if (gridColorRgb) {
@@ -3702,7 +3844,7 @@ this.spawnFloatingBlobs();
                 imgElement.dataset.currentBlobUrl = url;
             })
             .catch(error => {
-                console.warn('Failed to update SVG color:', error);
+                console.warn('SVG color update failed:', error);
                 // Fallback to CSS filter approach
                 const gridColorRgb = this.hexToRgb(hexColor);
                 if (gridColorRgb) {
@@ -4056,7 +4198,7 @@ this.spawnFloatingBlobs();
 
         this.mouseInteraction.waves.push(wave);
         
-        console.log(`// Artefact interaction ripple created at:`, localContactPoint, ` // Total waves: ${this.mouseInteraction.waves.length}`);
+        console.log(`// Artefact ripple at:`, localContactPoint, ` // Waves: ${this.mouseInteraction.waves.length}`);
     }
 
     // Apply mouse forces to floating blobs
@@ -4137,28 +4279,37 @@ this.spawnFloatingBlobs();
             this.cameraControls.targetZ += (this.ferrofluid.position.z - this.cameraControls.targetZ) * smoothingFactor;
         }
         
-        // Calculate music-reactive rotation speed
+        // Calculate music-reactive rotation speed with emphasis on horizontal sweeping
         const totalIntensity = (this.bassIntensity + this.midIntensity + this.highIntensity) / 3;
-        const baseRotationSpeed = 0.3; // Slow base rotation speed (degrees per second)
-        const musicMultiplier = 1 + totalIntensity * 2; // Speed up with music intensity
+        const baseRotationSpeed = 0.5; // Increased base rotation for more sweeping
+        const musicMultiplier = 1 + totalIntensity * 6; // Increased from 4 to 6 for more dramatic horizontal sweeping
         const rotationSpeed = baseRotationSpeed * musicMultiplier;
         
-        // Continuously rotate around the blob
-        this.cameraControls.azimuth += rotationSpeed * deltaTime;
+        // Add extra rotation burst during very intense music (focus on horizontal sweeping)
+        const intenseBurst = totalIntensity > 0.7 ? (totalIntensity - 0.7) * 12 : 0; // Increased from 6 to 12 for more sweeping
+        const finalRotationSpeed = rotationSpeed + intenseBurst;
         
-        // Gentle elevation changes based on music
-        const baseElevation = 15; // Good viewing angle
-        const elevationVariation = Math.sin(currentTime * 0.0005) * 8 + // Slow sine wave
-                                  this.midIntensity * 10; // React to mid frequencies
+        // Add occasional direction changes for more dynamic sweeping
+        const directionChange = Math.sin(currentTime * 0.0003) * totalIntensity * 2; // Occasional reverse sweeping during intense music
+        
+        // Continuously rotate around the blob with enhanced sweeping
+        this.cameraControls.azimuth += (finalRotationSpeed + directionChange) * deltaTime;
+        
+        // Enhanced elevation changes based on music (keep closer to side views)
+        const baseElevation = 18; // Slightly higher base for better side view (was 15)
+        const elevationVariation = Math.sin(currentTime * 0.0005) * 5 + // Reduced from 8 to 5 for less vertical movement
+                                  this.midIntensity * 8 + // Reduced from 15 to 8 to stay closer to side views
+                                  this.highIntensity * 4; // Reduced from 8 to 4 for subtle vertical movement
         this.cameraControls.elevation = baseElevation + elevationVariation;
         
-        // Gentle distance changes for breathing effect
+        // Enhanced distance changes for breathing effect
         const baseDistance = 18;
         const distanceVariation = Math.sin(currentTime * 0.0008) * 2 + // Slow breathing
-                                 this.bassIntensity * 3; // Zoom in on bass
+                                 this.bassIntensity * 5 + // Increased from 3 to 5 for more dramatic zoom
+                                 this.highIntensity * 3; // Add high frequency influence for rapid movements
         this.cameraControls.distance = baseDistance + distanceVariation;
         
-        // Clamp values within safe viewing limits
+        // Clamp values within safe viewing limits (keep original range for better side views)
         this.cameraControls.elevation = Math.max(5, Math.min(35, this.cameraControls.elevation));
         this.cameraControls.distance = Math.max(12, Math.min(25, this.cameraControls.distance));
     }
@@ -4218,7 +4369,13 @@ this.spawnFloatingBlobs();
         // Calculate delta time for frame-rate independent animation
         const now = performance.now() * 0.001;
         const deltaTime = now - (this.lastAnimationTime || now);
-        this.lastAnimationTime = now;        this.analyzeAudio();
+        this.lastAnimationTime = now;        
+        // DEBUG: Rotate test cube to verify animation is running
+        if (this.testCube) {
+            this.testCube.rotation.y += 0.01;
+        }
+        
+        this.analyzeAudio();
         this.updateAnomalySystem(); // Update anomaly system for idle effects
         this.updateFerrofluid();
         this.updateFloatingBlobs(deltaTime);
@@ -4226,12 +4383,15 @@ this.spawnFloatingBlobs();
         if (this.orbitalBlobSystem) {
             this.orbitalBlobSystem.update(deltaTime);
         }
-        
-        // Update shockwave system
+          // Update shockwave system
         if (this.shockwaveSystem) {
             this.shockwaveSystem.update(deltaTime);
         }
-          // Update grid cell animation
+
+        // Update GPU particle shader system (temporarily disabled)
+        if (this.gpuParticleSystem) {
+            this.gpuParticleSystem.update(deltaTime);
+        }          // Update grid cell animation
         if (this.gridCellAnimator) {
             this.gridCellAnimator.update(
                 now,
@@ -4287,11 +4447,14 @@ this.spawnFloatingBlobs();
                 blobData.mesh.material.dispose();
             });
             this.floatingBlobs = [];
-        }
-
-        // Clean up orbital blob system
+        }        // Clean up orbital blob system
         if (this.orbitalBlobSystem) {
             this.orbitalBlobSystem.clearAll();
+        }
+
+        // Clean up GPU particle shader system
+        if (this.gpuParticleSystem) {
+            this.gpuParticleSystem.dispose();
         }
 
         // Clean up inner ferrofluid sphere
@@ -4357,7 +4520,7 @@ this.spawnFloatingBlobs();
                             
                             // Debug: Log beat detection occasionally
                             if (Math.random() < 0.1) {
-                                console.log(`Enhanced Beat detected! Flux: ${spectralFlux.toFixed(3)}, Threshold: ${this.bpmDetector.adaptiveThreshold.toFixed(3)}, Energy increase: ${(energyIncrease * 100 - 100).toFixed(1)}%`);
+                                console.log(`Beat! Flux: ${spectralFlux.toFixed(3)}, Thresh: ${this.bpmDetector.adaptiveThreshold.toFixed(3)}, Energy+: ${(energyIncrease * 100 - 100).toFixed(1)}%`);
                             }
                             
                             // Remove old peaks outside of analysis window
@@ -4376,11 +4539,11 @@ this.spawnFloatingBlobs();
         
         // Debug logging occasionally
         if (Math.random() < 0.01) {
-            console.log(`BPM Debug - Total Energy: ${totalEnergy.toFixed(3)}, Adaptive Threshold: ${this.bpmDetector.adaptiveThreshold.toFixed(3)}, Peaks: ${this.bpmDetector.peaks.length}`);
+            console.log(`BPM Debug - Energy: ${totalEnergy.toFixed(3)}, Thresh: ${this.bpmDetector.adaptiveThreshold.toFixed(3)}, Peaks: ${this.bpmDetector.peaks.length}`);
         }
     }    calculateBPM() {
         if (this.bpmDetector.peaks.length < 6) {
-            console.log(`ARTEFAKT BPM: Not enough peaks (${this.bpmDetector.peaks.length}/6 required)`);
+            console.log(`BPM: Need more peaks (${this.bpmDetector.peaks.length}/6)`);
             return;
         }
         
@@ -4411,10 +4574,10 @@ this.spawnFloatingBlobs();
             interval >= lowerBound && interval <= upperBound
         );
         
-        console.log(`ARTEFAKT BPM: Raw intervals (${intervals.length}), Filtered (${filteredIntervals.length}), Median: ${Math.round(median)}ms`);
+        console.log(`BPM: Raw ${intervals.length}, Filtered ${filteredIntervals.length}, Median: ${Math.round(median)}ms`);
         
         if (filteredIntervals.length < 3) {
-            console.log(`ARTEFAKT BPM: Not enough filtered intervals (${filteredIntervals.length}/3 required)`);
+            console.log(`BPM: Need more filtered intervals (${filteredIntervals.length}/3)`);
             return;
         }
         
@@ -4441,11 +4604,11 @@ this.spawnFloatingBlobs();
         // Check if half-time or double-time makes more sense based on typical BPM ranges
         if (calculatedBPM > 160 && halfTimeBPM >= 70) {
             // Likely detecting double-time, use half-time instead
-            console.log(`ARTEFAKT BPM: Detected potential double-time (${calculatedBPM}), using half-time: ${halfTimeBPM}`);
+            console.log(`BPM: Double-time detected (${calculatedBPM}), using half: ${halfTimeBPM}`);
             calculatedBPM = halfTimeBPM;
         } else if (calculatedBPM < 80 && doubleTimeBPM <= 180) {
             // Likely detecting half-time, use double-time instead
-            console.log(`ARTEFAKT BPM: Detected potential half-time (${calculatedBPM}), using double-time: ${doubleTimeBPM}`);
+            console.log(`BPM: Half-time detected (${calculatedBPM}), using double: ${doubleTimeBPM}`);
             calculatedBPM = doubleTimeBPM;
         }
         
@@ -4465,7 +4628,7 @@ this.spawnFloatingBlobs();
         // Calculate average confidence over recent calculations
         const avgConfidence = this.bpmDetector.confidenceWindow.reduce((sum, c) => sum + c, 0) / this.bpmDetector.confidenceWindow.length;
         
-        console.log(`ARTEFAKT BPM: Calculated: ${calculatedBPM}, Confidence: ${(confidence * 100).toFixed(1)}%, Avg Confidence: ${(avgConfidence * 100).toFixed(1)}%`);
+        console.log(`BPM: ${calculatedBPM}, Conf: ${(confidence * 100).toFixed(1)}%, Avg: ${(avgConfidence * 100).toFixed(1)}%`);
         
         // Only update BPM if confidence is high enough and BPM is in valid range
         if (calculatedBPM >= this.bpmDetector.minBpm && 
@@ -4476,13 +4639,13 @@ this.spawnFloatingBlobs();
             const bpmElement = document.getElementById('track-bpm');
             if (bpmElement) {
                 bpmElement.textContent = calculatedBPM.toString();
-                console.log(`ARTEFAKT BPM updated to: ${calculatedBPM} (confidence: ${(avgConfidence * 100).toFixed(1)}%)`);
+                console.log(`Artefact BPM updated to: ${calculatedBPM} (confidence: ${(avgConfidence * 100).toFixed(1)}%)`);
             }
         } else {
             const reason = calculatedBPM < this.bpmDetector.minBpm || calculatedBPM > this.bpmDetector.maxBpm 
                 ? `outside valid range ${this.bpmDetector.minBpm}-${this.bpmDetector.maxBpm}` 
                 : `low confidence ${(avgConfidence * 100).toFixed(1)}% < ${(this.bpmDetector.minConfidence * 100)}%`;
-            console.log(`ARTEFAKT BPM ${calculatedBPM} rejected (${reason})`);
+            console.log(`BPM ${calculatedBPM} rejected (${reason})`);
         }
     }// Settings Methods
     getUISettings() {
@@ -4582,7 +4745,8 @@ this.spawnFloatingBlobs();
                 const gridSizeSlider = document.getElementById('grid-size');
                 const gridSizeValue = document.getElementById('grid-size-value');
                 if (gridSizeSlider) gridSizeSlider.value = this.gridSize;
-                if (gridSizeValue) gridSizeValue.textContent = this.gridSize;                this.createGrid(); // Recreate grid with new size
+                if (gridSizeValue) gridSizeValue.textContent = this.gridSize;                
+                this.createGrid(); // Recreate grid with new size
                 if (this.cameraControls) {
                     this.clampCameraTarget();
                 }
@@ -4784,7 +4948,8 @@ this.spawnFloatingBlobs();
               // Debug settings
             if (settings.debugEncodingEnabled !== undefined && window.debugEncodingControls) {
                 window.debugEncodingControls.setEnabled(settings.debugEncodingEnabled);
-                const debugToggle = document.getElementById('debug-encoding-toggle');            if (debugToggle) debugToggle.checked = settings.debugEncodingEnabled;
+                const debugToggle = document.getElementById('debug-encoding-toggle');            
+                if (debugToggle) debugToggle.checked = settings.debugEncodingEnabled;
             }            // Debug console settings
             const debugPanel = document.getElementById('debug-info-panel');
             const debugConsoleToggle = document.getElementById('debug-console-toggle');
@@ -4865,7 +5030,7 @@ this.spawnFloatingBlobs();
             // Mark that settings have been loaded to prevent initializeUIValues from overwriting
             this.settingsLoaded = true;
             
-            console.log('Settings applied successfully');
+            console.log('Settings applied OK');
             return true;
         } catch (error) {
             console.error('Error applying settings:', error);
@@ -4897,7 +5062,8 @@ this.spawnFloatingBlobs();
                 if (indexResponse.ok) {
                     const indexData = await indexResponse.json();
                     if (indexData.presets && Array.isArray(indexData.presets)) {
-                        console.log('Loading presets from index.json');                        for (const preset of indexData.presets) {
+                        console.log('Loading presets from index.json');                        
+                        for (const preset of indexData.presets) {
                             const filename = preset.file || preset;
                             const displayName = preset.name || filename.replace('.json', '').replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                             
@@ -4915,7 +5081,7 @@ this.spawnFloatingBlobs();
                             }
                         }
                         
-                        console.log(`Settings dropdown refreshed from index: ${loadedCount} presets found`);
+                        console.log(`Dropdown refreshed from index: ${loadedCount} presets`);
                         return;
                     }
                 }
@@ -4976,9 +5142,9 @@ this.spawnFloatingBlobs();
                 }
             }
             
-            console.log(`Settings dropdown refreshed: ${loadedCount} presets found`);
+            console.log(`Dropdown refreshed: ${loadedCount} presets`);
         } catch (error) {
-            console.error('Error refreshing settings dropdown:', error);
+            console.error('Error refreshing dropdown:', error);
         }
     }
 
@@ -4998,9 +5164,9 @@ this.spawnFloatingBlobs();
             const success = this.applyUISettings(settings);
             
             if (success) {
-                console.log(`Loaded preset: ${dropdown.options[dropdown.selectedIndex].textContent}`);
+                console.log(`Preset loaded: ${dropdown.options[dropdown.selectedIndex].textContent}`);
             } else {
-                console.error('Failed to apply loaded settings');
+                console.error('Failed to apply settings');
             }
         } catch (error) {
             console.error('Error loading selected settings:', error);
@@ -5023,7 +5189,7 @@ this.spawnFloatingBlobs();
             link.click();
             document.body.removeChild(link);
             
-            console.log('Settings exported successfully');
+            console.log('Settings exported OK');
         } catch (error) {
             console.error('Error exporting settings:', error);
         }
@@ -5046,12 +5212,12 @@ this.spawnFloatingBlobs();
                 const success = this.applyUISettings(settings);
                 
                 if (success) {
-                    console.log(`Settings imported from: ${file.name}`);
+                    console.log(`Settings imported: ${file.name}`);
                 } else {
                     console.error('Failed to apply imported settings');
                 }
             } catch (error) {
-                console.error('Error parsing settings file:', error);
+                console.error('Error parsing settings:', error);
             }
         };
         
@@ -5067,12 +5233,13 @@ this.spawnFloatingBlobs();
     let decodingLines = []; // Track lines that are currently decoding
     let reencodingLines = []; // Track lines that are currently re-encoding before removal
     let animationFrame = null;
-      // Characters used for encoding/scrambling
-    const ENCODING_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?~`';
-    const DECODE_SPEED = 25; // milliseconds between decode steps (faster: was 50)
-    const CHARS_PER_STEP = 4; // how many characters to decode per step (faster: was 2)
-    const REENCODE_SPEED = 20; // milliseconds between re-encode steps (slightly faster than decode)
-    const REENCODE_CHARS_PER_STEP = 5; // how many characters to re-encode per step
+      // Full character set for encoding/scrambling - simplified without distracting block/geometric chars
+    const ENCODING_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?~`"\'\/\\';
+    
+    const DECODE_SPEED = 25; // Standard decode speed
+    const CHARS_PER_STEP = 3; // Characters to decode per step
+    const REENCODE_SPEED = 20; // Re-encode speed
+    const REENCODE_CHARS_PER_STEP = 4; // Characters to re-encode per step
 
     function stripEmoji(str) {
         // Only remove actual emoji characters, preserve all numbers, letters, punctuation
@@ -5142,6 +5309,7 @@ this.spawnFloatingBlobs();
     }
       function decodeStep(line) {
         const now = Date.now();
+        
         if (now - line.lastDecodeTime < DECODE_SPEED) {
             return false; // Not time to decode yet
         }
@@ -5163,6 +5331,7 @@ this.spawnFloatingBlobs();
                 originalArray[i] === '\t' || originalArray[i] === ':' || 
                 originalArray[i] === '.' || originalArray[i] === ',') {
                 line.decodedChars++;
+                decoded++;
                 continue;
             }
             
@@ -5173,12 +5342,12 @@ this.spawnFloatingBlobs();
         
         line.current = currentArray.join('');
         line.lastDecodeTime = now;
-        
         return false; // Still decoding
     }
     
     function reencodeStep(line) {
         const now = Date.now();
+        
         if (now - line.lastReencodeTime < REENCODE_SPEED) {
             return false; // Not time to re-encode yet
         }
@@ -5369,8 +5538,8 @@ this.spawnFloatingBlobs();
             
             // Show immediate feedback
             const toggleMessage = window.debugEncodingSettings.enabled ? 
-                'Decoding animation: ENABLED' : 
-                'Decoding animation: DISABLED';
+                'Decode animation: ON' : 
+                'Decode animation: OFF';
             
             if (window.debugEncodingSettings.enabled) {
                 addEncodedLine(toggleMessage);
@@ -5385,7 +5554,7 @@ this.spawnFloatingBlobs();
             decodingLines = [];
             reencodingLines = [];
             debugBuffer = [];
-            addEncodedLine('Console cleared and reset');
+            addEncodedLine('Console cleared');
         },
         setEnabled: function(enabled) {
             window.debugEncodingSettings.enabled = enabled;
@@ -5633,7 +5802,7 @@ this.spawnFloatingBlobs();
 
 // Initialize the visualizer when the page loads
 document.addEventListener('DOMContentLoaded', () => {
-    new FerrofluidVisualizer();
+    window.visualizer = new FerrofluidVisualizer();
 });
 
 // Handle page unload

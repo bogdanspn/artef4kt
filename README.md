@@ -2,7 +2,16 @@
 *Advanced Ferrofluid Interactive Music Visualizer*
 
 [![Built with Three.js](https://img.shields.io/badge/Built%20with-Three.js-000000?style=flat&logo=three.js)](https://threejs.org/)
-[![Web Audio API](https://img.shields.io/badge/Audio-Web%20Audio%20API-orange?style=flat)](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
+[![Web Audio API](https://img.shields.io/badge/Audio-Web%20Audio%20API-orange?style=flat)](https://de### **Technical Architecture**
+
+### **GPU Shader System Architecture**
+- **Custom GLSL Shader Pipeline**: High-performance vertex and fragment shaders with audio-reactive capabilities
+- **Audio Texture System**: Real-time audio data transmission to GPU via floating-point textures
+- **Multi-Material Shader Support**: Unified shader system for ferrofluid blob, floating particles, and orbital elements
+- **Performance Adaptive Rendering**: Dynamic shader quality adjustment based on system performance metrics
+- **Fallback Material System**: Automatic fallback to standard Three.js materials for compatibility
+
+### **Performance Optimization & Scalability**oper.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
 [![JavaScript](https://img.shields.io/badge/Language-JavaScript-yellow?style=flat&logo=javascript)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 
 A state-of-the-art 3D music visualizer that simulates complex ferrofluid behavior with advanced particle systems, shockwave effects, and cinematic post-processing. Experience music through an immersive liquid metal environment that responds dynamically to every beat, frequency, and musical nuance.
@@ -44,6 +53,13 @@ A state-of-the-art 3D music visualizer that simulates complex ferrofluid behavio
 
 ### **Advanced Visual Effects & Post-Processing**
 
+#### **Custom GPU Shader System**
+- **Hardware-Accelerated Rendering**: Custom GLSL shaders for optimal performance with direct GPU computation
+- **Audio-Reactive Deformation**: Real-time vertex manipulation based on frequency analysis with multi-layer audio textures
+- **Advanced Material System**: Custom PBR shader materials with metallic ferrofluid properties and subsurface scattering
+- **Performance Adaptive Shaders**: Dynamic quality adjustment and shader optimization based on system capabilities
+- **Multi-Object Shader Support**: Unified shader system for main ferrofluid, floating blobs, and orbital particles
+
 #### **Filmic Noise Overlay**
 - **Cinematic Film Grain**: Dynamic TV-like noise pattern with SVG-based texture generation
 - **Animated Grain Movement**: Multiple moving layers for realistic film aesthetic
@@ -82,7 +98,8 @@ A state-of-the-art 3D music visualizer that simulates complex ferrofluid behavio
 ### **Comprehensive Performance Monitoring**
 - **Real-time Performance Metrics**: Live FPS monitoring, frame time analysis, and performance quality indicators
 - **System Resource Tracking**: Memory usage, GPU utilization, and render call optimization
-- **Performance Adaptive Features**: Automatic quality adjustment based on system capabilities
+- **Advanced Collision Detection**: Spatial partitioning grid system with intelligent collision optimization
+- **Performance Adaptive Features**: Automatic quality adjustment based on system capabilities with multi-tier LOD systems
 - **Debug Console System**: Advanced debug information with animated text decoding effects
 - **Optimization Indicators**: Visual indicators for performance bottlenecks and optimization suggestions
 
@@ -95,7 +112,7 @@ A state-of-the-art 3D music visualizer that simulates complex ferrofluid behavio
 - **Audio Visualization Components**: Dedicated frequency analyzer displays with customizable appearance
 
 ### **Comprehensive Settings & Preset System**
-- **Extensive Preset Library**: 20+ professionally crafted presets including Default, Dark Mode, Neon Vibes, Minimal, High Contrast, Deep Space, Soviet Red, Purple Haze, and more
+- **Extensive Preset Library**: 23+ professionally crafted presets including Default, Dark Mode, Neon Vibes, Minimal, High Contrast, Deep Space, Soviet Red, Purple Haze, Baby Barf, and more
 - **Dynamic Preset Discovery**: Automatic detection and loading of user-created custom presets
 - **Advanced Import/Export**: Complete settings serialization with JSON format support
 - **Preset Management Tools**: Refresh functionality, preset validation, and error handling
@@ -118,10 +135,11 @@ A state-of-the-art 3D music visualizer that simulates complex ferrofluid behavio
 
 ### **3D Graphics & Rendering**
 - **WebGL 2.0** - Low-level graphics API for maximum performance and visual fidelity
+- **Custom GPU Shader Pipeline** - High-performance GLSL shaders with audio-reactive vertex manipulation
 - **Advanced PBR Materials** - Physically-based rendering with metallic workflows and environment mapping
 - **Multi-Layer Shadow Systems** - Dynamic shadow mapping with transparency, color controls, and optimization
-- **Real-time Geometry Manipulation** - Vertex-level deformation for organic liquid effects
-- **Particle System Architecture** - Efficient particle lifecycle management with LOD optimization
+- **Real-time Geometry Manipulation** - Vertex-level deformation for organic liquid effects with GPU acceleration
+- **Particle System Architecture** - Efficient particle lifecycle management with LOD optimization and spatial partitioning
 
 ### **Audio Processing & Analysis**
 - **FFT Analysis Engine** - Fast Fourier Transform processing with 512-2048 frequency bins
@@ -139,10 +157,11 @@ A state-of-the-art 3D music visualizer that simulates complex ferrofluid behavio
 
 ### **Performance & Optimization**
 - **Frame-rate Independent Animation** - Delta-time based animations for consistent performance across devices
+- **Advanced Collision Detection** - Spatial partitioning grid system with intelligent collision optimization and caching
 - **LOD (Level of Detail) Systems** - Automatic quality adjustment based on system capabilities
 - **Memory Management** - Efficient object pooling, garbage collection optimization, and resource cleanup
-- **GPU Acceleration** - Hardware-accelerated computations and rendering pipeline optimization
-- **Adaptive Quality Control** - Dynamic performance monitoring with automatic quality adjustment
+- **GPU Acceleration** - Hardware-accelerated computations and custom shader rendering pipeline optimization
+- **Adaptive Quality Control** - Dynamic performance monitoring with automatic quality adjustment and multi-tier optimization
 
 ### **Data Management & Storage**
 - **JSON Configuration System** - Comprehensive settings serialization with validation and error handling
@@ -204,11 +223,19 @@ cd artef4kt
 - **Performance Tuning**: Adjust quality settings based on your system capabilities
 
 ### **Preset Management**
-- **Load Presets**: Select from 20+ built-in presets or custom user presets
+- **Load Presets**: Select from 23+ built-in presets or custom user presets
 - **Create Custom Presets**: Adjust settings to preference and export as JSON files
 - **Import Settings**: Load settings from JSON files shared by other users
 - **Refresh Presets**: Update the preset list to include newly added custom presets
 - **Preset Categories**: Choose from cinematic, minimal, high-energy, or artistic preset categories
+
+### **GPU Shader System Controls**
+- **Shader System Toggle**: Enable/disable custom GPU shader pipeline for optimal performance or compatibility
+- **Audio Responsiveness**: Control how intensely shaders react to audio frequency data
+- **Deformation Strength**: Adjust the intensity of audio-driven vertex manipulation
+- **Material Properties**: Configure metalness, roughness, and subsurface scattering effects
+- **Performance Monitoring**: Real-time shader performance metrics with automatic optimization
+- **Fallback System**: Automatic detection and fallback to standard materials when needed
 
 ## **Project Structure**
 
@@ -223,6 +250,7 @@ artef4kt/
 ├── shockwave-system.js             # Dynamic shockwave effects
 ├── grid-cells.js                   # 3D grid cell matrix system
 ├── performance-monitor.js          # Real-time performance tracking
+├── gpu-particle-shaders.js         # Custom GPU shader system for enhanced performance
 ├── update-mp3-index.ps1            # Audio file index generator
 ├── update-settings-index.ps1       # Preset management script
 ├── images/                         # Logo, icon, and graphic assets
@@ -248,7 +276,8 @@ artef4kt/
     ├── purple-haze.json            # Psychedelic purple theme
     ├── blue-saphir.json            # Elegant blue theme
     ├── wasp.json                   # High-energy yellow theme
-    └── [20+ additional presets]
+    ├── baby-barf.json              # Unique artistic color palette
+    └── [23+ additional presets]
 ```
 
 ## **Advanced Customization**
@@ -279,6 +308,8 @@ The visualizer supports comprehensive color customization with intelligent harmo
 
 ### **Performance Optimization Settings**
 - **Quality Presets**: Choose from Ultra, High, Medium, Low, or Custom quality configurations
+- **GPU Shader Controls**: Enable/disable custom shader system for maximum performance or compatibility
+- **Collision Detection Optimization**: Spatial partitioning grid with configurable quality levels and frame skipping
 - **Particle Limits**: Set maximum particle counts based on system capabilities
 - **Shadow Quality**: Adjust shadow resolution and transparency for performance balance
 - **LOD System**: Configure distance-based level of detail for complex particle systems
@@ -288,9 +319,10 @@ The visualizer supports comprehensive color customization with intelligent harmo
 
 ### **Performance Optimization & Scalability**
 - **Frame-rate Independent Animation System**: Delta-time based animations ensuring consistent visual behavior across all device capabilities
-- **Efficient Vertex Manipulation**: Optimized typed array operations for real-time geometry deformation
+- **Advanced Collision Detection**: Spatial partitioning grid system with intelligent broad-phase culling and temporal coherence optimization
+- **Efficient Vertex Manipulation**: Optimized typed array operations for real-time geometry deformation with GPU acceleration
 - **Multi-tier LOD System**: Automatic level-of-detail adjustment for particles, shadows, and effects based on performance metrics
-- **GPU-Accelerated Rendering**: WebGL optimization with efficient shader compilation and uniform management
+- **GPU-Accelerated Rendering**: WebGL optimization with efficient shader compilation, uniform management, and custom rendering pipeline
 - **Memory Management**: Comprehensive object pooling, garbage collection optimization, and resource lifecycle management
 - **Adaptive Quality Control**: Real-time performance monitoring with automatic quality adjustment and user feedback
 
@@ -312,9 +344,10 @@ The visualizer supports comprehensive color customization with intelligent harmo
 
 ### **Modular System Architecture**
 - **Core Visualizer Engine**: Main application logic with scene management and audio integration
-- **Particle System Modules**: Independent systems for shockwaves, orbital blobs, and grid cells
+- **GPU Shader System**: Custom GLSL shader pipeline with audio-reactive vertex manipulation and performance optimization
+- **Particle System Modules**: Independent systems for shockwaves, orbital blobs, and grid cells with spatial optimization
 - **Color Management**: Dedicated color harmonization and palette generation system
-- **Performance Monitor**: Real-time system monitoring with optimization recommendations
+- **Performance Monitor**: Real-time system monitoring with optimization recommendations and collision detection analytics
 - **Settings Management**: Comprehensive configuration system with validation and error handling
 - **UI Controller**: Responsive interface management with touch optimization and accessibility features
 

@@ -269,6 +269,7 @@ body {
 }
 
 #header h1 {
+    font-family:Helvetica,  Arial, sans-serif;
     font-size: 20px;
     font-weight: 600;
     letter-spacing: 0px;
@@ -277,12 +278,21 @@ body {
     text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
     flex: 1;
 }
-
-#header-logo {
-    width: 32px;
-    height: 32px;
+#header h1 img { width:120px;     
     opacity: 0.8;
     filter: invert(1) brightness(1.2);
+    transition: all 0.3s ease;
+    flex-shrink: 0;}
+     
+#header h1 img:hover {
+    filter: invert(1) brightness(1.4);
+    transform: scale(1.05);
+}
+#header-logo {
+    width: 32px;
+     height: 32px;
+    opacity: 0.8;
+    filter: invert(1) brightness(1.2); 
     transition: all 0.3s ease;
     flex-shrink: 0;
 }

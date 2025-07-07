@@ -51,6 +51,9 @@ class OrbitalBlobSystem {
         ];
         
         // Initialize orbital blobs
+        // Initialize skip flag for performance optimization
+        this.skipOrbitalUpdate = false;
+        
         this.initializeOrbitalBlobs();
         
         console.log('Orbital Blob System initialized');
@@ -204,7 +207,18 @@ class OrbitalBlobSystem {
         this.scene.add(blob);
         this.scene.add(innerCore);
         this.orbitalBlobs.push(orbitalBlobData);
-          console.log(`🛸 Orbital blob spawned: ${pattern} orbit, radius: ${orbitRadius.toFixed(2)}, speed: ${orbitSpeed.toFixed(2)} (${rotationDirection > 0 ? 'clockwise' : 'counterclockwise'})`);
+        
+        // Trigger GPU particle effects if available
+        if (this.visualizer.gpuParticleSystem) {
+            this.visualizer.gpuParticleSystem.createParticleBurst(initialPosition, {
+                particleCount: Math.floor(30 + Math.random() * 40), // 30-70 particles
+                spreadRadius: 0.3 + Math.random() * 0.4,
+                speed: 0.8 + Math.random() * 0.6,
+                particleType: 'orbital'
+            });
+        }
+        
+        console.log(`🛸 Orbital blob spawned: ${pattern} orbit, radius: ${orbitRadius.toFixed(2)}, speed: ${orbitSpeed.toFixed(2)} (${rotationDirection > 0 ? 'clockwise' : 'counterclockwise'})`);
         
         return orbitalBlobData;
     }
@@ -277,6 +291,16 @@ class OrbitalBlobSystem {
      */
     update(deltaTime) {
         if (!this.systemActive) return;
+        
+        // Performance optimization: Skip updates during very intense music to prevent freezing
+        const totalMusicInfluence = this.visualizer.bassIntensity + 
+                                   this.visualizer.midIntensity + 
+                                   this.visualizer.highIntensity;
+        
+        if (totalMusicInfluence > 0.9) {
+            this.skipOrbitalUpdate = !this.skipOrbitalUpdate;
+            if (this.skipOrbitalUpdate) return;
+        }
         
         // Update existing orbital blobs
         for (let i = this.orbitalBlobs.length - 1; i >= 0; i--) {
@@ -394,9 +418,16 @@ class OrbitalBlobSystem {
         
         let maxDeformation = 0;
         
+        // Performance optimization: simplify deformation during intense music
+        const simplifyDeformation = totalMusicInfluence > 0.8;
+        const vertexStep = simplifyDeformation ? 2 : 1;
+        
         // Apply sophisticated deformation to each vertex
-        for (let j = 0; j < positions.length; j += 3) {
+        for (let j = 0; j < positions.length; j += 3 * vertexStep) {
             const vertexIndex = j / 3;
+            
+            // Skip if vertex doesn't exist (safety check for vertex stepping)
+            if (vertexIndex >= orbitalData.originalPositions.length / 3) continue;
             const x = orbitalData.originalPositions[j];
             const y = orbitalData.originalPositions[j + 1];
             const z = orbitalData.originalPositions[j + 2];

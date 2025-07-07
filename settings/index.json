@@ -1,111 +1,116 @@
 {
-  "lastUpdated": "2025-06-07T18:51:40.850Z",
   "version": "1.0",
+  "lastUpdated": "2025-06-28T01:06:49.283Z",
   "presets": [
     {
       "description": "Preset: Arangiatta Lilla",
-      "name": "Arangiatta Lilla",
-      "file": "arangiatta-lilla.json"
+      "file": "arangiatta-lilla.json",
+      "name": "Arangiatta Lilla"
+    },
+    {
+      "description": "Preset: Baby Barf",
+      "file": "baby-barf.json",
+      "name": "Baby Barf"
     },
     {
       "description": "Preset: Blue Balast",
-      "name": "Blue Balast",
-      "file": "blue-balast.json"
+      "file": "blue-balast.json",
+      "name": "Blue Balast"
     },
     {
       "description": "Preset: Blue Saphir",
-      "name": "Blue Saphir",
-      "file": "blue-saphir.json"
+      "file": "blue-saphir.json",
+      "name": "Blue Saphir"
     },
     {
       "description": "Preset: Bricks",
-      "name": "Bricks",
-      "file": "bricks.json"
+      "file": "bricks.json",
+      "name": "Bricks"
     },
     {
       "description": "Preset: Dark Mode",
-      "name": "Dark Mode",
-      "file": "dark-mode.json"
+      "file": "dark-mode.json",
+      "name": "Dark Mode"
     },
     {
       "description": "Preset: Deep Space Shockwaves",
-      "name": "Deep Space Shockwaves",
-      "file": "deep-space-shockwaves.json"
+      "file": "deep-space-shockwaves.json",
+      "name": "Deep Space Shockwaves"
     },
     {
       "description": "Preset: Default",
-      "name": "Default",
-      "file": "default.json"
+      "file": "default.json",
+      "name": "Default"
     },
     {
       "description": "Preset: Green Tinge",
-      "name": "Green Tinge",
-      "file": "green-tinge.json"
+      "file": "green-tinge.json",
+      "name": "Green Tinge"
     },
     {
       "description": "Preset: High Contrast",
-      "name": "High Contrast",
-      "file": "high-contrast.json"
+      "file": "high-contrast.json",
+      "name": "High Contrast"
     },
     {
       "description": "Preset: Lime Haze",
-      "name": "Lime Haze",
-      "file": "lime-haze.json"
+      "file": "lime-haze.json",
+      "name": "Lime Haze"
     },
     {
       "description": "Preset: Minimal",
-      "name": "Minimal",
-      "file": "minimal.json"
+      "file": "minimal.json",
+      "name": "Minimal"
     },
     {
       "description": "Preset: Neon Vibes",
-      "name": "Neon Vibes",
-      "file": "neon-vibes.json"
+      "file": "neon-vibes.json",
+      "name": "Neon Vibes"
     },
     {
       "description": "Preset: Old And Retro Green",
-      "name": "Old And Retro Green",
-      "file": "old-and-retro-green.json"
+      "file": "old-and-retro-green.json",
+      "name": "Old And Retro Green"
     },
     {
       "description": "Preset: Purple Haze",
-      "name": "Purple Haze",
-      "file": "purple-haze.json"
+      "file": "purple-haze.json",
+      "name": "Purple Haze"
     },
     {
       "description": "Preset: Purple Shockwaves",
-      "name": "Purple Shockwaves",
-      "file": "purple-shockwaves.json"
+      "file": "purple-shockwaves.json",
+      "name": "Purple Shockwaves"
     },
     {
       "description": "Preset: Red Tinge",
-      "name": "Red Tinge",
-      "file": "red-tinge.json"
+      "file": "red-tinge.json",
+      "name": "Red Tinge"
     },
     {
       "description": "Preset: Sketchy",
-      "name": "Sketchy",
-      "file": "sketchy.json"
+      "file": "sketchy.json",
+      "name": "Sketchy"
     },
     {
       "description": "Preset: Soviet Red",
-      "name": "Soviet Red",
-      "file": "soviet-red.json"
+      "file": "soviet-red.json",
+      "name": "Soviet Red"
     },
     {
       "description": "Preset: Teals",
-      "name": "Teals",
-      "file": "teals.json"
+      "file": "teals.json",
+      "name": "Teals"
     },
     {
       "description": "Preset: Wasp",
-      "name": "Wasp",
-      "file": "wasp.json"
+      "file": "wasp.json",
+      "name": "Wasp"
     },
     {
       "description": "Preset: Yellow Red",
-      "name": "Yellow Red",
-      "file": "yellow-red.json"
+      "file": "yellow-red.json",
+      "name": "Yellow Red"
     }
   ]
 }
