@@ -3,7 +3,7 @@
 <head>    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARTEF4KT</title>
+    <title>ARTEF4KT Visualizer</title>
     <meta name="description" content="An immersive ferrofluid-inspired music visualizer with dynamic blobs, particle effects, and real-time audio analysis.">
     
     <!-- Open Graph / Facebook -->
@@ -39,9 +39,6 @@
 
         <canvas id="visualizer"></canvas>
         
-        <!-- Filmic noise overlay -->
-        <div id="filmic-noise-overlay"></div>
-        
         <div id="ui-hover-area"></div>
           <div id="ui">
             <div id="header">
@@ -50,29 +47,109 @@
             </div>
             
             <div id="controls">  
-                <div class="control-section">                
-                    <div class="control-group">
-                        <div class="section-name">Load Audio File</div>
-                        <div class="custom-file-input">
-                            <input type="file" id="audio-file" accept="audio/*" style="display: none;">
-                            <button id="file-button" type="button">File</button>
-                            <span id="file-name-display">bogdan-rosu-yfflon.mp3</span>
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        <div class="settings-selector-group">
-                            <select id="track-select">
-                                <option value="">Select a Track...</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="control-group player-buttons">
-                        <button id="play-pause">▶ PLAY</button>
-                        <button id="loop">⟲</button>
-                        <button id="stop">⏹ STOP</button>
-                    </div>
+                <div class="control-section">    
 
+                    <!-- Audio Input Tabs -->
+                    <div class="input-tabs-container">
+                        <div class="input-tabs">
+                            <button class="input-tab active" data-tab="file">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <polyline points="14,2 14,8 20,8"/>
+                                </svg>
+                                <span>File</span>
+                            </button>
+                            <button class="input-tab" data-tab="mic">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                                    <line x1="12" y1="19" x2="12" y2="23"/>
+                                    <line x1="8" y1="23" x2="16" y2="23"/>
+                                </svg>
+                                <span>MIC</span>
+                            </button>
+                            <button class="input-tab" data-tab="line">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="8"/>
+                                    <circle cx="12" cy="12" r="4"/>
+                                </svg>
+                                <span>Line</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Tab Content -->
+                        <div class="tab-content active" id="file-tab-content">
+                            <div class="tab-header">
+                                <h3>Load Audio File</h3>
+                                <p>Select an audio file from your computer or ready available tracks</p>
+                            </div>
+                            <div class="custom-file-input">
+                                <input type="file" id="audio-file" accept="audio/*" style="display: none;">
+                                <button id="file-button" type="button">File</button>
+                                <span id="file-name-display">bogdan-rosu-yfflon.mp3</span>
+                            </div>
+                            <div class="control-group">
+                                <div class="settings-selector-group">
+                                    <select id="track-select">
+                                        <option value="">Select a Track...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="control-group player-buttons">
+                                <button id="play-pause">▶ PLAY</button>
+                                <button id="loop">⟲</button>
+                                <button id="stop">⏹ STOP</button>
+                            </div>
+                        </div>
+                        
+                        <div class="tab-content" id="mic-tab-content">
+                            <div class="tab-header">
+                                <h3>Microphone Input</h3>
+                                <p>Connect your microphone for real-time visualization</p>
+                            </div>
+                            <div class="input-status-display" id="mic-status-container">
+                                <div class="status-indicator"></div>
+                                <span id="mic-status">Ready to connect</span>
+                            </div>
+                            <button id="mic-connect" type="button" class="connect-button">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                                    <line x1="12" y1="19" x2="12" y2="23"/>
+                                    <line x1="8" y1="23" x2="16" y2="23"/>
+                                </svg>
+                                Connect Microphone
+                            </button>
+                            <div class="input-info">
+                                <small>Your browser will request permission</small>
+                            </div>
+                        </div>
+                        
+                        <div class="tab-content" id="line-tab-content">
+                            <div class="tab-header">
+                                <h3>Line Input</h3>
+                                <p>Connect external audio devices or line input</p>
+                            </div>
+                            <div class="input-status-display" id="line-status-container">
+                                <div class="status-indicator"></div>
+                                <span id="line-status">Ready to connect</span>
+                            </div>
+                            <button id="line-connect" type="button" class="connect-button">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="3"/>
+                                    <path d="M12 1v6m0 6v6"/>
+                                    <path d="M1 12h6m6 0h6"/>
+                                </svg>
+                                Connect Line Input
+                            </button>
+                            <div class="input-info">
+                                <small>Your browser will request permission</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-section">
                     <!-- Settings Controls -->
                     <div class="control-group settings-controls">
                         <div class="section-name">Settings</div>
@@ -89,16 +166,16 @@
                                 <button id="export-settings" title="Export current settings to JSON file">Export</button>
                             </div>                    
                         </div>                
-                    </div>                
+                    </div>    
                 </div>
                 <div class="control-section">
                     <div class="section-name">Main Sensorics</div>
                     <div class="control-group slider-control">
                         <div class="control-header">
                             <label for="sensitivity">Sensitivity</label>
-                            <span id="sensitivity-value">1.0</span>
+                            <span id="sensitivity-value">1.00</span>
                         </div>
-                        <input type="range" id="sensitivity" min="0.1" max="3" step="0.1" value="1">
+                        <input type="range" id="sensitivity" min="0.4" max="1.4" step="0.05" value="1">
                     </div>
                     
                     <div class="control-group slider-control">
@@ -132,6 +209,12 @@
                         </div>
                         <input type="range" id="grid-opacity" min="0.1" max="0.8" step="0.1" value="0.3">
                     </div>
+                    <div class="control-group checkbox-control">
+                        <div class="control-header">
+                            <label for="grid-cells-activity-toggle">Grid Cells Activity</label>
+                            <input type="checkbox" id="grid-cells-activity-toggle" checked>
+                        </div>
+                    </div>                      
                 </div>                
                 <div class="control-section">
                     <div class="section-name">Environment Control</div>
@@ -141,20 +224,14 @@
                             <span id="env-size-value">115</span>
                         </div>
                         <input type="range" id="env-size" min="50" max="200" step="5" value="115">
-                    </div>                    <div class="control-group slider-control">
+                    </div>                    
+                    <div class="control-group slider-control">
                         <div class="control-header">
                             <label for="ui-opacity">Info Opacity</label>
                             <span id="ui-opacity-value">1.0</span>
                         </div>
                         <input type="range" id="ui-opacity" min="0" max="1" step="0.1" value="1.0">
                     </div>      
-                      <div class="control-group slider-control">
-                        <div class="control-header">
-                            <label for="filmic-noise">Filmic Noise</label>
-                            <span id="filmic-noise-value">0.60</span>
-                        </div>
-                        <input type="range" id="filmic-noise" min="0" max="1" step="0.05" value="0.60">
-                    </div>
                     
                     <div class="control-group checkbox-control">
                         <div class="control-header">
@@ -172,14 +249,155 @@
                             <label for="debug-encoding-toggle">Debug Encoding</label>
                             <input type="checkbox" id="debug-encoding-toggle" checked>
                         </div>
-                    </div>
+                    </div>   
+           
+                </div>
+
+                <div class="control-section">
+                    <div class="section-name">Filmic Tones</div>
                     <div class="control-group checkbox-control">
                         <div class="control-header">
-                            <label for="grid-cells-activity-toggle">Grid Cells Activity</label>
-                            <input type="checkbox" id="grid-cells-activity-toggle" checked>
+                            <label for="filmic-enabled">Enable Filmic Processing</label>
+                            <input type="checkbox" id="filmic-enabled">
                         </div>
-                    </div>     
-           
+                    </div>
+
+                    <div class="control-group dropdown-control">
+                        <div class="control-header">
+                            <label for="tone-mapping">Tone Mapping</label>
+                        </div>
+                        <div class="settings-selector-group">
+                            <select id="tone-mapping" class="tone-mapping-selector">
+                                <option value="linear">Linear (None)</option>
+                                <option value="aces">ACES Filmic</option>
+                                <option value="reinhard">Reinhard</option>
+                                <option value="uncharted2">Uncharted 2</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="control-group slider-control">
+                        <div class="control-header">
+                            <label for="filmic-exposure">Exposure</label>
+                            <span id="filmic-exposure-value">1.0</span>
+                        </div>
+                        <input type="range" id="filmic-exposure" min="0.1" max="3.0" step="0.1" value="1.0">
+                    </div>
+
+                    <div class="control-group slider-control">
+                        <div class="control-header">
+                            <label for="filmic-contrast">Contrast</label>
+                            <span id="filmic-contrast-value">1.0</span>
+                        </div>
+                        <input type="range" id="filmic-contrast" min="0.1" max="2.0" step="0.1" value="1.0">
+                    </div>
+
+                    <div class="control-group slider-control">
+                        <div class="control-header">
+                            <label for="filmic-saturation">Saturation</label>
+                            <span id="filmic-saturation-value">1.0</span>
+                        </div>
+                        <input type="range" id="filmic-saturation" min="0.0" max="2.0" step="0.1" value="1.0">
+                    </div>
+
+                    <div class="control-group slider-control">
+                        <div class="control-header">
+                            <label for="filmic-vibrance">Vibrance</label>
+                            <span id="filmic-vibrance-value">0.0</span>
+                        </div>
+                        <input type="range" id="filmic-vibrance" min="-1.0" max="1.0" step="0.1" value="0.0">
+                    </div>
+
+                    <div class="control-group slider-control">
+                        <div class="control-header">
+                            <label for="filmic-gamma">Gamma</label>
+                            <span id="filmic-gamma-value">1.0</span>
+                        </div>
+                        <input type="range" id="filmic-gamma" min="0.5" max="2.5" step="0.1" value="1.0">
+                    </div>
+
+                    <div class="section-name">Film Effects</div>
+                    <div class="control-group slider-control">
+                        <div class="control-header">
+                            <label for="film-grain-intensity">Film Grain</label>
+                            <span id="film-grain-intensity-value">0.0</span>
+                        </div>
+                        <input type="range" id="film-grain-intensity" min="0.0" max="1.0" step="0.01" value="0.0">
+                    </div>
+
+                    <div class="control-group slider-control">
+                        <div class="control-header">
+                            <label for="vignette-strength">Vignette</label>
+                            <span id="vignette-strength-value">0.0</span>
+                        </div>
+                        <input type="range" id="vignette-strength" min="0.0" max="1.0" step="0.05" value="0.0">
+                    </div>
+
+                    <div class="control-group slider-control">
+                        <div class="control-header">
+                            <label for="chromatic-aberration">Chromatic Aberration <span class="shader-only" title="Requires EffectComposer">⚡</span></label>
+                            <span id="chromatic-aberration-value">0.0</span>
+                        </div>
+                        <input type="range" id="chromatic-aberration" min="0.0" max="5.0" step="0.1" value="0.0">
+                    </div>
+
+                    <div class="control-group slider-control">
+                        <div class="control-header">
+                            <label for="lens-distortion">Lens Distortion <span class="shader-only" title="Requires EffectComposer">⚡</span></label>
+                            <span id="lens-distortion-value">0.0</span>
+                        </div>
+                        <input type="range" id="lens-distortion" min="-0.5" max="0.5" step="0.01" value="0.0">
+                    </div>
+
+                    <div class="section-name">Advanced Cinematic Effects</div>
+                    <div class="control-group slider-control">
+                        <div class="control-header">
+                            <label for="film-halation">Film Halation <span class="shader-only" title="Requires EffectComposer">⚡</span></label>
+                            <span id="film-halation-value">0.0</span>
+                        </div>
+                        <input type="range" id="film-halation" min="0.0" max="1.0" step="0.01" value="0.0">
+                    </div>
+
+                    <div class="control-group slider-control">
+                        <div class="control-header">
+                            <label for="film-scratches">Film Scratches <span class="shader-only" title="Requires EffectComposer">⚡</span></label>
+                            <span id="film-scratches-value">0.0</span>
+                        </div>
+                        <input type="range" id="film-scratches" min="0.0" max="1.0" step="0.01" value="0.0">
+                    </div>
+
+                    <div class="control-group slider-control">
+                        <div class="control-header">
+                            <label for="color-fringing">Color Fringing <span class="shader-only" title="Requires EffectComposer">⚡</span></label>
+                            <span id="color-fringing-value">0.0</span>
+                        </div>
+                        <input type="range" id="color-fringing" min="0.0" max="3.0" step="0.01" value="0.0">
+                    </div>
+
+                    <div class="control-group slider-control">
+                        <div class="control-header">
+                            <label for="scanlines">Scanlines <span class="shader-only" title="Requires EffectComposer">⚡</span></label>
+                            <span id="scanlines-value">0.0</span>
+                        </div>
+                        <input type="range" id="scanlines" min="0.0" max="1.0" step="0.01" value="0.0">
+                    </div>
+
+                    <div class="section-name">Color Temperature</div>
+                    <div class="control-group slider-control">
+                        <div class="control-header">
+                            <label for="color-temperature">Temperature (K)</label>
+                            <span id="color-temperature-value">6500</span>
+                        </div>
+                        <input type="range" id="color-temperature" min="2000" max="12000" step="100" value="6500">
+                    </div>
+
+                    <div class="control-group slider-control">
+                        <div class="control-header">
+                            <label for="color-tint">Tint (Mg/Gn)</label>
+                            <span id="color-tint-value">0.0</span>
+                        </div>
+                        <input type="range" id="color-tint" min="-1.0" max="1.0" step="0.1" value="0.0">
+                    </div>
                 </div>                     
 
                 <div class="control-section">
@@ -193,7 +411,7 @@
                     </div>
                     <div class="control-group checkbox-control">
                         <div class="control-header">
-                            <label for="link-shadow-color">Link Colors Shadow to Grid</label>
+                            <label for="link-shadow-color">Link Shadow Colors to Grid</label>
                             <input type="checkbox" id="link-shadow-color">
                         </div>
                     </div>
@@ -360,22 +578,57 @@
                 </div>
             </div>        </div>
         
+        <!-- Track progress bar above SVG logos -->
+        <div id="track-progress-container">
+            <div id="track-progress-bar">
+                <!-- Progress segments will be dynamically generated -->
+            </div>
+        </div>
+        
         <!-- SVG logos container -->
         <div id="svg-logos-container">
             <div class="svg-logo">
-                <a href="https://bogdanrosu.com/" target="_blank"><img src="images/br.svg" alt="BR" id="br-logo"></a>
+                <a href="https://bogdanrosu.com/" target="_blank">
+                    <svg id="br-logo" viewBox="0 0 2198.3 2423.1" xmlns="http://www.w3.org/2000/svg">
+                        <path class="svg-logo-path" d="M2049.4,532.1L1212.5,49c-62.4-36-164.4-36-226.7,0L148.9,532.1c-62.4,36-113.4,124.4-113.4,196.4v966.2
+                        c0,72,51,160.4,113.4,196.4l836.9,483.1c62.4,36,164.4,36,226.7,0l836.9-483.1c62.4-36,113.4-124.4,113.4-196.4V728.4
+                        C2162.7,656.4,2111.7,568.1,2049.4,532.1z M627.5,1184v468.8H473.1V1184c0-120.7,98.2-219,219-219h768.6v154.4H692.1
+                        C656.4,1119.4,627.5,1148.4,627.5,1184z M1718.9,1646.8H936.3c-112.1,0-203.2-91.2-203.2-203.2v-215.1h778.3
+                        c26.9,0,48.9-21.9,48.9-48.9V908.3c0-26.9-21.9-48.9-48.9-48.9h-1032V705.1h1032c112.1,0,203.2,91.2,203.2,203.2v271.2
+                        c0,112.1-91.2,203.2-203.2,203.2H887.4v60.8c0,26.9,21.9,48.9,48.9,48.9h782.6V1646.8z"/>
+                    </svg>
+                </a>
             </div>
             <div class="svg-logo">
-                <a href="https://bogdanrosu.com/" target="_blank"><img src="images/pixel-crusher.svg" alt="Pixel Crusher" id="pixel-crusher-logo"></a>
+                <a href="https://bogdanrosu.com/" target="_blank">
+                    <svg id="pixel-crusher-logo" viewBox="0 0 2417 2423.1" xmlns="http://www.w3.org/2000/svg">
+                        <g>
+                            <g>
+                                <rect x="270.6" y="273.1" class="svg-logo-path" width="267" height="267"/>
+                                <rect x="270.6" y="1883" class="svg-logo-path" width="267" height="267"/>
+                                <rect x="1879.4" y="1880.5" class="svg-logo-path" width="267" height="267"/>
+                                <rect x="1879.4" y="273.1" class="svg-logo-path" width="267" height="267"/>
+                                <path class="svg-logo-path" d="M1882.7,1341.5v-267v-267h-267l0,0.6v-0.6v-267h-267h-267h-267v267h-267v267v267h267v266.6v267h267v-267h267
+                                v267h267v-267v-267h-267v-266.6h267v-0.5l0,0.5v267H1882.7z M1081.7,1341.1h-267v-266.6h267V1341.1z"/>
+                            </g>
+                        </g>
+                    </svg>
+                </a>
             </div>        
         </div>
-    </div>      <script src="three.min.js"></script>
+    </div>      
+    <script src="three.min.js"></script>
     <script src="color-harmonizer.js"></script>
     <script src="grid-cells.js"></script>
     <script src="orbital-blobs.js"></script>
     <script src="shockwave-system.js"></script>    
     <script src="performance-monitor.js"></script>
     <script src="gpu-particle-shaders.js"></script>
+    <script src="effect-composer.js"></script>
+    <script src="filmic-tone-system.js"></script>
     <script src="script.js"></script>
+    
+    <!-- Tooltip for track progress bar -->
+    <div id="segment-tooltip" style="display: none;"></div>
 </body>
 </html>

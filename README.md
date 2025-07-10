@@ -2,7 +2,7 @@
 *Advanced Ferrofluid Interactive Music Visualizer*
 
 [![Built with Three.js](https://img.shields.io/badge/Built%20with-Three.js-000000?style=flat&logo=three.js)](https://threejs.org/)
-[![Web Audio API](https://img.shields.io/badge/Audio-Web%20Audio%20API-orange?style=flat)](#)
+[![Web Audio API](https://img.shields.io/badge/Audio-Web%20Audio%20API-orange?style=flat)]([#](https://developer.mozilla.org/en-US/docs/Web/JavaScript))
 
 **Technical Architecture**
 
@@ -86,7 +86,11 @@ A state-of-the-art 3D music visualizer that simulates complex ferrofluid behavio
   - Right-click + drag: Precise camera panning with momentum
   - Mouse wheel: Smooth zoom with configurable sensitivity
   - Double-click: Intelligent camera reset to optimal viewing position
-- **Automatic Camera Intelligence**: Music-responsive camera positioning with manual override capabilities
+- **Adaptive Camera Intelligence**: 
+  - Grid-size responsive camera positioning that automatically adjusts distance based on scene scale
+  - Smart scaling prevents camera from getting too close at small grid sizes (10-15) and too far at large grid sizes (30-40)
+  - Music-responsive camera positioning with manual override capabilities and contextual movement patterns
+  - Intelligent distance calculation with non-linear scaling for optimal viewing at all grid configurations
 - **Touch-Optimized Mobile Controls**: Full touch support for tablets and mobile devices
 - **Keyboard Shortcuts**: Debug toggle (Ctrl+D), console clear (Ctrl+R), UI panel toggle (Tab/Escape)
 
@@ -214,6 +218,10 @@ cd artef4kt
 - **Pan**: Right-click and drag to move the camera view with precision control
 - **Zoom**: Use mouse wheel to zoom in/out with configurable sensitivity
 - **Reset**: Double-click anywhere to return to the optimal viewing position
+- **Adaptive Distance**: Camera automatically adjusts optimal viewing distance based on grid size settings
+  - Small grids (10-15): Camera maintains closer proximity to prevent over-zooming
+  - Large grids (30-40): Camera scales distance appropriately while preventing excessive retreat
+  - Non-linear scaling ensures consistent visual experience across all grid configurations
 - **Touch Controls**: Full touch support for mobile devices with gesture recognition
 
 ### **Advanced Customization**
@@ -221,6 +229,10 @@ cd artef4kt
 - **Smoothing Controls**: Adjust the smoothness and responsiveness of audio analysis
 - **Color Harmonization**: Use the color harmonizer for automatically balanced color schemes
 - **Particle Systems**: Configure shockwave count, orbital blob density, and grid cell parameters
+- **Grid Size Optimization**: Adjust grid density (10-40) with automatic camera scaling for optimal viewing
+  - Small grids (10-15): Enhanced close-up viewing with camera positioned for detail observation
+  - Large grids (30-40): Scaled camera distance maintains scene proportion and prevents visual dead space
+  - Real-time camera parameter adjustment when changing grid size settings
 - **Visual Effects**: Control filmic noise intensity, shadow properties, and lighting characteristics
 - **Performance Tuning**: Adjust quality settings based on your system capabilities
 
@@ -244,7 +256,7 @@ cd artef4kt
 ```
 artef4kt/
 ├── index.html                      # Main HTML file with optimized structure
-├── script.js                       # Core visualizer logic (5600+ lines)
+├── script.js                       # Core visualizer logic (6700+ lines)
 ├── style.css                       # Advanced styling and responsive design
 ├── three.min.js                    # Three.js library
 ├── color-harmonizer.js             # Color theory and palette generation
@@ -253,19 +265,25 @@ artef4kt/
 ├── grid-cells.js                   # 3D grid cell matrix system
 ├── performance-monitor.js          # Real-time performance tracking
 ├── gpu-particle-shaders.js         # Custom GPU shader system for enhanced performance
+├── README.md                       # Comprehensive project documentation
 ├── update-mp3-index.ps1            # Audio file index generator
 ├── update-settings-index.ps1       # Preset management script
 ├── images/                         # Logo, icon, and graphic assets
+│   ├── artefakt-logo.svg           # Main project logo
 │   ├── br.svg                      # Artist logo (clickable)
 │   ├── pixel-crusher.svg           # Label logo (clickable)
 │   ├── favicon.svg                 # Browser favicon
-│   └── shareimage.png              # Social media preview image
+│   ├── shareimage.png              # Social media preview image
+│   ├── shareimage.svg              # Vector social media image
+│   └── shareimager-color.ai        # Adobe Illustrator source file
 ├── mp3/                            # Sample audio tracks
 │   ├── index.json                  # Audio track metadata
 │   ├── bogdan-rosu-yfflon.mp3      # Featured electronic track
 │   ├── bogdan-rosu-eargasm.mp3     # High-energy electronic
 │   ├── chantal-lemon.mp3           # Ambient electronic
-│   └── [additional sample tracks]
+│   ├── dominique-pimp2k.mp3        # Sample electronic track
+│   ├── dust-underslide.mp3         # Ambient atmospheric track
+│   └── px-play-mobile-theme-br-edit.mp3  # Mobile theme track
 └── settings/                       # Comprehensive preset library
     ├── index.json                  # Preset discovery index
     ├── default.json                # Default configuration
@@ -274,12 +292,23 @@ artef4kt/
     ├── minimal.json                # Clean minimal preset
     ├── high-contrast.json          # Bold contrast preset
     ├── deep-space-shockwaves.json  # Cinematic space theme
+    ├── purple-shockwaves.json      # Purple theme with shockwaves
     ├── soviet-red.json             # Retro communist aesthetic
     ├── purple-haze.json            # Psychedelic purple theme
     ├── blue-saphir.json            # Elegant blue theme
+    ├── blue-balast.json            # Blue ballast theme
     ├── wasp.json                   # High-energy yellow theme
     ├── baby-barf.json              # Unique artistic color palette
-    └── [23+ additional presets]
+    ├── arangiatta-lilla.json       # Orange-purple theme
+    ├── bricks.json                 # Brick-inspired theme
+    ├── green-tinge.json            # Green-tinted theme
+    ├── lime-haze.json              # Lime green theme
+    ├── old-and-retro-green.json    # Vintage green theme
+    ├── red-tinge.json              # Red-tinted theme
+    ├── sketchy.json                # Artistic sketchy theme
+    ├── teals.json                  # Teal color theme
+    ├── yellow-red.json             # Yellow-red gradient theme
+    └── [additional custom presets]
 ```
 
 ## **Advanced Customization**
@@ -324,6 +353,10 @@ The visualizer supports comprehensive color customization with intelligent harmo
 - **Advanced Collision Detection**: Spatial partitioning grid system with intelligent broad-phase culling and temporal coherence optimization
 - **Efficient Vertex Manipulation**: Optimized typed array operations for real-time geometry deformation with GPU acceleration
 - **Multi-tier LOD System**: Automatic level-of-detail adjustment for particles, shadows, and effects based on performance metrics
+- **Adaptive Camera System**: Intelligent camera scaling with grid-size responsive distance calculations
+  - Performance-optimized distance computation with non-linear scaling algorithms
+  - Automatic camera parameter updates with minimal computational overhead
+  - Scene-aware positioning that maintains optimal viewing ratios across all grid configurations
 - **GPU-Accelerated Rendering**: WebGL optimization with efficient shader compilation, uniform management, and custom rendering pipeline
 - **Memory Management**: Comprehensive object pooling, garbage collection optimization, and resource lifecycle management
 - **Adaptive Quality Control**: Real-time performance monitoring with automatic quality adjustment and user feedback
@@ -339,10 +372,15 @@ The visualizer supports comprehensive color customization with intelligent harmo
 ### **3D Rendering Pipeline**
 1. **Scene Graph Management**: Hierarchical scene organization with efficient culling and LOD management
 2. **Geometry Processing**: High-detail mesh generation (128x128 vertices) with real-time vertex deformation
-3. **Material System**: Advanced PBR shading with metallic workflows, roughness mapping, and environment reflections
-4. **Lighting Architecture**: Multi-source dynamic lighting with frequency-reactive color and intensity modulation
-5. **Shadow Mapping**: Real-time shadow generation with customizable quality, transparency, and color controls
-6. **Post-Processing Effects**: Filmic noise overlay, color grading, and visual enhancement filters
+3. **Adaptive Camera System**: Intelligent camera positioning with grid-size responsive scaling algorithms
+   - Dynamic distance calculation based on scene scale (grid size 10-40)
+   - Non-linear scaling prevents visual dead space at large grid sizes
+   - Optimized viewing ranges: close proximity for small grids, scaled distance for large grids
+   - Automatic camera parameter adjustment with smooth transitions
+4. **Material System**: Advanced PBR shading with metallic workflows, roughness mapping, and environment reflections
+5. **Lighting Architecture**: Multi-source dynamic lighting with frequency-reactive color and intensity modulation
+6. **Shadow Mapping**: Real-time shadow generation with customizable quality, transparency, and color controls
+7. **Post-Processing Effects**: Filmic noise overlay, color grading, and visual enhancement filters
 
 ### **Modular System Architecture**
 - **Core Visualizer Engine**: Main application logic with scene management and audio integration

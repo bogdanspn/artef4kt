@@ -16,23 +16,12 @@ class GridCellAnimator {
         this.minCellHeight = 0.1; // Minimum cell height when just appearing
         this.maxCellHeight = 0.1; // Maximum cell height for strong beats
         
-        // Create base wireframe material (for edges)
+        // Create base wireframe material (for edges only)
         this.wireframeMaterial = new THREE.MeshBasicMaterial({
             color: this.gridColor,
             transparent: true,
             opacity: 0.9,
             wireframe: true
-        });
-        
-        // Create base fill material (for faces)
-        this.fillMaterial = new THREE.MeshStandardMaterial({
-            color: this.backgroundColor,
-            transparent: true,
-            opacity: 0.3,
-            roughness: 0.7,
-            metalness: 0.1,
-            depthWrite: true,
-            alphaTest: 0.01  // Helps with transparency sorting
         });
     }    update(time, deltaTime, bassIntensity, midIntensity, highIntensity, gridVisible = true, gridOpacity = 0.3) {
         // Update existing cells
@@ -61,18 +50,13 @@ class GridCellAnimator {
             if (cell.wall === 'floor') {
                 // Classic 3D bar: base fixed at grid cell, grows upward
                 cell.wireframeMesh.scale.y = Math.max(0.01, heightScale);
-                cell.fillMesh.scale.y = Math.max(0.01, heightScale);
                 cell.wireframeMesh.position.x = cell.basePosition.x;
                 cell.wireframeMesh.position.z = cell.basePosition.z;
-                cell.fillMesh.position.x = cell.basePosition.x;
-                cell.fillMesh.position.z = cell.basePosition.z;
                 // Base always fixed at floor (y = -10), only height changes
                 cell.wireframeMesh.position.y = -10;
-                cell.fillMesh.position.y = -10;
             } else {
                 // Hide or skip all other walls for classic bar visualizer effect
                 cell.wireframeMesh.visible = false;
-                cell.fillMesh.visible = false;
             }
               // Opacity animation that respects grid settings
             let opacity = 1.0;
@@ -85,20 +69,14 @@ class GridCellAnimator {
             // Apply grid visibility and opacity settings
             const isVisible = gridVisible;
             const finalWireframeOpacity = isVisible ? opacity * 0.9 * (gridOpacity * 2.5) : 0;
-            const finalFillOpacity = isVisible ? opacity * 0.3 * gridOpacity : 0;
             
             cell.wireframeMesh.material.opacity = finalWireframeOpacity;
-            cell.fillMesh.material.opacity = finalFillOpacity;
             cell.wireframeMesh.visible = isVisible;
-            cell.fillMesh.visible = isVisible;
               // Remove expired cells
             if (cell.life <= 0) {
                 this.scene.remove(cell.wireframeMesh);
-                this.scene.remove(cell.fillMesh);
                 cell.wireframeMesh.geometry.dispose();
-                cell.fillMesh.geometry.dispose();
                 cell.wireframeMesh.material.dispose();
-                cell.fillMesh.material.dispose();
                 
                 // Clean up occupied position
                 if (cell.positionKey) {
@@ -182,10 +160,7 @@ class GridCellAnimator {
         // Create wireframe mesh
         const wireframeMesh = new THREE.Mesh(cellGeometry.clone(), this.wireframeMaterial.clone());
         
-        // Create fill mesh  
-        const fillMesh = new THREE.Mesh(cellGeometry.clone(), this.fillMaterial.clone());
-        fillMesh.receiveShadow = true;
-        fillMesh.renderOrder = 1;        // Set position based on wall - blocks start AT wall surface and grow inward
+        // Remove fill mesh - only use wireframe for grid lines        // Set position based on wall - blocks start AT wall surface and grow inward
         let basePosition;
         
         switch (selectedWall) {
@@ -230,20 +205,16 @@ class GridCellAnimator {
                 break;
         }
         
-        // Set initial position for both meshes
+        // Set initial position for wireframe mesh
         wireframeMesh.position.copy(basePosition);
-        fillMesh.position.copy(basePosition);
         
-        // Set initial scale - all start very thin and will grow during animation
+        // Set initial scale - starts very thin and will grow during animation
         if (selectedWall === 'floor') {
             wireframeMesh.scale.y = 0.01;
-            fillMesh.scale.y = 0.01;
         } else if (selectedWall === 'back' || selectedWall === 'front') {
             wireframeMesh.scale.z = 0.01;
-            fillMesh.scale.z = 0.01;
         } else { // left or right
             wireframeMesh.scale.x = 0.01;
-            fillMesh.scale.x = 0.01;
         }
         
         // Determine lifespan based on intensity (more intense = longer lasting)
@@ -251,11 +222,10 @@ class GridCellAnimator {
         
         // Add to scene
         this.scene.add(wireframeMesh);
-        this.scene.add(fillMesh);
-          // Add to active cells
+        
+        // Add to active cells
         this.activeCells.push({
             wireframeMesh: wireframeMesh,
-            fillMesh: fillMesh,
             mesh: wireframeMesh, // For backwards compatibility
             basePosition: basePosition,
             life: lifespan,
@@ -280,25 +250,20 @@ class GridCellAnimator {
         this.gridColor = gridColor;
         this.backgroundColor = backgroundColor;
         
-        // Update base materials
+        // Update base wireframe material
         this.wireframeMaterial.color.setHex(gridColor);
-        this.fillMaterial.color.setHex(backgroundColor);
         
         // Update existing cells
         for (const cell of this.activeCells) {
             cell.wireframeMesh.material.color.setHex(gridColor);
-            cell.fillMesh.material.color.setHex(backgroundColor);
         }
     }
       // Clean up all cells
     dispose() {
         for (const cell of this.activeCells) {
             this.scene.remove(cell.wireframeMesh);
-            this.scene.remove(cell.fillMesh);
             cell.wireframeMesh.geometry.dispose();
-            cell.fillMesh.geometry.dispose();
             cell.wireframeMesh.material.dispose();
-            cell.fillMesh.material.dispose();
         }
         this.activeCells = [];
         this.occupiedPositions.clear(); // Clear all occupied positions
