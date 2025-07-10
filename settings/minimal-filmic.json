@@ -7,7 +7,7 @@
   "gridVisible": false,
   "gridSize": 15,
   "gridOpacity": 0.8,
-  "gridColor": 6710886,
+  "gridColor": 7697781,
   "gridCellsActivityEnabled": false,
   "shadowTransparency": 0.3,
   "shadowColor": 0,
@@ -21,8 +21,8 @@
   "envVisibility": 1,
   "uiOpacity": 1,
   "filmicTones": {
-    "enabled": false,
-    "toneMapping": "linear",
+    "enabled": true,
+    "toneMapping": "aces",
     "exposure": 2.1,
     "contrast": 1,
     "saturation": 2,
@@ -71,5 +71,5 @@
   "debugEncodingEnabled": false,
   "debugConsoleVisible": false,
   "settingsVersion": "1.0",
-  "exportDate": "2025-07-08T10:42:01.216Z"
+  "exportDate": "2025-07-08T02:27:40.123Z"
 }

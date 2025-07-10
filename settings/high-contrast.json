@@ -20,7 +20,6 @@
   "envSphereSize": 105,
   "envVisibility": 1,
   "uiOpacity": 0.6,
-  "filmicNoiseIntensity": 1,
   "mouseInteractionEnabled": true,
   "mouseForceStrength": 0.5,
   "mouseForceRadius": 0.2,
