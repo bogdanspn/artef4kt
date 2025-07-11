@@ -459,7 +459,7 @@ class FerrofluidVisualizer {
         const shockwaveOpacityValue = document.getElementById('shockwave-opacity-value');
         if (shockwaveOpacitySlider) shockwaveOpacitySlider.value = 0.8;
         if (shockwaveOpacityValue) shockwaveOpacityValue.textContent = '0.8';
-          console.log('UI values init OK');
+        console.log('UI values init OK');
     }
 
     setupThreeJS() {
@@ -4721,7 +4721,21 @@ for (const bd of blobs) {
                 manualOverride: false,
                 overrideTimeout: 0,
                 overrideDuration: 3000, // ms before resuming auto movement after manual input
-                lastTargetUpdate: 0 // Track when we last updated the target position
+                lastTargetUpdate: 0, // Track when we last updated the target position
+                
+                // Enhanced fly-around system
+                flyAround: {
+                    isActive: false,
+                    startTime: 0,
+                    duration: 0,
+                    lastIntensityPeak: 0,
+                    peakThreshold: 0.75, // Higher threshold for more selective triggering
+                    minDuration: 2000, // Shorter 2 second bursts
+                    maxDuration: 4000, // Maximum 4 seconds
+                    cooldownTime: 0,
+                    cooldownDuration: 3000, // 3 second cooldown
+                    speedMultiplier: 2.5 // Moderate speed increase
+                }
             }
         };
           // Mouse event listeners
@@ -5126,6 +5140,7 @@ for (const bd of blobs) {
         if (!this.cameraControls.autoMovement.enabled) return;
         
         const autoMove = this.cameraControls.autoMovement;
+        const flyAround = autoMove.flyAround;
         const currentTime = performance.now();
         
         // Check if manual override is active
@@ -5146,12 +5161,63 @@ for (const bd of blobs) {
             this.cameraControls.targetZ += (this.ferrofluid.position.z - this.cameraControls.targetZ) * smoothingFactor;
         }
         
-        // Calculate music-reactive movement with much more variety
+        // Calculate music intensity for fly-around triggering
         const totalIntensity = (this.bassIntensity + this.midIntensity + this.highIntensity) / 3;
         
+        // Enhanced fly-around system logic
+        this.updateFlyAroundSystem(totalIntensity, currentTime, deltaTime);
+        
+        // Calculate movement based on fly-around state
+        if (flyAround.isActive) {
+            this.updateFlyAroundMovement(deltaTime, currentTime);
+        } else {
+            this.updateNormalCameraMovement(deltaTime, 1.0, currentTime);
+        }
+    }
+    
+    updateFlyAroundSystem(totalIntensity, currentTime, deltaTime) {
+        const flyAround = this.cameraControls.autoMovement.flyAround;
+        
+        // Check if we're in cooldown
+        if (flyAround.cooldownTime > 0) {
+            flyAround.cooldownTime -= deltaTime * 1000;
+            return;
+        }
+        
+        // Detect intensity peaks for triggering fly-around
+        if (totalIntensity > flyAround.peakThreshold && totalIntensity > flyAround.lastIntensityPeak + 0.15) {
+            if (!flyAround.isActive) {
+                // Start fly-around sequence
+                flyAround.isActive = true;
+                flyAround.startTime = currentTime;
+                flyAround.duration = flyAround.minDuration + Math.random() * (flyAround.maxDuration - flyAround.minDuration);
+                
+                console.log(`🎥 Fly-around activated for ${(flyAround.duration/1000).toFixed(1)}s`);
+            }
+        }
+        
+        flyAround.lastIntensityPeak = totalIntensity;
+        
+        // Check if fly-around should end
+        if (flyAround.isActive && (currentTime - flyAround.startTime) > flyAround.duration) {
+            flyAround.isActive = false;
+            flyAround.cooldownTime = flyAround.cooldownDuration;
+            console.log('🎥 Fly-around ended, returning to normal movement');
+        }
+    }
+    
+    updateFlyAroundMovement(deltaTime, currentTime) {
+        // This is just sped-up normal movement - no complex patterns
+        this.updateNormalCameraMovement(deltaTime, this.cameraControls.autoMovement.flyAround.speedMultiplier, currentTime);
+    }
+    
+    updateNormalCameraMovement(deltaTime, speedMultiplier, currentTime) {
+        const totalIntensity = (this.bassIntensity + this.midIntensity + this.highIntensity) / 3;
+        const speedMult = speedMultiplier || 1.0;
+        
         // Enhanced horizontal rotation - continuous orbital movement with music bursts
-        const baseRotationSpeed = 1.2; // Increased base speed for more dynamic orbiting
-        const musicRotationBoost = totalIntensity * 8; // Strong music influence
+        const baseRotationSpeed = 1.2 * speedMult; // Apply speed multiplier to base speed
+        const musicRotationBoost = totalIntensity * 8 * speedMult; // Apply multiplier to music boost too
         const rotationSpeed = baseRotationSpeed + musicRotationBoost;
         
         // Add occasional direction changes and speed variations
@@ -5176,14 +5242,10 @@ for (const bd of blobs) {
         const distanceTimePhase = currentTime * 0.0004;
         
         // Improved scaling logic for camera distance based on grid size
-        // At small grid sizes (10-15): Allow camera to go closer, less zoom out
-        // At large grid sizes (16-40): Keep same distance as grid size 15 to prevent zooming too far out
         let gridSizeScale;
         if (this.gridSize <= 15) {
-            // For small grids: minimal scaling, allow closer camera
             gridSizeScale = 0.8 + (this.gridSize - 10) * 0.04; // Range: 0.8 to 1.0
         } else {
-            // For grids above 15: keep the same scale as grid size 15
             gridSizeScale = 1.0; // Fixed at grid size 15 level
         }
         
@@ -5697,7 +5759,8 @@ for (const bd of blobs) {
             shockwaveEnabled: this.shockwaveSystem ? this.shockwaveSystem.enabled : true,
             shockwaveIntensity: this.shockwaveSystem ? this.shockwaveSystem.config.intensity : 1.0,
             shockwaveLifetime: this.shockwaveSystem ? this.shockwaveSystem.config.lifetime : 3.0,
-            shockwaveOpacity: this.shockwaveSystem ? this.shockwaveSystem.config.opacity : 0.8,            // Debug settings
+            shockwaveOpacity: this.shockwaveSystem ? this.shockwaveSystem.config.opacity : 0.8,            
+            // Debug settings
             debugEncodingEnabled: window.debugEncodingSettings ? window.debugEncodingSettings.enabled : false,
             debugConsoleVisible: document.getElementById('debug-console-toggle') ? 
                 document.getElementById('debug-console-toggle').checked : true,

@@ -23,7 +23,7 @@ function createWindow() {
     // Show when ready
     mainWindow.once('ready-to-show', () => {
         mainWindow.show();
-        mainWindow.maximize(); // Start maximized
+        // mainWindow.maximize(); // Start maximized
     });
 }
 
