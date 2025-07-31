@@ -1,5 +1,90 @@
+// Loading Screen Management
+class LoadingManager {
+    constructor() {
+        this.loadingScreen = document.getElementById('loading-screen');
+        this.loadingText = document.getElementById('loading-text');
+        this.loadingPercentage = document.getElementById('loading-percentage');
+        this.loadingProgressBar = document.getElementById('loading-progress-bar');
+        
+        this.progress = 5; // Start at 5% instead of 0%
+        this.targetProgress = 5; // Start at 5% instead of 0%
+        this.loadingSteps = [
+            { progress: 10, text: 'LOADING ARTEF4KT CORE...' },
+            { progress: 25, text: 'INITIALIZING THREE.JS...' },
+            { progress: 40, text: 'SETTING UP AUDIO CONTEXT...' },
+            { progress: 55, text: 'CREATING FERROFLUID SYSTEM...' },
+            { progress: 70, text: 'LOADING SHADERS...' },
+            { progress: 85, text: 'INITIALIZING PARTICLE SYSTEMS...' },
+            { progress: 95, text: 'FINALIZING SETUP...' },
+            { progress: 100, text: 'ARTEF4KT READY' }
+        ];
+        this.currentStepIndex = 0;
+        
+        // Set initial display values
+        this.loadingText.textContent = 'INITIALIZING ARTEF4KT...';
+        this.loadingPercentage.textContent = '5%';
+        if (this.loadingProgressBar) {
+            this.loadingProgressBar.style.width = '5%';
+        }
+        
+        this.animateProgress();
+    }
+    
+    updateProgress(targetProgress, customText = null) {
+        this.targetProgress = Math.min(100, Math.max(0, targetProgress));
+        
+        // Update text based on progress steps
+        if (!customText) {
+            for (let i = this.currentStepIndex; i < this.loadingSteps.length; i++) {
+                if (this.targetProgress >= this.loadingSteps[i].progress) {
+                    this.loadingText.textContent = this.loadingSteps[i].text;
+                    this.currentStepIndex = i;
+                }
+            }
+        } else {
+            this.loadingText.textContent = customText;
+        }
+    }
+    
+    animateProgress() {
+        // Smooth progress animation
+        const progressDiff = this.targetProgress - this.progress;
+        if (Math.abs(progressDiff) > 0.1) {
+            this.progress += progressDiff * 0.1;
+        } else {
+            this.progress = this.targetProgress;
+        }
+        
+        // Update percentage display
+        this.loadingPercentage.textContent = Math.round(this.progress) + '%';
+        
+        // Update horizontal progress bar
+        if (this.loadingProgressBar) {
+            this.loadingProgressBar.style.width = this.progress + '%';
+        }
+        
+        requestAnimationFrame(() => this.animateProgress());
+    }
+    
+    hide() {
+        this.updateProgress(100);
+        setTimeout(() => {
+            this.loadingScreen.classList.add('hidden');
+            setTimeout(() => {
+                this.loadingScreen.style.display = 'none';
+            }, 500);
+        }, 1000); // Show 100% for a moment
+    }
+}
+
+// Initialize loading manager
+window.loadingManager = new LoadingManager();
+
 class FerrofluidVisualizer {
     constructor() {
+        // Update loading progress
+        window.loadingManager.updateProgress(10);
+        
         this.canvas = document.getElementById('visualizer');
         
         if (!this.canvas) {
@@ -39,10 +124,23 @@ class FerrofluidVisualizer {
         this.animationId = null;
         
         // Audio input source management
-        this.audioInputSource = 'file'; // 'file', 'mic', 'line'
+        this.audioInputSource = 'file'; // 'file', 'input'
         this.microphoneStream = null;
         this.lineStream = null;
         this.currentInputSource = null;
+        
+        // Audio source state tracking
+        this.activeAudioSource = null; // 'file', 'input', or null
+        this.fileAudioActive = false;
+        this.inputAudioActive = false;
+        
+        // Audio monitoring for input devices
+        this.audioMonitoringEnabled = false;
+        this.monitorVolume = 0.6;
+        this.monitorGainNode = null;
+        
+        // Ultra-fast audio polling flag
+        this.ultraFastValuesActive = false;
         
         // Collision detection optimization system
         this.collisionOptimization = {
@@ -214,6 +312,10 @@ class FerrofluidVisualizer {
             nextTriggerTime: 0,
             duration: 0,
             intensity: 0.3, // Start with some initial intensity
+            windingDown: false, // New state for gradual wind-down
+            windDownStartTime: 0,
+            windDownDuration: 3000, // 3 seconds for gentle wind-down
+            peakIntensity: 0, // Store peak intensity for wind-down calculation
             minInterval: 8000,  // Minimum 8 seconds between anomalies
             maxInterval: 25000, // Maximum 25 seconds between anomalies
             minDuration: 2000,  // Minimum 2 seconds anomaly duration
@@ -301,14 +403,31 @@ class FerrofluidVisualizer {
     getRandomSpawnEmoji() {
         return this.spawnEmojis[Math.floor(Math.random() * this.spawnEmojis.length)];
     }    init() {
+        // Update loading progress
+        window.loadingManager.updateProgress(25);
+        
         this.setupThreeJS();
+        
+        // Update loading progress
+        window.loadingManager.updateProgress(40);
+        
         this.createFerrofluid();
         this.createLighting();
         this.updateShadowColors(); // Initialize shadow colors after lighting is created
         this.createEnvironment();
-        this.updateLightingFromBackground(); // Apply initial background color influence        // Initialize orbital blob system
-        this.orbitalBlobSystem = new OrbitalBlobSystem(this);        // Initialize shockwave system
+        this.updateLightingFromBackground(); // Apply initial background color influence        
+        
+        // Update loading progress
+        window.loadingManager.updateProgress(55);
+        
+        // Initialize orbital blob system
+        this.orbitalBlobSystem = new OrbitalBlobSystem(this);        
+
+        // Initialize shockwave system
         this.shockwaveSystem = new ShockwaveSystem(this);
+
+        // Update loading progress
+        window.loadingManager.updateProgress(70);
 
         // Initialize blob shader system for enhanced performance (temporarily disabled for debugging)
         try {
@@ -319,6 +438,9 @@ class FerrofluidVisualizer {
             console.error('Failed to init Artefact Shader System:', error);
             this.gpuParticleSystem = null;
         }
+
+        // Update loading progress
+        window.loadingManager.updateProgress(85);
 
         // Initialize Filmic Tone System
         try {
@@ -367,6 +489,9 @@ class FerrofluidVisualizer {
         this.initializeSvgColors();
         
         this.resize();
+        
+        // Update loading progress - almost complete
+        window.loadingManager.updateProgress(95);
     }
     
     initializeSvgColors() {
@@ -440,6 +565,16 @@ class FerrofluidVisualizer {
             uiOpacityValue.textContent = this.uiOpacity.toFixed(1);
         }        // Apply initial UI opacity setting
         this.updateUIOpacity();
+        
+        // Initialize monitor volume slider to match default value
+        const monitorVolumeSlider = document.getElementById('monitor-volume');
+        const monitorVolumeValue = document.getElementById('monitor-volume-value');
+        if (monitorVolumeSlider) {
+            monitorVolumeSlider.value = this.monitorVolume;
+        }
+        if (monitorVolumeValue) {
+            monitorVolumeValue.textContent = this.monitorVolume.toFixed(1);
+        }
           // Initialize shockwave controls with default values only if not already set by loaded settings
         const shockwaveEnabledToggle = document.getElementById('shockwave-enabled');
         if (shockwaveEnabledToggle && !this.settingsLoaded) {
@@ -909,14 +1044,31 @@ class FerrofluidVisualizer {
             });
         });
         
-        // Microphone connect button
-        document.getElementById('mic-connect').addEventListener('click', () => {
-            this.connectMicrophone();
+        // Audio input connect button
+        document.getElementById('input-connect').addEventListener('click', () => {
+            this.connectAudioInput();
         });
         
-        // Line input connect button
-        document.getElementById('line-connect').addEventListener('click', () => {
-            this.connectLineInput();
+        // Enumerate audio devices when page loads
+        this.enumerateAudioDevices().catch(console.error);
+        
+        // Re-enumerate devices when input tab becomes active
+        document.querySelector('[data-tab="input"]').addEventListener('click', () => {
+            setTimeout(() => this.enumerateAudioDevices().catch(console.error), 100);
+        });
+        
+        // Audio monitoring controls
+        document.getElementById('audio-monitoring').addEventListener('change', (e) => {
+            this.audioMonitoringEnabled = e.target.checked;
+            this.updateAudioMonitoring();
+        });
+        
+        document.getElementById('monitor-volume').addEventListener('input', (e) => {
+            this.monitorVolume = parseFloat(e.target.value);
+            document.getElementById('monitor-volume-value').textContent = this.monitorVolume.toFixed(1);
+            if (this.monitorGainNode) {
+                this.monitorGainNode.gain.setValueAtTime(this.monitorVolume, this.audioContext.currentTime);
+            }
         });
         
         // Sensitivity slider
@@ -1722,46 +1874,12 @@ class FerrofluidVisualizer {
     
     // Audio input tab switching methods
     switchAudioInputTab(tabType) {
+        console.log(`Switching to tab: ${tabType}, active source: ${this.activeAudioSource}`);
+        
         try {
-            // Stop current audio and cleanup
-            if (this.audioElement) {
-                this.audioElement.pause();
-                this.audioElement.remove();
-                this.audioElement = null;
-            }
+            // DON'T stop existing audio streams - just switch UI tabs
             
-            // Stop any existing streams
-            if (this.microphoneStream) {
-                this.microphoneStream.getTracks().forEach(track => track.stop());
-                this.microphoneStream = null;
-            }
-            if (this.lineStream) {
-                this.lineStream.getTracks().forEach(track => track.stop());
-                this.lineStream = null;
-            }
-            
-            // Stop playback
-            this.isPlaying = false;
-            const playPauseButton = document.getElementById('play-pause');
-            if (playPauseButton) {
-                playPauseButton.textContent = '▶ PLAY';
-                playPauseButton.classList.remove('playing');
-            }
-            
-            // Only stop animation for file tab - keep it running for MIC/Line to show idle visuals
-            if (tabType === 'file') {
-                // For File tab, ensure animation continues for idle visuals when not playing
-                if (!this.animationId) {
-                    this.animate();
-                }
-            } else {
-                // For MIC/Line tabs, ensure animation is running for idle/anomaly visuals
-                if (!this.animationId) {
-                    this.animate();
-                }
-            }
-            
-            // Update tabs
+            // Update tabs (UI only)
             document.querySelectorAll('.input-tab').forEach(tab => {
                 tab.classList.remove('active');
             });
@@ -1773,43 +1891,16 @@ class FerrofluidVisualizer {
             document.querySelector(`[data-tab="${tabType}"]`).classList.add('active');
             document.getElementById(`${tabType}-tab-content`).classList.add('active');
             
-            // Reset button states
-            document.getElementById('mic-connect').classList.remove('connected');
-            document.getElementById('line-connect').classList.remove('connected');
-            document.getElementById('mic-connect').textContent = 'Connect Microphone';
-            document.getElementById('line-connect').textContent = 'Connect Line Input';
-            
-            // Reset status displays
-            const micStatus = document.getElementById('mic-status');
-            const lineStatus = document.getElementById('line-status');
-            const micStatusContainer = document.getElementById('mic-status-container');
-            const lineStatusContainer = document.getElementById('line-status-container');
-            
-            if (micStatus) {
-                micStatus.textContent = 'Ready to connect';
-                micStatusContainer.classList.remove('connected', 'error');
-            }
-            if (lineStatus) {
-                lineStatus.textContent = 'Ready to connect';
-                lineStatusContainer.classList.remove('connected', 'error');
-            }
-            
+            // Update audio input source tracking (for UI purposes)
             this.audioInputSource = tabType;
             
-            // Update track display
-            if (tabType === 'mic') {
-                document.getElementById('track-name-vertical').textContent = 'Microphone Input';
-            } else if (tabType === 'line') {
-                document.getElementById('track-name-vertical').textContent = 'Line Input';
-            } else {
-                // For file tab, only set "No file loaded" if no audio element exists
-                // or if no file name is currently displayed
-                const currentDisplayName = document.getElementById('file-name-display');
-                if (!this.audioElement || !currentDisplayName || !currentDisplayName.textContent || currentDisplayName.textContent.trim() === '') {
-                    document.getElementById('track-name-vertical').textContent = 'No file loaded';
-                }
-                // If a file is already loaded, keep the current track name display
+            // Enumerate devices if switching to input tab
+            if (tabType === 'input') {
+                setTimeout(() => this.enumerateAudioDevices().catch(console.error), 100);
             }
+            
+            // Update tab indicators to show what's actually playing
+            this.updateTabIndicators();
             
             this.updateStatusMessage();
             
@@ -1819,109 +1910,159 @@ class FerrofluidVisualizer {
         }
     }
     
-    async connectMicrophone() {
-        try {
-            const micButton = document.getElementById('mic-connect');
-            const micStatus = document.getElementById('mic-status');
-            const micStatusContainer = document.getElementById('mic-status-container');
-            
-            // If already connected, disconnect
-            if (this.microphoneStream) {
-                this.microphoneStream.getTracks().forEach(track => track.stop());
-                this.microphoneStream = null;
-                micButton.classList.remove('connected');
-                micButton.innerHTML = `
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                        <line x1="12" y1="19" x2="12" y2="23"/>
-                        <line x1="8" y1="23" x2="16" y2="23"/>
-                    </svg>
-                    Connect Microphone
-                `;
-                micStatus.textContent = 'Ready to connect';
-                micStatusContainer.classList.remove('connected', 'error');
-                this.isPlaying = false;
-                
-                // Keep animation running for idle/anomaly visuals
-                if (!this.animationId) {
-                    this.animate();
-                }
-                return;
-            }
-            
-            micStatus.textContent = 'Requesting microphone access...';
-            micStatusContainer.classList.remove('error');
-            
-            // Request microphone access
-            this.microphoneStream = await navigator.mediaDevices.getUserMedia({
-                audio: {
-                    echoCancellation: false,
-                    noiseSuppression: false,
-                    autoGainControl: false
-                }
-            });
-            
-            await this.setupStreamAudio(this.microphoneStream);
-            
-            micButton.classList.add('connected');
-            micButton.innerHTML = `
+    updateTabIndicators() {
+        // Remove playing class from all tabs
+        document.querySelectorAll('.input-tab').forEach(tab => {
+            tab.classList.remove('playing');
+        });
+        
+        // Add playing class to active source tab
+        if (this.activeAudioSource === 'file' && this.fileAudioActive) {
+            document.querySelector('[data-tab="file"]').classList.add('playing');
+        } else if (this.activeAudioSource === 'input' && this.inputAudioActive) {
+            document.querySelector('[data-tab="input"]').classList.add('playing');
+        }
+        
+        console.log(`Tab indicators updated. Active source: ${this.activeAudioSource}, File: ${this.fileAudioActive}, Input: ${this.inputAudioActive}`);
+    }
+    
+    disconnectInputAudio() {
+        // Stop ultra-fast audio polling
+        this.stopUltraFastAudioPolling();
+        
+        if (this.microphoneStream) {
+            this.microphoneStream.getTracks().forEach(track => track.stop());
+            this.microphoneStream = null;
+        }
+        if (this.lineStream) {
+            this.lineStream.getTracks().forEach(track => track.stop());
+            this.lineStream = null;
+        }
+        
+        // Disable audio monitoring
+        this.audioMonitoringEnabled = false;
+        const audioMonitoringCheckbox = document.getElementById('audio-monitoring');
+        if (audioMonitoringCheckbox) {
+            audioMonitoringCheckbox.checked = false;
+        }
+        this.updateAudioMonitoring();
+        
+        // Update button state
+        const inputButton = document.getElementById('input-connect');
+        if (inputButton) {
+            inputButton.classList.remove('connected');
+            inputButton.innerHTML = `
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
                     <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
                     <line x1="12" y1="19" x2="12" y2="23"/>
                     <line x1="8" y1="23" x2="16" y2="23"/>
                 </svg>
-                Disconnect Microphone
+                Connect Audio Input
             `;
-            micStatus.textContent = 'Microphone connected';
-            micStatusContainer.classList.add('connected');
-            
-            // Update track display
-            document.getElementById('track-name-vertical').textContent = 'Microphone Input';
-            this.isPlaying = true;
-            
-            // Start animation
-            if (!this.animationId) {
-                this.animate();
+        }
+        
+        // Update status
+        const inputStatus = document.getElementById('input-status');
+        const inputStatusContainer = document.getElementById('input-status-container');
+        if (inputStatus) {
+            inputStatus.textContent = 'Ready to connect';
+            inputStatusContainer.classList.remove('connected', 'error');
+        }
+        
+        this.inputAudioActive = false;
+        console.log('Input audio disconnected');
+    }
+    
+    updateAudioMonitoring() {
+        if (!this.audioContext || !this.audioSource) {
+            return;
+        }
+        
+        try {
+            if (this.audioMonitoringEnabled) {
+                // Create monitoring gain node if it doesn't exist
+                if (!this.monitorGainNode) {
+                    this.monitorGainNode = this.audioContext.createGain();
+                    this.monitorGainNode.gain.setValueAtTime(this.monitorVolume, this.audioContext.currentTime);
+                }
+                
+                // Connect audio through EQ chain to speakers for monitoring
+                // Use highEQ as the output point so EQ affects monitoring
+                if (this.highEQ) {
+                    this.highEQ.connect(this.monitorGainNode);
+                } else {
+                    // Fallback to direct connection if EQ not set up
+                    this.audioSource.connect(this.monitorGainNode);
+                }
+                this.monitorGainNode.connect(this.audioContext.destination);
+                
+                console.log('🔊 Audio monitoring enabled at volume:', this.monitorVolume, 'with EQ');
+            } else {
+                // Disconnect monitoring
+                if (this.monitorGainNode) {
+                    try {
+                        if (this.highEQ) {
+                            this.highEQ.disconnect(this.monitorGainNode);
+                        } else {
+                            this.audioSource.disconnect(this.monitorGainNode);
+                        }
+                        this.monitorGainNode.disconnect(this.audioContext.destination);
+                    } catch (e) {
+                        // Ignore disconnect errors
+                    }
+                }
+                
+                console.log('🔇 Audio monitoring disabled');
             }
-            
         } catch (error) {
-            console.error('Error connecting microphone:', error);
-            const micStatus = document.getElementById('mic-status');
-            const micStatusContainer = document.getElementById('mic-status-container');
-            micStatus.textContent = 'Microphone access denied';
-            micStatusContainer.classList.add('error');
-            
-            // Keep animation running for idle/anomaly visuals even on error
-            if (!this.animationId) {
-                this.animate();
-            }
+            console.error('Error updating audio monitoring:', error);
         }
     }
     
-    async connectLineInput() {
+    async enumerateAudioDevices() {
         try {
-            const lineButton = document.getElementById('line-connect');
-            const lineStatus = document.getElementById('line-status');
-            const lineStatusContainer = document.getElementById('line-status-container');
+            console.log('🎤 Enumerating audio devices...');
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const audioInputDevices = devices.filter(device => device.kind === 'audioinput');
+            
+            console.log(`Found ${audioInputDevices.length} audio input devices:`, audioInputDevices);
+            
+            // Update unified input device dropdown
+            const inputDeviceSelect = document.getElementById('input-device-select');
+            
+            if (inputDeviceSelect) {
+                inputDeviceSelect.innerHTML = '<option value="">Default audio input</option>';
+                audioInputDevices.forEach((device, index) => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    option.textContent = device.label || `Audio Input ${index + 1}`;
+                    inputDeviceSelect.appendChild(option);
+                    console.log(`Added input device: ${option.textContent} (${device.deviceId})`);
+                });
+            }
+            
+            return audioInputDevices;
+        } catch (error) {
+            console.error('Error enumerating audio devices:', error);
+            return [];
+        }
+    }
+    
+    async connectAudioInput() {
+        try {
+            const inputButton = document.getElementById('input-connect');
+            const inputStatus = document.getElementById('input-status');
+            const inputStatusContainer = document.getElementById('input-status-container');
             
             // If already connected, disconnect
-            if (this.lineStream) {
-                this.lineStream.getTracks().forEach(track => track.stop());
-                this.lineStream = null;
-                lineButton.classList.remove('connected');
-                lineButton.innerHTML = `
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="3"/>
-                        <path d="M12 1v6m0 6v6"/>
-                        <path d="M1 12h6m6 0h6"/>
-                    </svg>
-                    Connect Line Input
-                `;
-                lineStatus.textContent = 'Ready to connect';
-                lineStatusContainer.classList.remove('connected', 'error');
-                this.isPlaying = false;
+            if (this.microphoneStream || this.lineStream) {
+                this.disconnectInputAudio();
+                
+                // Update status
+                this.activeAudioSource = null;
+                this.inputAudioActive = false;
+                this.updateTabIndicators();
                 
                 // Keep animation running for idle/anomaly visuals
                 if (!this.animationId) {
@@ -1930,35 +2071,101 @@ class FerrofluidVisualizer {
                 return;
             }
             
-            lineStatus.textContent = 'Requesting line input access...';
-            lineStatusContainer.classList.remove('error');
+            // Stop file audio if active (input overrides file)
+            if (this.activeAudioSource === 'file' && this.audioElement) {
+                this.audioElement.pause();
+                this.audioElement.remove();
+                this.audioElement = null;
+                this.fileAudioActive = false;
+                
+                // Reset play/pause button to initial state since file is no longer playing
+                this.isPlaying = false;
+                document.getElementById('play-pause').textContent = '▶ PLAY';
+                document.getElementById('play-pause').classList.remove('playing');
+                
+                console.log('File audio stopped - input audio taking over');
+            }
             
-            // Request line input access (same as microphone but potentially different device)
-            this.lineStream = await navigator.mediaDevices.getUserMedia({
-                audio: {
-                    echoCancellation: false,
-                    noiseSuppression: false,
-                    autoGainControl: false
-                }
+            inputStatus.textContent = 'Requesting audio input access...';
+            inputStatusContainer.classList.remove('error');
+            
+            // Get selected device ID
+            const inputDeviceSelect = document.getElementById('input-device-select');
+            const selectedDeviceId = inputDeviceSelect ? inputDeviceSelect.value : '';
+            
+            // Build audio constraints for ultra-low latency
+            const audioConstraints = {
+                echoCancellation: false,
+                noiseSuppression: false,
+                autoGainControl: false,
+                // Ultra-low latency optimizations
+                latency: 0.001,  // Request 1ms latency (extremely low)
+                sampleRate: 96000,  // Higher sample rate for better quality and potentially lower latency
+                channelCount: 1,  // Mono to reduce processing overhead
+                // Additional latency reduction constraints
+                googAutoGainControl: false,
+                googNoiseSuppression: false,
+                googEchoCancellation: false,
+                googDAEchoCancellation: false,
+                googHighpassFilter: false,
+                googAudioMirroring: false,
+                googTypingNoiseDetection: false
+            };
+            
+            // Add device ID if a specific device is selected
+            if (selectedDeviceId) {
+                audioConstraints.deviceId = { exact: selectedDeviceId };
+            }
+            
+            // Request audio input access
+            const audioStream = await navigator.mediaDevices.getUserMedia({
+                audio: audioConstraints
             });
             
-            await this.setupStreamAudio(this.lineStream);
+            // Store as microphone stream for compatibility with existing code
+            this.microphoneStream = audioStream;
             
-            lineButton.classList.add('connected');
-            lineButton.innerHTML = `
+            await this.setupStreamAudio(audioStream);
+            
+            // Update audio monitoring if enabled
+            this.updateAudioMonitoring();
+            
+            inputButton.classList.add('connected');
+            inputButton.innerHTML = `
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="3"/>
-                    <path d="M12 1v6m0 6v6"/>
-                    <path d="M1 12h6m6 0h6"/>
+                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                    <line x1="12" y1="19" x2="12" y2="23"/>
+                    <line x1="8" y1="23" x2="16" y2="23"/>
                 </svg>
-                Disconnect Line Input
+                Disconnect Audio Input
             `;
-            lineStatus.textContent = 'Line input connected';
-            lineStatusContainer.classList.add('connected');
+            inputStatus.textContent = 'Audio input connected';
+            inputStatusContainer.classList.add('connected');
             
             // Update track display
-            document.getElementById('track-name-vertical').textContent = 'Line Input';
+            const selectedOption = inputDeviceSelect.options[inputDeviceSelect.selectedIndex];
+            const deviceName = selectedOption.textContent || 'Audio Input';
+            document.getElementById('track-name-vertical').textContent = deviceName;
             this.isPlaying = true;
+            
+            // Set active source to input
+            this.activeAudioSource = 'input';
+            this.inputAudioActive = true;
+            this.fileAudioActive = false;
+            
+            // Update tab indicators
+            this.updateTabIndicators();
+            
+            // Enable audio monitoring by default for mic/line input
+            this.audioMonitoringEnabled = true;
+            const audioMonitoringCheckbox = document.getElementById('audio-monitoring');
+            if (audioMonitoringCheckbox) {
+                audioMonitoringCheckbox.checked = true;
+            }
+            this.updateAudioMonitoring();
+            
+            console.log('Input audio active, file audio stopped, monitoring enabled');
             
             // Start animation
             if (!this.animationId) {
@@ -1966,11 +2173,11 @@ class FerrofluidVisualizer {
             }
             
         } catch (error) {
-            console.error('Error connecting line input:', error);
-            const lineStatus = document.getElementById('line-status');
-            const lineStatusContainer = document.getElementById('line-status-container');
-            lineStatus.textContent = 'Line input access denied';
-            lineStatusContainer.classList.add('error');
+            console.error('Error connecting audio input:', error);
+            const inputStatus = document.getElementById('input-status');
+            const inputStatusContainer = document.getElementById('input-status-container');
+            inputStatus.textContent = 'Audio input access denied';
+            inputStatusContainer.classList.add('error');
             
             // Keep animation running for idle/anomaly visuals even on error
             if (!this.animationId) {
@@ -1981,9 +2188,24 @@ class FerrofluidVisualizer {
     
     async setupStreamAudio(stream) {
         try {
-            // Create audio context if needed
+            // Create audio context with ultra-low latency settings if needed
             if (!this.audioContext) {
-                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
+                    latencyHint: 'interactive',  // Optimize for lowest possible latency
+                    sampleRate: 48000  // Request high sample rate for better precision
+                });
+                
+                // Set smaller buffer sizes for lower latency (browser permitting)
+                if (this.audioContext.audioWorklet) {
+                    // Request smaller buffer size if supported
+                    try {
+                        const outputLatency = this.audioContext.outputLatency || 0.01;
+                        const baseLatency = this.audioContext.baseLatency || 0.005;
+                        console.log(`Audio latency: output=${outputLatency.toFixed(3)}s, base=${baseLatency.toFixed(3)}s`);
+                    } catch (e) {
+                        console.log('Latency info not available');
+                    }
+                }
             }
             
             // Resume if suspended
@@ -1994,11 +2216,12 @@ class FerrofluidVisualizer {
             // Create audio source from stream
             this.audioSource = this.audioContext.createMediaStreamSource(stream);
             
-            // Set up analyzer
+            // Set up analyzer with ultra-optimized settings for lowest latency
             this.analyser = this.audioContext.createAnalyser();
-            this.analyser.fftSize = 1024;
+            this.analyser.fftSize = 256;  // Further reduced from 512 for even lower latency (50% less processing)
+            this.analyser.smoothingTimeConstant = 0.1;  // Minimal smoothing for maximum responsiveness
             const clampedSmoothing = Math.max(0, Math.min(1, this.smoothing));
-            this.analyser.smoothingTimeConstant = clampedSmoothing;
+            this.analyser.smoothingTimeConstant = Math.min(clampedSmoothing, 0.3); // Cap smoothing for responsiveness
             
             // Create EQ filters
             this.bassEQ = this.audioContext.createBiquadFilter();
@@ -2028,6 +2251,9 @@ class FerrofluidVisualizer {
             this.dataArray = new Uint8Array(this.bufferLength);
             this.frequencyData = new Float32Array(this.bufferLength);
             
+            // Start ultra-high frequency audio polling for minimum latency
+            this.startUltraFastAudioPolling();
+            
             // Initialize or recreate grid cell animator
             if (this.gridCellAnimator) {
                 this.gridCellAnimator.dispose();
@@ -2045,6 +2271,43 @@ class FerrofluidVisualizer {
         }
     }
     
+    startUltraFastAudioPolling() {
+        // Clear any existing ultra-fast polling
+        if (this.ultraFastAudioTimer) {
+            clearInterval(this.ultraFastAudioTimer);
+        }
+        
+        // Set up ultra-high frequency audio analysis (120 FPS for sub-frame responsiveness)
+        this.ultraFastAudioTimer = setInterval(() => {
+            if (this.analyser && this.isPlaying && (this.audioInputSource === 'input' || this.audioInputSource === 'mic' || this.audioInputSource === 'line')) {
+                // Quick analysis for input latency reduction
+                this.analyser.getByteFrequencyData(this.dataArray);
+                
+                // Fast bass/mid/high calculation for immediate response
+                const bassSum = this.dataArray.slice(0, 8).reduce((a, b) => a + b, 0) / 8;
+                const midSum = this.dataArray.slice(8, 32).reduce((a, b) => a + b, 0) / 24;
+                const highSum = this.dataArray.slice(32, 64).reduce((a, b) => a + b, 0) / 32;
+                
+                // DIRECT intensity updates for immediate visual response (bypass main analysis completely)
+                this.bassIntensity = (bassSum / 255) * this.sensitivity;
+                this.midIntensity = (midSum / 255) * this.sensitivity;
+                this.highIntensity = (highSum / 255) * this.sensitivity;
+                
+                // Mark that ultra-fast values are active to prevent main analysis override
+                this.ultraFastValuesActive = true;
+            }
+        }, 1000 / 120); // 120 FPS = ~8.3ms intervals for ultra-low latency
+    }
+    
+    stopUltraFastAudioPolling() {
+        if (this.ultraFastAudioTimer) {
+            clearInterval(this.ultraFastAudioTimer);
+            this.ultraFastAudioTimer = null;
+        }
+        // Reset flag so main analysis can take over
+        this.ultraFastValuesActive = false;
+    }
+    
     setupEQControls() {
         const eqBass = document.getElementById('eq-bass');
         const eqMid = document.getElementById('eq-mid');
@@ -2053,27 +2316,42 @@ class FerrofluidVisualizer {
         const eqMidValue = document.getElementById('eq-mid-value');
         const eqHighValue = document.getElementById('eq-high-value');
         
-        if (eqBass) {
+        if (eqBass && this.bassEQ) {
+            // Set current EQ value from slider
+            const currentBass = parseFloat(eqBass.value);
+            this.bassEQ.gain.value = currentBass;
+            if (eqBassValue) eqBassValue.textContent = `${currentBass} dB`;
+            
             eqBass.addEventListener('input', e => {
                 const gain = parseFloat(e.target.value);
                 this.bassEQ.gain.value = gain;
-                eqBassValue.textContent = `${gain} dB`;
+                if (eqBassValue) eqBassValue.textContent = `${gain} dB`;
             });
         }
         
-        if (eqMid) {
+        if (eqMid && this.midEQ) {
+            // Set current EQ value from slider
+            const currentMid = parseFloat(eqMid.value);
+            this.midEQ.gain.value = currentMid;
+            if (eqMidValue) eqMidValue.textContent = `${currentMid} dB`;
+            
             eqMid.addEventListener('input', e => {
                 const gain = parseFloat(e.target.value);
                 this.midEQ.gain.value = gain;
-                eqMidValue.textContent = `${gain} dB`;
+                if (eqMidValue) eqMidValue.textContent = `${gain} dB`;
             });
         }
         
-        if (eqHigh) {
+        if (eqHigh && this.highEQ) {
+            // Set current EQ value from slider
+            const currentHigh = parseFloat(eqHigh.value);
+            this.highEQ.gain.value = currentHigh;
+            if (eqHighValue) eqHighValue.textContent = `${currentHigh} dB`;
+            
             eqHigh.addEventListener('input', e => {
                 const gain = parseFloat(e.target.value);
                 this.highEQ.gain.value = gain;
-                eqHighValue.textContent = `${gain} dB`;
+                if (eqHighValue) eqHighValue.textContent = `${gain} dB`;
             });
         }
     }
@@ -2300,6 +2578,19 @@ class FerrofluidVisualizer {
         if (!file) return;
         
         try {
+            // Stop ultra-fast audio polling when switching to file audio
+            this.stopUltraFastAudioPolling();
+            
+            // Set audio input source to file
+            this.audioInputSource = 'file';
+            
+            // Stop input audio if active (file overrides input)
+            if (this.activeAudioSource === 'input') {
+                this.disconnectInputAudio();
+                this.inputAudioActive = false;
+                console.log('Input audio stopped - file audio taking over');
+            }
+            
             // Create audio context if needed
             if (!this.audioContext) {
                 this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -2435,6 +2726,12 @@ class FerrofluidVisualizer {
                 document.getElementById('play-pause').textContent = '▶ PLAY';
                 document.getElementById('play-pause').classList.remove('playing');
             }
+            
+            // Set file audio as active and update tab indicators
+            this.activeAudioSource = 'file';
+            this.fileAudioActive = true;
+            this.updateTabIndicators();
+            console.log('File audio active, tab indicators updated');
             
             // Update status message after loading audio file
             this.updateStatusMessage();
@@ -2931,9 +3228,11 @@ class FerrofluidVisualizer {
         
         // Set anomaly state
         this.anomalySystem.isActive = true;
+        this.anomalySystem.windingDown = false;
         this.anomalySystem.duration = this.anomalySystem.minDuration + 
                                       Math.random() * (this.anomalySystem.maxDuration - this.anomalySystem.minDuration);
         this.anomalySystem.intensity = 0.5 + Math.random() * 0.5; // 0.5 to 1.0 intensity
+        this.anomalySystem.peakIntensity = this.anomalySystem.intensity; // Store peak for wind-down
         this.anomalySystem.spawnBlobCount = 0;
 
         // Display random anomaly message in console
@@ -2945,14 +3244,25 @@ class FerrofluidVisualizer {
         console.log(`  System attempting auto-correction...`);
         console.log(`/////////////////////////////////////////////////////////`);
 
-        // Schedule the end of this anomaly
+        // Schedule the wind-down phase (not immediate end)
         setTimeout(() => {
-            this.endAnomaly();
+            this.startAnomalyWindDown();
         }, this.anomalySystem.duration);
+    }
+
+    startAnomalyWindDown() {
+        this.anomalySystem.windingDown = true;
+        this.anomalySystem.windDownStartTime = performance.now();
+        
+        console.log(`/////////////////////////////////////////////////////////`);
+        console.log(`ARTEFACT STABILIZATION INITIATED`);
+        console.log(`Gently returning to baseline state...`);
+        console.log(`/////////////////////////////////////////////////////////`);
     }
 
     endAnomaly() {
         this.anomalySystem.isActive = false;
+        this.anomalySystem.windingDown = false;
         this.anomalySystem.intensity = 0;
         this.anomalySystem.spawnBlobCount = 0;
         
@@ -2978,8 +3288,30 @@ class FerrofluidVisualizer {
             this.triggerAnomaly();
         }
 
-        // Handle anomaly blob spawning during active anomaly
-        if (this.anomalySystem.isActive && this.anomalySystem.spawnBlobCount < this.anomalySystem.maxSpawnBlobs) {
+        // Handle wind-down phase
+        if (this.anomalySystem.windingDown) {
+            const windDownElapsed = now - this.anomalySystem.windDownStartTime;
+            const windDownProgress = Math.min(windDownElapsed / this.anomalySystem.windDownDuration, 1.0);
+            
+            // Create smooth wind-down curve (ease-out)
+            const easeOutProgress = 1 - Math.pow(1 - windDownProgress, 3);
+            
+            // Gradually reduce intensity with some gentle wobble
+            const wobbleFrequency = 2.0; // Gentle wobble frequency
+            const wobbleAmplitude = 0.1 * (1 - windDownProgress); // Wobble fades as we approach end
+            const wobble = Math.sin(windDownElapsed * 0.001 * wobbleFrequency * Math.PI * 2) * wobbleAmplitude;
+            
+            this.anomalySystem.intensity = this.anomalySystem.peakIntensity * (1 - easeOutProgress) + wobble;
+            
+            // End the anomaly when wind-down is complete
+            if (windDownProgress >= 1.0) {
+                this.endAnomaly();
+            }
+        }
+
+        // Handle anomaly blob spawning during active anomaly (but not during wind-down)
+        if (this.anomalySystem.isActive && !this.anomalySystem.windingDown && 
+            this.anomalySystem.spawnBlobCount < this.anomalySystem.maxSpawnBlobs) {
             // Random chance to spawn blob during anomaly (more frequent spawning)
             if (Math.random() < 0.1) { // 10% chance per frame
                 this.spawnAnomalyBlob();
@@ -3013,6 +3345,13 @@ class FerrofluidVisualizer {
             this.bassIntensity = Math.max(0, this.bassIntensity - returnSpeed);
             this.midIntensity = Math.max(0, this.midIntensity - returnSpeed);
             this.highIntensity = Math.max(0, this.highIntensity - returnSpeed);
+            return;
+        }
+        
+        // For input audio with ultra-fast polling, completely skip analysis to prevent override
+        if ((this.audioInputSource === 'input' || this.audioInputSource === 'mic' || this.audioInputSource === 'line') && this.ultraFastValuesActive) {
+            // Ultra-fast polling is handling values - just update frequency data for display
+            this.analyser.getByteFrequencyData(this.dataArray);
             return;
         }
         
@@ -5098,28 +5437,28 @@ for (const bd of blobs) {
     // Helper methods for improved camera distance calculations
     getBaseDistance() {
         if (this.gridSize <= 15) {
-            return 14.4 + (this.gridSize - 10) * 0.72; // Range: 14.4 to 18
+            return 13 + (this.gridSize - 10) * 0.6; // Range: 13 to 16 (centered in new 7-23 range)
         } else {
             // For grid sizes above 15, keep the same distance as grid size 15
-            return 18; // Fixed at grid size 15 level for all larger grids
+            return 16; // Centered in the 7-23 range for all larger grids
         }
     }
     
     getMinDistance() {
         if (this.gridSize <= 15) {
-            return 6 + (this.gridSize - 10) * 0.2; // Range: 6 to 7
+            return 8 + (this.gridSize - 10) * 0.2; // Range: 8 to 9 (increased by 2 points)
         } else {
             // For grid sizes above 15, keep similar bounds as grid size 15
-            return 7; // Fixed at grid size 15 level
+            return 9; // Fixed at grid size 15 level (increased by 2 points)
         }
     }
     
     getMaxDistance() {
         if (this.gridSize <= 15) {
-            return 25 + (this.gridSize - 10) * 1.0; // Range: 25 to 30
+            return 20 + (this.gridSize - 10) * 0.6; // Range: 20 to 23 (reduced from 25-30)
         } else {
             // For grid sizes above 15, keep similar bounds as grid size 15
-            return 30; // Fixed at grid size 15 level
+            return 23; // Reduced from 30 to spend more time at mid-range
         }
     }
     
@@ -5134,6 +5473,18 @@ for (const bd of blobs) {
         
         // Update current camera distance to match the new grid size
         this.cameraControls.distance = this.getBaseDistance();
+    }
+    
+    // New method to update only the camera scaling without resetting distance
+    updateCameraLimitsOnly() {
+        // Update camera control limits using improved scaling
+        this.cameraControls.minDistance = this.getMinDistance();
+        this.cameraControls.maxDistance = this.getMaxDistance();
+        
+        // Update automatic movement base distance
+        this.cameraControls.autoMovement.baseDistance = this.getBaseDistance();
+        
+        // Don't reset the camera distance - let it stay where it is
     }
       // Update automatic camera movement based on music
     updateAutomaticCameraMovement(deltaTime) {
@@ -5249,13 +5600,13 @@ for (const bd of blobs) {
             gridSizeScale = 1.0; // Fixed at grid size 15 level
         }
         
-        const scaledBaseDistance = 18 * gridSizeScale;
+        const scaledBaseDistance = 16 * gridSizeScale; // Updated to use new centered base distance
         
         // Scale effects consistently - don't increase for larger grids
         const effectScale = gridSizeScale;
-        const musicZoomRange = totalIntensity * 8 * effectScale;
+        const musicZoomRange = totalIntensity * 0 * effectScale; // Disabled music zoom to prevent too much close-up
         const breathingEffect = Math.sin(distanceTimePhase) * 3 * effectScale;
-        const bassZoomPulse = this.bassIntensity * Math.sin(distanceTimePhase * 4) * 5 * effectScale;
+        const bassZoomPulse = this.bassIntensity * Math.sin(distanceTimePhase * 4) * 2 * effectScale; // Reduced from 5 to 2
         
         this.cameraControls.distance = scaledBaseDistance + breathingEffect + musicZoomRange + bassZoomPulse;
         
@@ -5265,13 +5616,13 @@ for (const bd of blobs) {
         // Improved distance limits based on grid size
         let minDistance, maxDistance;
         if (this.gridSize <= 15) {
-            // Small grids: allow very close camera, moderate max distance
+            // Small grids: allow very close camera, reduced max distance for more mid-range time
             minDistance = 6 + (this.gridSize - 10) * 0.2; // Range: 6 to 7
-            maxDistance = 25 + (this.gridSize - 10) * 1.0; // Range: 25 to 30
+            maxDistance = 20 + (this.gridSize - 10) * 0.6; // Range: 20 to 23 (reduced from 25-30)
         } else {
             // Large grids: use the same bounds as grid size 15 to prevent zooming too far out
             minDistance = 7; // Same as grid size 15
-            maxDistance = 30; // Same as grid size 15
+            maxDistance = 23; // Reduced from 30 to spend more time at mid-range
         }
         
         this.cameraControls.distance = Math.max(minDistance, Math.min(maxDistance, this.cameraControls.distance));
@@ -5393,7 +5744,9 @@ for (const bd of blobs) {
             this.testCube.rotation.y += 0.01;
         }
         
+        // High-frequency audio analysis for ultra-low latency response
         this.analyzeAudio();
+        
         this.updateAnomalySystem(); // Update anomaly system for idle effects
         this.updateFerrofluid();
         this.updateFloatingBlobs(deltaTime);
@@ -5814,21 +6167,21 @@ for (const bd of blobs) {
                 // Only update camera scaling if grid size actually changed
                 if (previousGridSize !== this.gridSize) {
                     this.updateCameraScaling(); // Update camera scaling for loaded grid size
+                    this.createGrid(); // Recreate grid with new size
+                    if (this.cameraControls) {
+                        this.clampCameraTarget();
+                    }
+                    // Recreate grid cell animator with new size
+                    if (this.gridCellAnimator) {
+                        this.gridCellAnimator.dispose();
+                        this.gridCellAnimator = new GridCellAnimator(this.gridSize, this.scene, this.analyser, this.gridColor, this.backgroundColor);
+                    }
                 }
                 
                 const gridSizeSlider = document.getElementById('grid-size');
                 const gridSizeValue = document.getElementById('grid-size-value');
                 if (gridSizeSlider) gridSizeSlider.value = this.gridSize;
-                if (gridSizeValue) gridSizeValue.textContent = this.gridSize;                
-                this.createGrid(); // Recreate grid with new size
-                if (this.cameraControls) {
-                    this.clampCameraTarget();
-                }
-                  // Recreate grid cell animator with new size
-                if (this.gridCellAnimator) {
-                    this.gridCellAnimator.dispose();
-                    this.gridCellAnimator = new GridCellAnimator(this.gridSize, this.scene, this.analyser, this.gridColor, this.backgroundColor);
-                }
+                if (gridSizeValue) gridSizeValue.textContent = this.gridSize;
             }
             
             if (settings.gridOpacity !== undefined) {
@@ -6991,7 +7344,15 @@ for (const bd of blobs) {
 
 // Initialize the visualizer when the page loads
 document.addEventListener('DOMContentLoaded', () => {
-    window.visualizer = new FerrofluidVisualizer();
+    // Small delay to ensure loading screen is visible
+    setTimeout(() => {
+        window.visualizer = new FerrofluidVisualizer();
+        
+        // Complete loading and hide loading screen
+        setTimeout(() => {
+            window.loadingManager.hide();
+        }, 500); // Small delay to show final loading state
+    }, 100);
 });
 
 // Handle page unload

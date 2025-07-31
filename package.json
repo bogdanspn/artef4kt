@@ -135,7 +135,8 @@
     "yauzl": "^2.10.0"
   },
   "devDependencies": {
-    "electron": "^37.2.0"
+    "electron": "^37.2.0",
+    "electron-builder": "^26.0.12"
   },
   "scripts": {
     "start": "electron .",

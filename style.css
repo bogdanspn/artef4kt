@@ -14,6 +14,165 @@ body {
     user-select: none;
 }
 
+/* Loading Screen Styles */
+#loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #888888; /* Default background color */
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+#loading-screen.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+#loading-content {
+    text-align: center;
+    max-width: 500px;
+    padding: 20px;
+}
+
+#loading-logos {
+    margin-bottom: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+}
+
+#loading-icon {
+    width: 80px;
+    height: 80px;
+    filter: brightness(0) saturate(100%) invert(75%) sepia(6%) saturate(157%) hue-rotate(352deg) brightness(96%) contrast(95%); /* Default grid color #bbbbbb */
+    animation: pulse 2s ease-in-out infinite;
+}
+
+#loading-logo {
+    height: 40px;
+    filter: brightness(0) saturate(100%) invert(75%) sepia(6%) saturate(157%) hue-rotate(352deg) brightness(96%) contrast(95%); /* Default grid color #bbbbbb */
+    opacity: 0.8;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.1); opacity: 1; }
+}
+
+#loading-progress-container {
+    margin-top: 40px;
+}
+
+#loading-text {
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    margin-bottom: 30px;
+    color: #bbbbbb; /* Default grid color */
+    opacity: 0.9;
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase;
+}
+
+#loading-progress-wrapper {
+    width: 100%;
+    height: 8px;
+    background: rgba(187, 187, 187, 0.2); /* Default grid color with transparency */
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+#loading-progress-bar {
+    width: 0%;
+    height: 100%;
+    background: #bbbbbb; /* Default grid color */
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+#loading-percentage {
+    font-size: 16px;
+    font-weight: 600;
+    color: #bbbbbb; /* Default grid color */
+    letter-spacing: 1px;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* Responsive loading screen */
+@media (max-width: 768px) {
+    #loading-content {
+        max-width: 90%;
+        padding: 15px;
+    }
+    
+    #loading-icon {
+        width: 60px;
+        height: 60px;
+    }
+    
+    #loading-logo {
+        height: 30px;
+    }
+    
+    #loading-text {
+        font-size: 12px;
+    }
+    
+    #loading-progress-wrapper {
+        height: 6px;
+    }
+}
+
+/* Responsive loading screen */
+@media (max-width: 768px) {
+    #loading-content {
+        max-width: 90%;
+        padding: 15px;
+    }
+    
+    #loading-icon {
+        width: 60px;
+        height: 60px;
+    }
+    
+    #loading-logo {
+        height: 30px;
+    }
+    
+    #loading-text {
+        font-size: 12px;
+    }
+    
+    .loading-bar {
+        width: 8px;
+        gap: 2px;
+    }
+    
+    #loading-progress-bar {
+        height: 40px;
+        gap: 2px;
+    }
+    
+    @keyframes loading-pulse {
+        0%, 20%, 80%, 100% {
+            height: 3px;
+            opacity: 0.3;
+        }
+        40%, 60% {
+            height: 40px;
+            opacity: 1;
+        }
+    }
+}
+
 #container {
     position: relative;
     width: 100vw;
@@ -226,7 +385,7 @@ body {
 }
 
 #header h1 {
-    font-family:Helvetica,  Arial, sans-serif;
+    font-family: 'JetBrains Mono', monospace;
     font-size: 20px;
     font-weight: 600;
     letter-spacing: 0px;
@@ -280,7 +439,7 @@ body {
     margin-bottom: 8px;
     text-transform: uppercase;
     letter-spacing: 0px; 
-    display:none;
+    color:#fff;
 }
 .control-group {
     margin-bottom: 5px; /* Reduced from 15px */
@@ -304,14 +463,14 @@ body {
 
 /* Slider control specific styling */
 .slider-control {
-    margin-bottom: 8px; /* Reduced from 18px */
+    margin-bottom: 12px; /* Space after the entire slider control */
 }
 
 .control-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 4px; /* Reduced from 4px */
+    margin-bottom: -4px; /* Negative margin to pull slider closer to label */
 }
 
 .slider-control .control-header label {
@@ -549,13 +708,13 @@ button:active {
 }
 
 button.playing {
-    background: #fff;
+    background: transparent;
     color: #fff;
 }
 
 button.playing:hover {
-    background: #eee;
-    color: #222;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
 }
 
 /* Loop button active state */
@@ -955,7 +1114,8 @@ input[type="color"]::-webkit-color-swatch-wrapper {
 .settings-selector-group {
     display: flex;
     gap: 6px;
-    align-items: center;
+    align-items: flex-start; /* Change from center to flex-start for top alignment */
+    margin-bottom: 0; /* Ensure no extra spacing */
 }
 
 .settings-selector-group select {
@@ -977,6 +1137,8 @@ input[type="color"]::-webkit-color-swatch-wrapper {
     background-repeat: no-repeat;
     background-position: right 8px center;
     background-size: 16px;
+    height: auto; /* Ensure height is calculated automatically */
+    box-sizing: border-box; /* Ensure consistent box model */
 }
 
 .settings-selector-group select:focus {
@@ -999,8 +1161,11 @@ input[type="color"]::-webkit-color-swatch-wrapper {
 .settings-selector-group button {
     padding: 8px 10px;
     font-size: 9px;
-    margin-right: 0;
+    margin: 0; /* Remove all margins */
     min-width: 40px;
+    line-height: normal; /* Ensure consistent line height */
+    height: auto; /* Match select box height calculation */
+    box-sizing: border-box; /* Ensure consistent box model */
 }
 
 .settings-selector-group button#refresh-presets {
@@ -1008,6 +1173,12 @@ input[type="color"]::-webkit-color-swatch-wrapper {
     min-width: 32px;
     background: rgba(255, 255, 255, 0.05);
     transition: background 0.2s ease;
+    margin: 0 !important; /* Force remove any inherited margins */
+    line-height: normal; /* Match select box line height */
+    vertical-align: top; /* Align to top like select box */
+    display: inline-block; /* Reset to inline-block */
+    height: auto; /* Match select box height calculation */
+    box-sizing: border-box; /* Ensure consistent box model */
 }
 
 .settings-selector-group button#refresh-presets:hover {
@@ -1076,6 +1247,42 @@ input[type="color"]::-webkit-color-swatch-wrapper {
     letter-spacing: 0.5px;
     border-radius: 6px;
     min-height: 32px;
+    position: relative;
+}
+
+.tab-status-indicator {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: transparent;
+    transition: all 0.3s ease;
+    z-index: 2;
+}
+
+.input-tab.playing .tab-status-indicator {
+    background: #00ff00;
+    box-shadow: 0 0 6px rgba(0, 255, 0, 0.6);
+}
+
+.input-tab.playing .tab-status-indicator::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border-radius: 50%;
+    background: rgba(0, 255, 0, 0.3);
+    animation: pulse-indicator 2s infinite;
+}
+
+@keyframes pulse-indicator {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.3); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
 }
 
 .input-tab:hover {
@@ -1084,7 +1291,7 @@ input[type="color"]::-webkit-color-swatch-wrapper {
 }
 
 .input-tab.active {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.08);
     color: #fff;
     border: 1px solid rgba(255, 255, 255, 0.3);
 }
@@ -1132,6 +1339,42 @@ input[type="color"]::-webkit-color-swatch-wrapper {
     color: rgba(255, 255, 255, 0.6);
     font-family: 'JetBrains Mono', monospace;
     line-height: 1.4;
+}
+
+/* Audio device selection dropdowns */
+.control-group select {
+    width: 100%;
+    padding: 8px 24px 8px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    outline: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 16px;
+    margin-bottom: 8px;
+}
+
+.control-group select:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.control-group select option {
+    background: #222;
+    color: #fff;
+    padding: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
 }
 
 /* Updated input status display */

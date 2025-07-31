@@ -35,7 +35,32 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
-<body>      <div id="container">
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div id="loading-content">
+            <div id="loading-logos">
+                <img src="images/favicon.svg" alt="ARTEF4KT Icon" id="loading-icon">
+                <img src="images/artefakt-logo.svg" alt="ARTEF4KT" id="loading-logo">
+            </div>
+            <div id="loading-progress-container">
+                <div id="loading-text">INITIALIZING ARTEF4KT...</div>
+                <div id="loading-progress-wrapper">
+                    <div id="loading-progress-bar"></div>
+                </div>
+                <div id="loading-percentage">0%</div>
+            </div>
+                    <div class="loading-bar" style="--delay: 2.1s"></div>
+                    <div class="loading-bar" style="--delay: 2.2s"></div>
+                    <div class="loading-bar" style="--delay: 2.3s"></div>
+                    <div class="loading-bar" style="--delay: 2.4s"></div>
+           
+                
+            </div>
+        </div>
+    </div>
+
+    <div id="container">
 
         <canvas id="visualizer"></canvas>
         
@@ -53,27 +78,22 @@
                     <div class="input-tabs-container">
                         <div class="input-tabs">
                             <button class="input-tab active" data-tab="file">
+                                <div class="tab-status-indicator"></div>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                                     <polyline points="14,2 14,8 20,8"/>
                                 </svg>
                                 <span>File</span>
                             </button>
-                            <button class="input-tab" data-tab="mic">
+                            <button class="input-tab" data-tab="input">
+                                <div class="tab-status-indicator"></div>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
                                     <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
                                     <line x1="12" y1="19" x2="12" y2="23"/>
                                     <line x1="8" y1="23" x2="16" y2="23"/>
                                 </svg>
-                                <span>MIC</span>
-                            </button>
-                            <button class="input-tab" data-tab="line">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="12" r="8"/>
-                                    <circle cx="12" cy="12" r="4"/>
-                                </svg>
-                                <span>Line</span>
+                                <span>Mic/Line</span>
                             </button>
                         </div>
                         
@@ -102,45 +122,42 @@
                             </div>
                         </div>
                         
-                        <div class="tab-content" id="mic-tab-content">
+                        <div class="tab-content" id="input-tab-content">
                             <div class="tab-header">
-                                <h3>Microphone Input</h3>
-                                <p>Connect your microphone for real-time visualization</p>
+                                <h3>Audio Input</h3>
+                                <p>Connect microphone, line input, or external audio devices</p>
                             </div>
-                            <div class="input-status-display" id="mic-status-container">
+                            <div class="control-group">
+                                <label for="input-device-select">Audio Input Device</label>
+                                <select id="input-device-select">
+                                    <option value="">Select audio input device...</option>
+                                </select>
+                            </div>
+                            <div class="input-status-display" id="input-status-container">
                                 <div class="status-indicator"></div>
-                                <span id="mic-status">Ready to connect</span>
+                                <span id="input-status">Ready to connect</span>
                             </div>
-                            <button id="mic-connect" type="button" class="connect-button">
+                            <div class="control-group checkbox-control">
+                                <div class="control-header">
+                                    <label for="audio-monitoring">Audio Monitoring</label>
+                                    <input type="checkbox" id="audio-monitoring">
+                                </div>
+                            </div>
+                            <div class="control-group slider-control">
+                                <div class="control-header">
+                                    <label for="monitor-volume">Monitor Volume</label>
+                                    <span id="monitor-volume-value">0.1</span>
+                                </div>
+                                <input type="range" id="monitor-volume" min="0" max="1" step="0.1" value="0.1">
+                            </div>
+                            <button id="input-connect" type="button" class="connect-button">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
                                     <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
                                     <line x1="12" y1="19" x2="12" y2="23"/>
                                     <line x1="8" y1="23" x2="16" y2="23"/>
                                 </svg>
-                                Connect Microphone
-                            </button>
-                            <div class="input-info">
-                                <small>Your browser will request permission</small>
-                            </div>
-                        </div>
-                        
-                        <div class="tab-content" id="line-tab-content">
-                            <div class="tab-header">
-                                <h3>Line Input</h3>
-                                <p>Connect external audio devices or line input</p>
-                            </div>
-                            <div class="input-status-display" id="line-status-container">
-                                <div class="status-indicator"></div>
-                                <span id="line-status">Ready to connect</span>
-                            </div>
-                            <button id="line-connect" type="button" class="connect-button">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="12" r="3"/>
-                                    <path d="M12 1v6m0 6v6"/>
-                                    <path d="M1 12h6m6 0h6"/>
-                                </svg>
-                                Connect Line Input
+                                Connect Audio Input
                             </button>
                             <div class="input-info">
                                 <small>Your browser will request permission</small>

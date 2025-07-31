@@ -1,0 +1,1 @@
+npx electron-packager . artef4kt --platform=win32 --arch=x64 --overwrite 
