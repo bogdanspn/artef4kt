@@ -393,7 +393,7 @@ The visualizer supports comprehensive color customization with intelligent harmo
 
 ##  **License**
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.
 
 ##  **Acknowledgments**
 
@@ -402,15 +402,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **JetBrains** - For the excellent monospace font
 - **Ferrofluid Physics** - Inspired by real ferrofluid behavior and properties
 
-## **Support**
 
--  **Bug Reports**: Open an issue on GitHub
--  **Feature Requests**: Submit a feature request issue
--  **Documentation**: Check the `/settings/README.md` for settings system details
--  **Questions**: Start a discussion on GitHub
-
----
-
-**Experience the future of music visualization with ARTEF4KT** 
-
-*Created with passion for immersive audio-visual experiences*
